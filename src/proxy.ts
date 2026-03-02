@@ -2224,7 +2224,7 @@ async function proxyRequest(
             const toolCallNames = Array.isArray(assistantToolCalls)
               ? assistantToolCalls
                   .map((tc) => tc.function?.name)
-                  .filter(Boolean)
+                  .filter((n): n is string => Boolean(n))
               : undefined;
             const contentHash = hashRequestContent(prompt, toolCallNames);
             const shouldEscalate = sessionStore.recordRequestHash(effectiveSessionId!, contentHash);
