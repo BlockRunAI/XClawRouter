@@ -81,7 +81,9 @@ export const MODEL_ALIASES: Record<string, string> = {
   "gpt-120b": "nvidia/gpt-oss-120b",
 
   // MiniMax
-  minimax: "minimax/minimax-m2.5",
+  minimax: "minimax/minimax-m2.7",
+  "minimax-m2.7": "minimax/minimax-m2.7",
+  "minimax-m2.5": "minimax/minimax-m2.5",
 
   // Z.AI GLM-5
   glm: "zai/glm-5",
@@ -647,6 +649,18 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
   },
 
   // MiniMax
+  {
+    id: "minimax/minimax-m2.7",
+    name: "MiniMax M2.7",
+    version: "m2.7",
+    inputPrice: 0.3,
+    outputPrice: 1.2,
+    contextWindow: 204800,
+    maxOutput: 16384,
+    reasoning: true,
+    agentic: true,
+    toolCalling: true,
+  },
   {
     id: "minimax/minimax-m2.5",
     name: "MiniMax M2.5",

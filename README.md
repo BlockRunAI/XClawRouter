@@ -56,7 +56,7 @@ This is the stack that lets agents operate autonomously: **x402 + USDC + local r
 
 |                  | OpenRouter        | LiteLLM          | Martian           | Portkey           | **ClawRouter**          |
 | ---------------- | ----------------- | ---------------- | ----------------- | ----------------- | ----------------------- |
-| **Models**       | 200+              | 100+             | Smart routing     | Gateway           | **43+**                 |
+| **Models**       | 200+              | 100+             | Smart routing     | Gateway           | **44+**                 |
 | **Routing**      | Manual selection  | Manual selection | Smart (closed)    | Observability     | **Smart (open source)** |
 | **Auth**         | Account + API key | Your API keys    | Account + API key | Account + API key | **Wallet signature**    |
 | **Payment**      | Credit card       | BYO keys         | Credit card       | $49-499/mo        | **USDC per-request**    |
@@ -159,7 +159,7 @@ Edit existing images with `/img2img`:
 
 ## Models & Pricing
 
-43 models across 8 providers, one wallet. **Starting at $0.0002/request.**
+44 models across 8 providers, one wallet. **Starting at $0.0002/request.**
 
 > **💡 "Cost per request"** = estimated cost for a typical chat message (~500 input + 500 output tokens).
 
@@ -181,6 +181,7 @@ Edit existing images with `/img2img`:
 | deepseek/deepseek-chat | $0.28 | $0.42 | $0.0004 | 128K | tools |
 | deepseek/deepseek-reasoner | $0.28 | $0.42 | $0.0004 | 128K | reasoning, tools |
 | xai/grok-3-mini | $0.30 | $0.50 | $0.0004 | 131K | tools |
+| minimax/minimax-m2.7 | $0.30 | $1.20 | $0.0008 | 205K | reasoning, agentic, tools |
 | minimax/minimax-m2.5 | $0.30 | $1.20 | $0.0008 | 205K | reasoning, agentic, tools |
 | google/gemini-2.5-flash | $0.30 | $2.50 | $0.0014 | 1M | vision, tools |
 | openai/gpt-4.1-mini | $0.40 | $1.60 | $0.0010 | 128K | tools |
@@ -372,7 +373,7 @@ npm test
 
 **The LLM router built for autonomous agents**
 
-You're here. 43+ models, local smart routing, x402 USDC payments — the only stack that lets agents operate independently.
+You're here. 44+ models, local smart routing, x402 USDC payments — the only stack that lets agents operate independently.
 
 `curl -fsSL https://blockrun.ai/ClawRouter-update | bash`
 
