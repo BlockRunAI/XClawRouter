@@ -39,6 +39,7 @@ import {
   getFallbackChainFiltered,
   filterByToolCalling,
   filterByVision,
+  filterByExcludeList,
   calculateModelCost,
   DEFAULT_ROUTING_CONFIG,
   type RouterOptions,
@@ -80,6 +81,7 @@ import {
   type SessionConfig,
 } from "./session.js";
 import { checkForUpdates } from "./updater.js";
+import { loadExcludeList } from "./exclude-models.js";
 import { PROXY_PORT } from "./config.js";
 import { SessionJournal } from "./journal.js";
 
@@ -1172,6 +1174,12 @@ export type ProxyOptions = {
    * - 'strict': immediately return 429 once the session spend reaches the cap.
    */
   maxCostPerRunMode?: "graceful" | "strict";
+  /**
+   * Set of model IDs to exclude from routing.
+   * Excluded models are filtered out of fallback chains.
+   * Loaded from ~/.openclaw/blockrun/exclude-models.json
+   */
+  excludeModels?: Set<string>;
   onReady?: (port: number) => void;
   onError?: (error: Error) => void;
   onPayment?: (info: { model: string; amount: string; network: string }) => void;
@@ -3594,6 +3602,7 @@ async function proxyRequest(
     // If we have a routing decision, get the full fallback chain for the tier
     // Otherwise, just use the current model (no fallback for explicit model requests)
     let modelsToTry: string[];
+    const excludeList = options.excludeModels ?? loadExcludeList();
     if (routingDecision) {
       // Estimate total context: input tokens (~4 chars per token) + max output tokens
       const estimatedInputTokens = Math.ceil(body.length / 4);
@@ -3619,11 +3628,20 @@ async function proxyRequest(
         );
       }
 
+      // Filter out user-excluded models
+      const excludeFiltered = filterByExcludeList(contextFiltered, excludeList);
+      const excludeExcluded = contextFiltered.filter((m) => !excludeFiltered.includes(m));
+      if (excludeExcluded.length > 0) {
+        console.log(
+          `[ClawRouter] Exclude filter: excluded ${excludeExcluded.join(", ")} (user preference)`,
+        );
+      }
+
       // Filter to models that support tool calling when request has tools.
       // Prevents models like grok-code-fast-1 from outputting tool invocations
       // as plain text JSON (the "talking to itself" bug).
-      let toolFiltered = filterByToolCalling(contextFiltered, hasTools, supportsToolCalling);
-      const toolExcluded = contextFiltered.filter((m) => !toolFiltered.includes(m));
+      let toolFiltered = filterByToolCalling(excludeFiltered, hasTools, supportsToolCalling);
+      const toolExcluded = excludeFiltered.filter((m) => !toolFiltered.includes(m));
       if (toolExcluded.length > 0) {
         console.log(
           `[ClawRouter] Tool-calling filter: excluded ${toolExcluded.join(", ")} (no structured function call support)`,
@@ -3671,7 +3689,7 @@ async function proxyRequest(
     // Ensure free model is the last-resort fallback for non-tool requests.
     // Skip free fallback when tools are present — nvidia/gpt-oss-120b lacks
     // tool calling support and would produce broken responses for agentic tasks.
-    if (!hasTools && !modelsToTry.includes(FREE_MODEL)) {
+    if (!hasTools && !modelsToTry.includes(FREE_MODEL) && !excludeList.has(FREE_MODEL)) {
       modelsToTry.push(FREE_MODEL);
     }
 

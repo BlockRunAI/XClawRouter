@@ -28,6 +28,7 @@ export {
   getFallbackChainFiltered,
   filterByToolCalling,
   filterByVision,
+  filterByExcludeList,
   calculateModelCost,
 } from "./selector.js";
 export { DEFAULT_ROUTING_CONFIG } from "./config.js";
