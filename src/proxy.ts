@@ -19,7 +19,13 @@
  *   - Usage logging: log every request as JSON line to ~/.openclaw/blockrun/logs/
  */
 
+import { AsyncLocalStorage } from "node:async_hooks";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+
+// Per-request payment tracking via AsyncLocalStorage (safe for concurrent requests).
+// The x402 onAfterPaymentCreation hook writes the actual payment amount into the
+// request-scoped store, and the logging code reads it after payFetch completes.
+const paymentStore = new AsyncLocalStorage<{ amountUsd: number }>();
 import { finished } from "node:stream";
 import type { AddressInfo } from "node:net";
 import { homedir } from "node:os";
@@ -1244,6 +1250,28 @@ function estimateAmount(
   return amountMicros.toString();
 }
 
+// Image pricing table (must match server's IMAGE_MODELS in blockrun/src/lib/models.ts)
+// Server applies 5% margin on top of these prices.
+const IMAGE_PRICING: Record<string, { default: number; sizes?: Record<string, number> }> = {
+  "openai/dall-e-3": { default: 0.04, sizes: { "1024x1024": 0.04, "1792x1024": 0.08, "1024x1792": 0.08 } },
+  "openai/gpt-image-1": { default: 0.02, sizes: { "1024x1024": 0.02, "1536x1024": 0.04, "1024x1536": 0.04 } },
+  "black-forest/flux-1.1-pro": { default: 0.04 },
+  "google/nano-banana": { default: 0.05 },
+  "google/nano-banana-pro": { default: 0.10, sizes: { "1024x1024": 0.10, "2048x2048": 0.10, "4096x4096": 0.15 } },
+};
+
+/**
+ * Estimate the cost of an image generation/editing request.
+ * Matches server-side calculateImagePrice() including 5% margin.
+ */
+function estimateImageCost(model: string, size?: string, n: number = 1): number {
+  const pricing = IMAGE_PRICING[model];
+  if (!pricing) return 0.04 * n * 1.05; // fallback: assume $0.04/image + margin
+  const sizePrice = size && pricing.sizes ? pricing.sizes[size] : undefined;
+  const pricePerImage = sizePrice ?? pricing.default;
+  return pricePerImage * n * 1.05; // 5% server margin
+}
+
 /**
  * Proxy a partner API request through x402 payment flow.
  *
@@ -1256,6 +1284,7 @@ async function proxyPartnerRequest(
   res: ServerResponse,
   apiBase: string,
   payFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
+  getActualPaymentUsd: () => number,
 ): Promise<void> {
   const startTime = Date.now();
   const upstreamUrl = `${apiBase}${req.url}`;
@@ -1312,13 +1341,14 @@ async function proxyPartnerRequest(
   const latencyMs = Date.now() - startTime;
   console.log(`[ClawRouter] Partner response: ${upstream.status} (${latencyMs}ms)`);
 
-  // Log partner usage (fire-and-forget)
+  // Log partner usage with actual x402 payment amount (previously logged cost: 0)
+  const partnerCost = getActualPaymentUsd();
   logUsage({
     timestamp: new Date().toISOString(),
     model: "partner",
     tier: "PARTNER",
-    cost: 0, // Actual cost handled by x402 settlement
-    baselineCost: 0,
+    cost: partnerCost,
+    baselineCost: partnerCost,
     savings: 0,
     latencyMs,
     partnerId:
@@ -1508,7 +1538,7 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
     console.log(`[ClawRouter] Solana wallet: ${solanaAddress}`);
   }
 
-  // Log which chain is used for each payment
+  // Log which chain is used for each payment and capture actual payment amount
   x402.onAfterPaymentCreation(async (context) => {
     const network = context.selectedRequirements.network;
     const chain = network.startsWith("eip155")
@@ -1516,7 +1546,13 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
       : network.startsWith("solana")
         ? "Solana"
         : network;
-    console.log(`[ClawRouter] Payment signed on ${chain} (${network})`);
+    // Capture actual payment amount in USD (amount is in USDC micro units, 6 decimals)
+    const amountMicros = parseInt(context.selectedRequirements.amount || "0", 10);
+    const amountUsd = amountMicros / 1_000_000;
+    // Write to request-scoped store (if available)
+    const store = paymentStore.getStore();
+    if (store) store.amountUsd = amountUsd;
+    console.log(`[ClawRouter] Payment signed on ${chain} (${network}) — $${amountUsd.toFixed(6)}`);
   });
 
   const payFetch = createPayFetchWithPreAuth(fetch, x402, undefined, {
@@ -1557,7 +1593,9 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
   // Track active connections for graceful cleanup
   const connections = new Set<import("net").Socket>();
 
-  const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
+  const server = createServer((req: IncomingMessage, res: ServerResponse) => {
+    // Wrap in paymentStore.run() so x402 hook can write actual payment amount per-request
+    paymentStore.run({ amountUsd: 0 }, async () => {
     // Add stream error handlers to prevent server crashes
     req.on("error", (err) => {
       console.error(`[ClawRouter] Request stream error: ${err.message}`);
@@ -1723,11 +1761,21 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
     // NOTE: image generation endpoints bypass maxCostPerRun budget tracking entirely.
     // Cost is charged via x402 micropayment directly — no session accumulation or cap enforcement.
     if (req.url === "/v1/images/generations" && req.method === "POST") {
+      const imgStartTime = Date.now();
       const chunks: Buffer[] = [];
       for await (const chunk of req) {
         chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
       }
       const reqBody = Buffer.concat(chunks);
+      // Parse request for usage logging
+      let imgModel = "unknown";
+      let imgCost = 0;
+      try {
+        const parsed = JSON.parse(reqBody.toString());
+        imgModel = parsed.model || "openai/dall-e-3";
+        const n = parsed.n || 1;
+        imgCost = estimateImageCost(imgModel, parsed.size, n);
+      } catch { /* use defaults */ }
       try {
         const upstream = await payFetch(`${apiBase}/v1/images/generations`, {
           method: "POST",
@@ -1787,6 +1835,17 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
             }
           }
         }
+        // Log image generation usage with actual x402 payment (previously missing entirely)
+        const imgActualCost = paymentStore.getStore()?.amountUsd ?? imgCost;
+        logUsage({
+          timestamp: new Date().toISOString(),
+          model: imgModel,
+          tier: "IMAGE",
+          cost: imgActualCost,
+          baselineCost: imgActualCost,
+          savings: 0,
+          latencyMs: Date.now() - imgStartTime,
+        }).catch(() => {});
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(result));
       } catch (err) {
@@ -1803,6 +1862,7 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
     // --- Handle /v1/images/image2image: proxy with x402 payment + save images locally ---
     // Accepts image as: data URI, local file path, ~/path, or HTTP(S) URL
     if (req.url === "/v1/images/image2image" && req.method === "POST") {
+      const img2imgStartTime = Date.now();
       const chunks: Buffer[] = [];
       for await (const chunk of req) {
         chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
@@ -1811,6 +1871,8 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
 
       // Resolve image/mask fields: file paths and URLs → data URIs
       let reqBody: string;
+      let img2imgModel = "openai/gpt-image-1";
+      let img2imgCost = 0;
       try {
         const parsed = JSON.parse(rawBody.toString());
         for (const field of ["image", "mask"] as const) {
@@ -1837,6 +1899,8 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
         }
         // Default model if not specified
         if (!parsed.model) parsed.model = "openai/gpt-image-1";
+        img2imgModel = parsed.model;
+        img2imgCost = estimateImageCost(img2imgModel, parsed.size, parsed.n || 1);
         reqBody = JSON.stringify(parsed);
       } catch (parseErr) {
         const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
@@ -1904,6 +1968,17 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
             }
           }
         }
+        // Log image editing usage with actual x402 payment (previously missing entirely)
+        const img2imgActualCost = paymentStore.getStore()?.amountUsd ?? img2imgCost;
+        logUsage({
+          timestamp: new Date().toISOString(),
+          model: img2imgModel,
+          tier: "IMAGE",
+          cost: img2imgActualCost,
+          baselineCost: img2imgActualCost,
+          savings: 0,
+          latencyMs: Date.now() - img2imgStartTime,
+        }).catch(() => {});
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(result));
       } catch (err) {
@@ -1920,7 +1995,7 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
     // --- Handle partner API paths (/v1/x/*, /v1/partner/*) ---
     if (req.url?.match(/^\/v1\/(?:x|partner)\//)) {
       try {
-        await proxyPartnerRequest(req, res, apiBase, payFetch);
+        await proxyPartnerRequest(req, res, apiBase, payFetch, () => paymentStore.getStore()?.amountUsd ?? 0);
       } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err));
         options.onError?.(error);
@@ -1977,6 +2052,7 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
         res.end();
       }
     }
+    }); // end paymentStore.run()
   });
 
   // Listen on configured port with retry logic for TIME_WAIT handling
@@ -2699,6 +2775,17 @@ async function proxyRequest(
               responseText = lines.join("\n");
             }
             console.log(`[ClawRouter] /imagegen success: ${images.length} image(s) generated`);
+            // Log /imagegen usage with actual x402 payment
+            const imagegenActualCost = paymentStore.getStore()?.amountUsd ?? estimateImageCost(imageModel, imageSize, 1);
+            logUsage({
+              timestamp: new Date().toISOString(),
+              model: imageModel,
+              tier: "IMAGE",
+              cost: imagegenActualCost,
+              baselineCost: imagegenActualCost,
+              savings: 0,
+              latencyMs: 0,
+            }).catch(() => {});
           }
 
           // Return as synthetic chat completion
@@ -2926,6 +3013,17 @@ async function proxyRequest(
               responseText = lines.join("\n");
             }
             console.log(`[ClawRouter] /img2img success: ${images.length} image(s)`);
+            // Log /img2img usage with actual x402 payment
+            const img2imgActualCost2 = paymentStore.getStore()?.amountUsd ?? estimateImageCost(img2imgModel, img2imgSize, 1);
+            logUsage({
+              timestamp: new Date().toISOString(),
+              model: img2imgModel,
+              tier: "IMAGE",
+              cost: img2imgActualCost2,
+              baselineCost: img2imgActualCost2,
+              savings: 0,
+              latencyMs: 0,
+            }).catch(() => {});
           }
 
           sendImg2ImgText(responseText);
@@ -4457,30 +4555,56 @@ async function proxyRequest(
   }
 
   // --- Usage logging (fire-and-forget) ---
-  // Note: Use actual token counts from API response when available,
-  // fall back to estimates. Log actual cost without 20% buffer (the buffer
-  // is only needed for pre-payment estimation in estimateAmount()).
-  // Log ALL requests: both auto-routed (routingDecision set) and direct model picks
+  // Use actual x402 payment amount from the per-request AsyncLocalStorage store.
+  // This is the real amount the user paid — no estimation needed.
+  // Falls back to local estimate only for free models (no x402 payment).
   const logModel = routingDecision?.model ?? modelId;
   if (logModel) {
-    // Use actual token counts when available, fall back to estimates
-    const actualInputTokens = responseInputTokens ?? Math.ceil(body.length / 4);
-    const actualOutputTokens = responseOutputTokens ?? maxTokens;
+    const actualPayment = paymentStore.getStore()?.amountUsd ?? 0;
 
-    const accurateCosts = calculateModelCost(
-      logModel,
-      routerOpts.modelPricing,
-      actualInputTokens,
-      actualOutputTokens,
-      routingProfile ?? undefined,
-    );
+    // For free models (no x402 payment), use local cost calculation as fallback
+    let logCost: number;
+    let logBaseline: number;
+    let logSavings: number;
+    if (actualPayment > 0) {
+      logCost = actualPayment;
+      // Calculate baseline for savings comparison
+      const chargedInputTokens = Math.ceil(body.length / 4);
+      const modelDef = BLOCKRUN_MODELS.find((m) => m.id === logModel);
+      const chargedOutputTokens = modelDef
+        ? Math.min(maxTokens, modelDef.maxOutput)
+        : maxTokens;
+      const baseline = calculateModelCost(
+        logModel,
+        routerOpts.modelPricing,
+        chargedInputTokens,
+        chargedOutputTokens,
+        routingProfile ?? undefined,
+      );
+      logBaseline = baseline.baselineCost;
+      logSavings = logBaseline > 0 ? Math.max(0, (logBaseline - logCost) / logBaseline) : 0;
+    } else {
+      // Free model — no payment, calculate locally
+      const chargedInputTokens = Math.ceil(body.length / 4);
+      const costs = calculateModelCost(
+        logModel,
+        routerOpts.modelPricing,
+        chargedInputTokens,
+        maxTokens,
+        routingProfile ?? undefined,
+      );
+      logCost = costs.costEstimate;
+      logBaseline = costs.baselineCost;
+      logSavings = costs.savings;
+    }
+
     const entry: UsageEntry = {
       timestamp: new Date().toISOString(),
       model: logModel,
       tier: routingDecision?.tier ?? "DIRECT",
-      cost: accurateCosts.costEstimate,
-      baselineCost: accurateCosts.baselineCost,
-      savings: accurateCosts.savings,
+      cost: logCost,
+      baselineCost: logBaseline,
+      savings: logSavings,
       latencyMs: Date.now() - startTime,
       ...(responseInputTokens !== undefined && { inputTokens: responseInputTokens }),
       ...(responseOutputTokens !== undefined && { outputTokens: responseOutputTokens }),

@@ -33378,8 +33378,8 @@ var BLOCKRUN_MODELS = [
     id: "xai/grok-4-0709",
     name: "Grok 4 (0709)",
     version: "4-0709",
-    inputPrice: 0.2,
-    outputPrice: 1.5,
+    inputPrice: 3,
+    outputPrice: 15,
     contextWindow: 131072,
     maxOutput: 16384,
     reasoning: true,
@@ -33437,8 +33437,8 @@ var BLOCKRUN_MODELS = [
     id: "nvidia/kimi-k2.5",
     name: "NVIDIA Kimi K2.5",
     version: "k2.5",
-    inputPrice: 0.55,
-    outputPrice: 2.5,
+    inputPrice: 0.6,
+    outputPrice: 3,
     contextWindow: 262144,
     maxOutput: 16384,
     toolCalling: true
@@ -33553,6 +33553,7 @@ var blockrunProvider = {
 };
 
 // src/proxy.ts
+import { AsyncLocalStorage } from "async_hooks";
 import { createServer } from "http";
 import { finished } from "stream";
 import { homedir as homedir5 } from "os";
@@ -43494,13 +43495,18 @@ function getFallbackChain(tier, tierConfigs) {
   const config = tierConfigs[tier];
   return [config.primary, ...config.fallback];
 }
+var SERVER_MARGIN_PERCENT = 5;
+var MIN_PAYMENT_USD = 1e-3;
 function calculateModelCost(model, modelPricing, estimatedInputTokens, maxOutputTokens, routingProfile) {
   const pricing = modelPricing.get(model);
   const inputPrice = pricing?.inputPrice ?? 0;
   const outputPrice = pricing?.outputPrice ?? 0;
   const inputCost = estimatedInputTokens / 1e6 * inputPrice;
   const outputCost = maxOutputTokens / 1e6 * outputPrice;
-  const costEstimate = inputCost + outputCost;
+  const costEstimate = Math.max(
+    (inputCost + outputCost) * (1 + SERVER_MARGIN_PERCENT / 100),
+    MIN_PAYMENT_USD
+  );
   const opusPricing = modelPricing.get(BASELINE_MODEL_ID);
   const opusInputPrice = opusPricing?.inputPrice ?? BASELINE_INPUT_PRICE;
   const opusOutputPrice = opusPricing?.outputPrice ?? BASELINE_OUTPUT_PRICE;
@@ -47095,6 +47101,7 @@ ${lines.join("\n")}`;
 };
 
 // src/proxy.ts
+var paymentStore = new AsyncLocalStorage();
 var BLOCKRUN_API = "https://blockrun.ai/api";
 var BLOCKRUN_SOLANA_API = "https://sol.blockrun.ai/api";
 var IMAGE_DIR = join8(homedir5(), ".openclaw", "blockrun", "images");
@@ -47712,7 +47719,21 @@ function estimateAmount(modelId, bodyLength, maxTokens) {
   const amountMicros = Math.max(1e3, Math.ceil(costUsd * 1.2 * 1e6));
   return amountMicros.toString();
 }
-async function proxyPartnerRequest(req, res, apiBase, payFetch) {
+var IMAGE_PRICING = {
+  "openai/dall-e-3": { default: 0.04, sizes: { "1024x1024": 0.04, "1792x1024": 0.08, "1024x1792": 0.08 } },
+  "openai/gpt-image-1": { default: 0.02, sizes: { "1024x1024": 0.02, "1536x1024": 0.04, "1024x1536": 0.04 } },
+  "black-forest/flux-1.1-pro": { default: 0.04 },
+  "google/nano-banana": { default: 0.05 },
+  "google/nano-banana-pro": { default: 0.1, sizes: { "1024x1024": 0.1, "2048x2048": 0.1, "4096x4096": 0.15 } }
+};
+function estimateImageCost(model, size5, n = 1) {
+  const pricing = IMAGE_PRICING[model];
+  if (!pricing) return 0.04 * n * 1.05;
+  const sizePrice = size5 && pricing.sizes ? pricing.sizes[size5] : void 0;
+  const pricePerImage = sizePrice ?? pricing.default;
+  return pricePerImage * n * 1.05;
+}
+async function proxyPartnerRequest(req, res, apiBase, payFetch, getActualPaymentUsd) {
   const startTime = Date.now();
   const upstreamUrl = `${apiBase}${req.url}`;
   const bodyChunks = [];
@@ -47749,13 +47770,13 @@ async function proxyPartnerRequest(req, res, apiBase, payFetch) {
   res.end();
   const latencyMs = Date.now() - startTime;
   console.log(`[ClawRouter] Partner response: ${upstream.status} (${latencyMs}ms)`);
+  const partnerCost = getActualPaymentUsd();
   logUsage({
     timestamp: (/* @__PURE__ */ new Date()).toISOString(),
     model: "partner",
     tier: "PARTNER",
-    cost: 0,
-    // Actual cost handled by x402 settlement
-    baselineCost: 0,
+    cost: partnerCost,
+    baselineCost: partnerCost,
     savings: 0,
     latencyMs,
     partnerId: (req.url?.split("?")[0] ?? "").replace(/^\/v1\//, "").replace(/\//g, "_") || "unknown",
@@ -47888,7 +47909,11 @@ async function startProxy(options) {
   x402.onAfterPaymentCreation(async (context) => {
     const network = context.selectedRequirements.network;
     const chain3 = network.startsWith("eip155") ? "Base (EVM)" : network.startsWith("solana") ? "Solana" : network;
-    console.log(`[ClawRouter] Payment signed on ${chain3} (${network})`);
+    const amountMicros = parseInt(context.selectedRequirements.amount || "0", 10);
+    const amountUsd = amountMicros / 1e6;
+    const store = paymentStore.getStore();
+    if (store) store.amountUsd = amountUsd;
+    console.log(`[ClawRouter] Payment signed on ${chain3} (${network}) \u2014 $${amountUsd.toFixed(6)}`);
   });
   const payFetch = createPayFetchWithPreAuth(fetch, x402, void 0, {
     skipPreAuth: paymentChain === "solana"
@@ -47913,311 +47938,382 @@ async function startProxy(options) {
   const sessionStore = new SessionStore(options.sessionConfig);
   const sessionJournal = new SessionJournal();
   const connections = /* @__PURE__ */ new Set();
-  const server = createServer(async (req, res) => {
-    req.on("error", (err) => {
-      console.error(`[ClawRouter] Request stream error: ${err.message}`);
-    });
-    res.on("error", (err) => {
-      console.error(`[ClawRouter] Response stream error: ${err.message}`);
-    });
-    finished(res, (err) => {
-      if (err && err.code !== "ERR_STREAM_DESTROYED") {
-        console.error(`[ClawRouter] Response finished with error: ${err.message}`);
-      }
-    });
-    finished(req, (err) => {
-      if (err && err.code !== "ERR_STREAM_DESTROYED") {
-        console.error(`[ClawRouter] Request finished with error: ${err.message}`);
-      }
-    });
-    if (req.url === "/health" || req.url?.startsWith("/health?")) {
-      const url = new URL(req.url, "http://localhost");
-      const full = url.searchParams.get("full") === "true";
-      const response = {
-        status: "ok",
-        wallet: account.address,
-        paymentChain
-      };
-      if (solanaAddress) {
-        response.solana = solanaAddress;
-      }
-      if (full) {
-        try {
-          const balanceInfo = await balanceMonitor.checkBalance();
-          response.balance = balanceInfo.balanceUSD;
-          response.isLow = balanceInfo.isLow;
-          response.isEmpty = balanceInfo.isEmpty;
-        } catch {
-          response.balanceError = "Could not fetch balance";
-        }
-      }
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(response));
-      return;
-    }
-    if (req.url === "/cache" || req.url?.startsWith("/cache?")) {
-      const stats = responseCache2.getStats();
-      res.writeHead(200, {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-cache"
+  const server = createServer((req, res) => {
+    paymentStore.run({ amountUsd: 0 }, async () => {
+      req.on("error", (err) => {
+        console.error(`[ClawRouter] Request stream error: ${err.message}`);
       });
-      res.end(JSON.stringify(stats, null, 2));
-      return;
-    }
-    if (req.url === "/stats" && req.method === "DELETE") {
-      try {
-        const result = await clearStats();
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ cleared: true, deletedFiles: result.deletedFiles }));
-      } catch (err) {
-        res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(
-          JSON.stringify({
-            error: `Failed to clear stats: ${err instanceof Error ? err.message : String(err)}`
-          })
-        );
-      }
-      return;
-    }
-    if (req.url === "/stats" || req.url?.startsWith("/stats?")) {
-      try {
+      res.on("error", (err) => {
+        console.error(`[ClawRouter] Response stream error: ${err.message}`);
+      });
+      finished(res, (err) => {
+        if (err && err.code !== "ERR_STREAM_DESTROYED") {
+          console.error(`[ClawRouter] Response finished with error: ${err.message}`);
+        }
+      });
+      finished(req, (err) => {
+        if (err && err.code !== "ERR_STREAM_DESTROYED") {
+          console.error(`[ClawRouter] Request finished with error: ${err.message}`);
+        }
+      });
+      if (req.url === "/health" || req.url?.startsWith("/health?")) {
         const url = new URL(req.url, "http://localhost");
-        const days = parseInt(url.searchParams.get("days") || "7", 10);
-        const stats = await getStats(Math.min(days, 30));
+        const full = url.searchParams.get("full") === "true";
+        const response = {
+          status: "ok",
+          wallet: account.address,
+          paymentChain
+        };
+        if (solanaAddress) {
+          response.solana = solanaAddress;
+        }
+        if (full) {
+          try {
+            const balanceInfo = await balanceMonitor.checkBalance();
+            response.balance = balanceInfo.balanceUSD;
+            response.isLow = balanceInfo.isLow;
+            response.isEmpty = balanceInfo.isEmpty;
+          } catch {
+            response.balanceError = "Could not fetch balance";
+          }
+        }
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(response));
+        return;
+      }
+      if (req.url === "/cache" || req.url?.startsWith("/cache?")) {
+        const stats = responseCache2.getStats();
         res.writeHead(200, {
           "Content-Type": "application/json",
           "Cache-Control": "no-cache"
         });
-        res.end(
-          JSON.stringify(
-            {
-              ...stats,
-              providerErrors: Object.fromEntries(perProviderErrors)
-            },
-            null,
-            2
-          )
-        );
-      } catch (err) {
-        res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(
-          JSON.stringify({
-            error: `Failed to get stats: ${err instanceof Error ? err.message : String(err)}`
-          })
-        );
-      }
-      return;
-    }
-    if (req.url === "/v1/models" && req.method === "GET") {
-      const models = buildProxyModelList();
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ object: "list", data: models }));
-      return;
-    }
-    if (req.url?.startsWith("/images/") && req.method === "GET") {
-      const filename = req.url.slice("/images/".length).split("?")[0].replace(/[^a-zA-Z0-9._-]/g, "");
-      if (!filename) {
-        res.writeHead(400);
-        res.end("Bad request");
+        res.end(JSON.stringify(stats, null, 2));
         return;
       }
-      const filePath = join8(IMAGE_DIR, filename);
-      try {
-        const s3 = await fsStat(filePath);
-        if (!s3.isFile()) throw new Error("not a file");
-        const ext = filename.split(".").pop()?.toLowerCase() ?? "png";
-        const mime = {
-          png: "image/png",
-          jpg: "image/jpeg",
-          jpeg: "image/jpeg",
-          webp: "image/webp",
-          gif: "image/gif"
-        };
-        const data = await readFile(filePath);
-        res.writeHead(200, {
-          "Content-Type": mime[ext] ?? "application/octet-stream",
-          "Content-Length": data.length
-        });
-        res.end(data);
-      } catch {
-        res.writeHead(404, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Image not found" }));
-      }
-      return;
-    }
-    if (req.url === "/v1/images/generations" && req.method === "POST") {
-      const chunks = [];
-      for await (const chunk of req) {
-        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-      }
-      const reqBody = Buffer.concat(chunks);
-      try {
-        const upstream = await payFetch(`${apiBase}/v1/images/generations`, {
-          method: "POST",
-          headers: { "content-type": "application/json", "user-agent": USER_AGENT },
-          body: reqBody
-        });
-        const text = await upstream.text();
-        if (!upstream.ok) {
-          res.writeHead(upstream.status, { "Content-Type": "application/json" });
-          res.end(text);
-          return;
-        }
-        let result;
+      if (req.url === "/stats" && req.method === "DELETE") {
         try {
-          result = JSON.parse(text);
-        } catch {
+          const result = await clearStats();
           res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(text);
+          res.end(JSON.stringify({ cleared: true, deletedFiles: result.deletedFiles }));
+        } catch (err) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              error: `Failed to clear stats: ${err instanceof Error ? err.message : String(err)}`
+            })
+          );
+        }
+        return;
+      }
+      if (req.url === "/stats" || req.url?.startsWith("/stats?")) {
+        try {
+          const url = new URL(req.url, "http://localhost");
+          const days = parseInt(url.searchParams.get("days") || "7", 10);
+          const stats = await getStats(Math.min(days, 30));
+          res.writeHead(200, {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache"
+          });
+          res.end(
+            JSON.stringify(
+              {
+                ...stats,
+                providerErrors: Object.fromEntries(perProviderErrors)
+              },
+              null,
+              2
+            )
+          );
+        } catch (err) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              error: `Failed to get stats: ${err instanceof Error ? err.message : String(err)}`
+            })
+          );
+        }
+        return;
+      }
+      if (req.url === "/v1/models" && req.method === "GET") {
+        const models = buildProxyModelList();
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ object: "list", data: models }));
+        return;
+      }
+      if (req.url?.startsWith("/images/") && req.method === "GET") {
+        const filename = req.url.slice("/images/".length).split("?")[0].replace(/[^a-zA-Z0-9._-]/g, "");
+        if (!filename) {
+          res.writeHead(400);
+          res.end("Bad request");
           return;
         }
-        if (result.data?.length) {
-          await mkdir3(IMAGE_DIR, { recursive: true });
-          const port2 = server.address()?.port ?? 8402;
-          for (const img of result.data) {
-            const dataUriMatch = img.url?.match(/^data:(image\/\w+);base64,(.+)$/);
-            if (dataUriMatch) {
-              const [, mimeType, b64] = dataUriMatch;
-              const ext = mimeType === "image/jpeg" ? "jpg" : mimeType.split("/")[1] ?? "png";
-              const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
-              await writeFile2(join8(IMAGE_DIR, filename), Buffer.from(b64, "base64"));
-              img.url = `http://localhost:${port2}/images/${filename}`;
-              console.log(`[ClawRouter] Image saved \u2192 ${img.url}`);
-            } else if (img.url?.startsWith("https://") || img.url?.startsWith("http://")) {
-              try {
-                const imgResp = await fetch(img.url);
-                if (imgResp.ok) {
-                  const contentType = imgResp.headers.get("content-type") ?? "image/png";
-                  const ext = contentType.includes("jpeg") || contentType.includes("jpg") ? "jpg" : contentType.includes("webp") ? "webp" : "png";
-                  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
-                  const buf = Buffer.from(await imgResp.arrayBuffer());
-                  await writeFile2(join8(IMAGE_DIR, filename), buf);
-                  img.url = `http://localhost:${port2}/images/${filename}`;
-                  console.log(`[ClawRouter] Image downloaded & saved \u2192 ${img.url}`);
+        const filePath = join8(IMAGE_DIR, filename);
+        try {
+          const s3 = await fsStat(filePath);
+          if (!s3.isFile()) throw new Error("not a file");
+          const ext = filename.split(".").pop()?.toLowerCase() ?? "png";
+          const mime = {
+            png: "image/png",
+            jpg: "image/jpeg",
+            jpeg: "image/jpeg",
+            webp: "image/webp",
+            gif: "image/gif"
+          };
+          const data = await readFile(filePath);
+          res.writeHead(200, {
+            "Content-Type": mime[ext] ?? "application/octet-stream",
+            "Content-Length": data.length
+          });
+          res.end(data);
+        } catch {
+          res.writeHead(404, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Image not found" }));
+        }
+        return;
+      }
+      if (req.url === "/v1/images/generations" && req.method === "POST") {
+        const imgStartTime = Date.now();
+        const chunks = [];
+        for await (const chunk of req) {
+          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        }
+        const reqBody = Buffer.concat(chunks);
+        let imgModel = "unknown";
+        let imgCost = 0;
+        try {
+          const parsed = JSON.parse(reqBody.toString());
+          imgModel = parsed.model || "openai/dall-e-3";
+          const n = parsed.n || 1;
+          imgCost = estimateImageCost(imgModel, parsed.size, n);
+        } catch {
+        }
+        try {
+          const upstream = await payFetch(`${apiBase}/v1/images/generations`, {
+            method: "POST",
+            headers: { "content-type": "application/json", "user-agent": USER_AGENT },
+            body: reqBody
+          });
+          const text = await upstream.text();
+          if (!upstream.ok) {
+            res.writeHead(upstream.status, { "Content-Type": "application/json" });
+            res.end(text);
+            return;
+          }
+          let result;
+          try {
+            result = JSON.parse(text);
+          } catch {
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(text);
+            return;
+          }
+          if (result.data?.length) {
+            await mkdir3(IMAGE_DIR, { recursive: true });
+            const port2 = server.address()?.port ?? 8402;
+            for (const img of result.data) {
+              const dataUriMatch = img.url?.match(/^data:(image\/\w+);base64,(.+)$/);
+              if (dataUriMatch) {
+                const [, mimeType, b64] = dataUriMatch;
+                const ext = mimeType === "image/jpeg" ? "jpg" : mimeType.split("/")[1] ?? "png";
+                const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+                await writeFile2(join8(IMAGE_DIR, filename), Buffer.from(b64, "base64"));
+                img.url = `http://localhost:${port2}/images/${filename}`;
+                console.log(`[ClawRouter] Image saved \u2192 ${img.url}`);
+              } else if (img.url?.startsWith("https://") || img.url?.startsWith("http://")) {
+                try {
+                  const imgResp = await fetch(img.url);
+                  if (imgResp.ok) {
+                    const contentType = imgResp.headers.get("content-type") ?? "image/png";
+                    const ext = contentType.includes("jpeg") || contentType.includes("jpg") ? "jpg" : contentType.includes("webp") ? "webp" : "png";
+                    const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+                    const buf = Buffer.from(await imgResp.arrayBuffer());
+                    await writeFile2(join8(IMAGE_DIR, filename), buf);
+                    img.url = `http://localhost:${port2}/images/${filename}`;
+                    console.log(`[ClawRouter] Image downloaded & saved \u2192 ${img.url}`);
+                  }
+                } catch (downloadErr) {
+                  console.warn(
+                    `[ClawRouter] Failed to download image, using original URL: ${downloadErr instanceof Error ? downloadErr.message : String(downloadErr)}`
+                  );
                 }
-              } catch (downloadErr) {
-                console.warn(
-                  `[ClawRouter] Failed to download image, using original URL: ${downloadErr instanceof Error ? downloadErr.message : String(downloadErr)}`
-                );
               }
             }
           }
+          const imgActualCost = paymentStore.getStore()?.amountUsd ?? imgCost;
+          logUsage({
+            timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+            model: imgModel,
+            tier: "IMAGE",
+            cost: imgActualCost,
+            baselineCost: imgActualCost,
+            savings: 0,
+            latencyMs: Date.now() - imgStartTime
+          }).catch(() => {
+          });
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(result));
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error(`[ClawRouter] Image generation error: ${msg}`);
+          if (!res.headersSent) {
+            res.writeHead(502, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Image generation failed", details: msg }));
+          }
         }
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(result));
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.error(`[ClawRouter] Image generation error: ${msg}`);
-        if (!res.headersSent) {
-          res.writeHead(502, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Image generation failed", details: msg }));
+        return;
+      }
+      if (req.url === "/v1/images/image2image" && req.method === "POST") {
+        const img2imgStartTime = Date.now();
+        const chunks = [];
+        for await (const chunk of req) {
+          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
         }
+        const rawBody = Buffer.concat(chunks);
+        let reqBody;
+        let img2imgModel = "openai/gpt-image-1";
+        let img2imgCost = 0;
+        try {
+          const parsed = JSON.parse(rawBody.toString());
+          for (const field of ["image", "mask"]) {
+            const val = parsed[field];
+            if (typeof val !== "string" || !val) continue;
+            if (val.startsWith("data:")) {
+            } else if (val.startsWith("https://") || val.startsWith("http://")) {
+              const imgResp = await fetch(val);
+              if (!imgResp.ok)
+                throw new Error(`Failed to download ${field} from ${val}: HTTP ${imgResp.status}`);
+              const contentType = imgResp.headers.get("content-type") ?? "image/png";
+              const buf = Buffer.from(await imgResp.arrayBuffer());
+              parsed[field] = `data:${contentType};base64,${buf.toString("base64")}`;
+              console.log(
+                `[ClawRouter] img2img: downloaded ${field} URL \u2192 data URI (${buf.length} bytes)`
+              );
+            } else {
+              parsed[field] = readImageFileAsDataUri(val);
+              console.log(`[ClawRouter] img2img: read ${field} file \u2192 data URI`);
+            }
+          }
+          if (!parsed.model) parsed.model = "openai/gpt-image-1";
+          img2imgModel = parsed.model;
+          img2imgCost = estimateImageCost(img2imgModel, parsed.size, parsed.n || 1);
+          reqBody = JSON.stringify(parsed);
+        } catch (parseErr) {
+          const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Invalid request", details: msg }));
+          return;
+        }
+        try {
+          const upstream = await payFetch(`${apiBase}/v1/images/image2image`, {
+            method: "POST",
+            headers: { "content-type": "application/json", "user-agent": USER_AGENT },
+            body: reqBody
+          });
+          const text = await upstream.text();
+          if (!upstream.ok) {
+            res.writeHead(upstream.status, { "Content-Type": "application/json" });
+            res.end(text);
+            return;
+          }
+          let result;
+          try {
+            result = JSON.parse(text);
+          } catch {
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(text);
+            return;
+          }
+          if (result.data?.length) {
+            await mkdir3(IMAGE_DIR, { recursive: true });
+            const port2 = server.address()?.port ?? 8402;
+            for (const img of result.data) {
+              const dataUriMatch = img.url?.match(/^data:(image\/\w+);base64,(.+)$/);
+              if (dataUriMatch) {
+                const [, mimeType, b64] = dataUriMatch;
+                const ext = mimeType === "image/jpeg" ? "jpg" : mimeType.split("/")[1] ?? "png";
+                const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+                await writeFile2(join8(IMAGE_DIR, filename), Buffer.from(b64, "base64"));
+                img.url = `http://localhost:${port2}/images/${filename}`;
+                console.log(`[ClawRouter] Image saved \u2192 ${img.url}`);
+              } else if (img.url?.startsWith("https://") || img.url?.startsWith("http://")) {
+                try {
+                  const imgResp = await fetch(img.url);
+                  if (imgResp.ok) {
+                    const contentType = imgResp.headers.get("content-type") ?? "image/png";
+                    const ext = contentType.includes("jpeg") || contentType.includes("jpg") ? "jpg" : contentType.includes("webp") ? "webp" : "png";
+                    const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+                    const buf = Buffer.from(await imgResp.arrayBuffer());
+                    await writeFile2(join8(IMAGE_DIR, filename), buf);
+                    img.url = `http://localhost:${port2}/images/${filename}`;
+                    console.log(`[ClawRouter] Image downloaded & saved \u2192 ${img.url}`);
+                  }
+                } catch (downloadErr) {
+                  console.warn(
+                    `[ClawRouter] Failed to download image, using original URL: ${downloadErr instanceof Error ? downloadErr.message : String(downloadErr)}`
+                  );
+                }
+              }
+            }
+          }
+          const img2imgActualCost = paymentStore.getStore()?.amountUsd ?? img2imgCost;
+          logUsage({
+            timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+            model: img2imgModel,
+            tier: "IMAGE",
+            cost: img2imgActualCost,
+            baselineCost: img2imgActualCost,
+            savings: 0,
+            latencyMs: Date.now() - img2imgStartTime
+          }).catch(() => {
+          });
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(result));
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error(`[ClawRouter] Image editing error: ${msg}`);
+          if (!res.headersSent) {
+            res.writeHead(502, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Image editing failed", details: msg }));
+          }
+        }
+        return;
       }
-      return;
-    }
-    if (req.url === "/v1/images/image2image" && req.method === "POST") {
-      const chunks = [];
-      for await (const chunk of req) {
-        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-      }
-      const rawBody = Buffer.concat(chunks);
-      let reqBody;
-      try {
-        const parsed = JSON.parse(rawBody.toString());
-        for (const field of ["image", "mask"]) {
-          const val = parsed[field];
-          if (typeof val !== "string" || !val) continue;
-          if (val.startsWith("data:")) {
-          } else if (val.startsWith("https://") || val.startsWith("http://")) {
-            const imgResp = await fetch(val);
-            if (!imgResp.ok)
-              throw new Error(`Failed to download ${field} from ${val}: HTTP ${imgResp.status}`);
-            const contentType = imgResp.headers.get("content-type") ?? "image/png";
-            const buf = Buffer.from(await imgResp.arrayBuffer());
-            parsed[field] = `data:${contentType};base64,${buf.toString("base64")}`;
-            console.log(
-              `[ClawRouter] img2img: downloaded ${field} URL \u2192 data URI (${buf.length} bytes)`
+      if (req.url?.match(/^\/v1\/(?:x|partner)\//)) {
+        try {
+          await proxyPartnerRequest(req, res, apiBase, payFetch, () => paymentStore.getStore()?.amountUsd ?? 0);
+        } catch (err) {
+          const error = err instanceof Error ? err : new Error(String(err));
+          options.onError?.(error);
+          if (!res.headersSent) {
+            res.writeHead(502, { "Content-Type": "application/json" });
+            res.end(
+              JSON.stringify({
+                error: { message: `Partner proxy error: ${error.message}`, type: "partner_error" }
+              })
             );
-          } else {
-            parsed[field] = readImageFileAsDataUri(val);
-            console.log(`[ClawRouter] img2img: read ${field} file \u2192 data URI`);
           }
         }
-        if (!parsed.model) parsed.model = "openai/gpt-image-1";
-        reqBody = JSON.stringify(parsed);
-      } catch (parseErr) {
-        const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
-        res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Invalid request", details: msg }));
+        return;
+      }
+      if (!req.url?.startsWith("/v1")) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Not found" }));
         return;
       }
       try {
-        const upstream = await payFetch(`${apiBase}/v1/images/image2image`, {
-          method: "POST",
-          headers: { "content-type": "application/json", "user-agent": USER_AGENT },
-          body: reqBody
-        });
-        const text = await upstream.text();
-        if (!upstream.ok) {
-          res.writeHead(upstream.status, { "Content-Type": "application/json" });
-          res.end(text);
-          return;
-        }
-        let result;
-        try {
-          result = JSON.parse(text);
-        } catch {
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(text);
-          return;
-        }
-        if (result.data?.length) {
-          await mkdir3(IMAGE_DIR, { recursive: true });
-          const port2 = server.address()?.port ?? 8402;
-          for (const img of result.data) {
-            const dataUriMatch = img.url?.match(/^data:(image\/\w+);base64,(.+)$/);
-            if (dataUriMatch) {
-              const [, mimeType, b64] = dataUriMatch;
-              const ext = mimeType === "image/jpeg" ? "jpg" : mimeType.split("/")[1] ?? "png";
-              const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
-              await writeFile2(join8(IMAGE_DIR, filename), Buffer.from(b64, "base64"));
-              img.url = `http://localhost:${port2}/images/${filename}`;
-              console.log(`[ClawRouter] Image saved \u2192 ${img.url}`);
-            } else if (img.url?.startsWith("https://") || img.url?.startsWith("http://")) {
-              try {
-                const imgResp = await fetch(img.url);
-                if (imgResp.ok) {
-                  const contentType = imgResp.headers.get("content-type") ?? "image/png";
-                  const ext = contentType.includes("jpeg") || contentType.includes("jpg") ? "jpg" : contentType.includes("webp") ? "webp" : "png";
-                  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
-                  const buf = Buffer.from(await imgResp.arrayBuffer());
-                  await writeFile2(join8(IMAGE_DIR, filename), buf);
-                  img.url = `http://localhost:${port2}/images/${filename}`;
-                  console.log(`[ClawRouter] Image downloaded & saved \u2192 ${img.url}`);
-                }
-              } catch (downloadErr) {
-                console.warn(
-                  `[ClawRouter] Failed to download image, using original URL: ${downloadErr instanceof Error ? downloadErr.message : String(downloadErr)}`
-                );
-              }
-            }
-          }
-        }
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(result));
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.error(`[ClawRouter] Image editing error: ${msg}`);
-        if (!res.headersSent) {
-          res.writeHead(502, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Image editing failed", details: msg }));
-        }
-      }
-      return;
-    }
-    if (req.url?.match(/^\/v1\/(?:x|partner)\//)) {
-      try {
-        await proxyPartnerRequest(req, res, apiBase, payFetch);
+        await proxyRequest(
+          req,
+          res,
+          apiBase,
+          payFetch,
+          options,
+          routerOpts,
+          deduplicator,
+          balanceMonitor,
+          sessionStore,
+          responseCache2,
+          sessionJournal
+        );
       } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err));
         options.onError?.(error);
@@ -48225,52 +48321,20 @@ async function startProxy(options) {
           res.writeHead(502, { "Content-Type": "application/json" });
           res.end(
             JSON.stringify({
-              error: { message: `Partner proxy error: ${error.message}`, type: "partner_error" }
+              error: { message: `Proxy error: ${error.message}`, type: "proxy_error" }
             })
           );
-        }
-      }
-      return;
-    }
-    if (!req.url?.startsWith("/v1")) {
-      res.writeHead(404, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Not found" }));
-      return;
-    }
-    try {
-      await proxyRequest(
-        req,
-        res,
-        apiBase,
-        payFetch,
-        options,
-        routerOpts,
-        deduplicator,
-        balanceMonitor,
-        sessionStore,
-        responseCache2,
-        sessionJournal
-      );
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error(String(err));
-      options.onError?.(error);
-      if (!res.headersSent) {
-        res.writeHead(502, { "Content-Type": "application/json" });
-        res.end(
-          JSON.stringify({
-            error: { message: `Proxy error: ${error.message}`, type: "proxy_error" }
-          })
-        );
-      } else if (!res.writableEnded) {
-        res.write(
-          `data: ${JSON.stringify({ error: { message: error.message, type: "proxy_error" } })}
+        } else if (!res.writableEnded) {
+          res.write(
+            `data: ${JSON.stringify({ error: { message: error.message, type: "proxy_error" } })}
 
 `
-        );
-        res.write("data: [DONE]\n\n");
-        res.end();
+          );
+          res.write("data: [DONE]\n\n");
+          res.end();
+        }
       }
-    }
+    });
   });
   const tryListen = (attempt) => {
     return new Promise((resolveAttempt, rejectAttempt) => {
@@ -48784,6 +48848,17 @@ async function proxyRequest(req, res, apiBase, payFetch, options, routerOpts, de
               responseText = lines.join("\n");
             }
             console.log(`[ClawRouter] /imagegen success: ${images.length} image(s) generated`);
+            const imagegenActualCost = paymentStore.getStore()?.amountUsd ?? estimateImageCost(imageModel, imageSize, 1);
+            logUsage({
+              timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+              model: imageModel,
+              tier: "IMAGE",
+              cost: imagegenActualCost,
+              baselineCost: imagegenActualCost,
+              savings: 0,
+              latencyMs: 0
+            }).catch(() => {
+            });
           }
           const completionId = `chatcmpl-image-${Date.now()}`;
           const timestamp = Math.floor(Date.now() / 1e3);
@@ -48993,6 +49068,17 @@ async function proxyRequest(req, res, apiBase, payFetch, options, routerOpts, de
               responseText = lines.join("\n");
             }
             console.log(`[ClawRouter] /img2img success: ${images.length} image(s)`);
+            const img2imgActualCost2 = paymentStore.getStore()?.amountUsd ?? estimateImageCost(img2imgModel, img2imgSize, 1);
+            logUsage({
+              timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+              model: img2imgModel,
+              tier: "IMAGE",
+              cost: img2imgActualCost2,
+              baselineCost: img2imgActualCost2,
+              savings: 0,
+              latencyMs: 0
+            }).catch(() => {
+            });
           }
           sendImg2ImgText(responseText);
         } catch (err) {
@@ -50091,22 +50177,44 @@ data: [DONE]
   }
   const logModel = routingDecision?.model ?? modelId;
   if (logModel) {
-    const actualInputTokens = responseInputTokens ?? Math.ceil(body.length / 4);
-    const actualOutputTokens = responseOutputTokens ?? maxTokens;
-    const accurateCosts = calculateModelCost(
-      logModel,
-      routerOpts.modelPricing,
-      actualInputTokens,
-      actualOutputTokens,
-      routingProfile ?? void 0
-    );
+    const actualPayment = paymentStore.getStore()?.amountUsd ?? 0;
+    let logCost;
+    let logBaseline;
+    let logSavings;
+    if (actualPayment > 0) {
+      logCost = actualPayment;
+      const chargedInputTokens = Math.ceil(body.length / 4);
+      const modelDef = BLOCKRUN_MODELS.find((m) => m.id === logModel);
+      const chargedOutputTokens = modelDef ? Math.min(maxTokens, modelDef.maxOutput) : maxTokens;
+      const baseline = calculateModelCost(
+        logModel,
+        routerOpts.modelPricing,
+        chargedInputTokens,
+        chargedOutputTokens,
+        routingProfile ?? void 0
+      );
+      logBaseline = baseline.baselineCost;
+      logSavings = logBaseline > 0 ? Math.max(0, (logBaseline - logCost) / logBaseline) : 0;
+    } else {
+      const chargedInputTokens = Math.ceil(body.length / 4);
+      const costs = calculateModelCost(
+        logModel,
+        routerOpts.modelPricing,
+        chargedInputTokens,
+        maxTokens,
+        routingProfile ?? void 0
+      );
+      logCost = costs.costEstimate;
+      logBaseline = costs.baselineCost;
+      logSavings = costs.savings;
+    }
     const entry = {
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       model: logModel,
       tier: routingDecision?.tier ?? "DIRECT",
-      cost: accurateCosts.costEstimate,
-      baselineCost: accurateCosts.baselineCost,
-      savings: accurateCosts.savings,
+      cost: logCost,
+      baselineCost: logBaseline,
+      savings: logSavings,
       latencyMs: Date.now() - startTime,
       ...responseInputTokens !== void 0 && { inputTokens: responseInputTokens },
       ...responseOutputTokens !== void 0 && { outputTokens: responseOutputTokens }

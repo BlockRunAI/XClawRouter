@@ -143,10 +143,6 @@ type ModelPricing = {
  * Get the ordered fallback chain for a tier: [primary, ...fallbacks].
  */
 declare function getFallbackChain(tier: Tier, tierConfigs: Record<Tier, TierConfig>): string[];
-/**
- * Calculate cost for a specific model (used when fallback model is used).
- * Returns updated cost fields for RoutingDecision.
- */
 declare function calculateModelCost(model: string, modelPricing: Map<string, ModelPricing>, estimatedInputTokens: number, maxOutputTokens: number, routingProfile?: "free" | "eco" | "auto" | "premium"): {
     costEstimate: number;
     baselineCost: number;
