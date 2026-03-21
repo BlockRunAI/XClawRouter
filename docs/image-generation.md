@@ -51,13 +51,13 @@ The returned URL is a publicly hosted image, ready to use in Telegram, Discord, 
 
 ## Models & Pricing
 
-| Model ID                   | Shorthand       | Price       | Max Size   | Provider          |
-| -------------------------- | --------------- | ----------- | ---------- | ----------------- |
-| `google/nano-banana`       | `nano-banana`   | $0.05/image | 1024×1024  | Google Gemini Flash |
-| `google/nano-banana-pro`   | `banana-pro`    | $0.10/image | 4096×4096  | Google Gemini Pro |
-| `openai/dall-e-3`          | `dall-e-3`      | $0.04/image | 1792×1024  | OpenAI DALL-E 3   |
-| `openai/gpt-image-1`       | `gpt-image`     | $0.02/image | 1536×1024  | OpenAI GPT Image  |
-| `black-forest/flux-1.1-pro`| `flux`          | $0.04/image | 1024×1024  | Black Forest Labs |
+| Model ID                    | Shorthand     | Price       | Max Size  | Provider            |
+| --------------------------- | ------------- | ----------- | --------- | ------------------- |
+| `google/nano-banana`        | `nano-banana` | $0.05/image | 1024×1024 | Google Gemini Flash |
+| `google/nano-banana-pro`    | `banana-pro`  | $0.10/image | 4096×4096 | Google Gemini Pro   |
+| `openai/dall-e-3`           | `dall-e-3`    | $0.04/image | 1792×1024 | OpenAI DALL-E 3     |
+| `openai/gpt-image-1`        | `gpt-image`   | $0.02/image | 1536×1024 | OpenAI GPT Image    |
+| `black-forest/flux-1.1-pro` | `flux`        | $0.04/image | 1024×1024 | Black Forest Labs   |
 
 Default model: `google/nano-banana`.
 
@@ -71,20 +71,20 @@ OpenAI-compatible endpoint. Route via ClawRouter proxy (`http://localhost:8402`)
 
 **Request body:**
 
-| Field    | Type     | Required | Description                                      |
-| -------- | -------- | -------- | ------------------------------------------------ |
-| `model`  | `string` | Yes      | Model ID (see table above)                       |
-| `prompt` | `string` | Yes      | Text description of the image to generate        |
-| `size`   | `string` | No       | Image dimensions, e.g. `"1024x1024"` (default)  |
-| `n`      | `number` | No       | Number of images (default: `1`)                  |
+| Field    | Type     | Required | Description                                    |
+| -------- | -------- | -------- | ---------------------------------------------- |
+| `model`  | `string` | Yes      | Model ID (see table above)                     |
+| `prompt` | `string` | Yes      | Text description of the image to generate      |
+| `size`   | `string` | No       | Image dimensions, e.g. `"1024x1024"` (default) |
+| `n`      | `number` | No       | Number of images (default: `1`)                |
 
 **Response:**
 
 ```typescript
 {
-  created: number;          // Unix timestamp
+  created: number; // Unix timestamp
   data: Array<{
-    url: string;            // Publicly hosted image URL
+    url: string; // Publicly hosted image URL
     revised_prompt?: string; // Model's rewritten prompt (dall-e-3 only)
   }>;
 }
@@ -96,22 +96,22 @@ Edit an existing image using AI. Route via ClawRouter proxy (`http://localhost:8
 
 **Request body:**
 
-| Field    | Type     | Required | Description                                                    |
-| -------- | -------- | -------- | -------------------------------------------------------------- |
-| `model`  | `string` | No       | Model ID (default: `openai/gpt-image-1`)                       |
-| `prompt` | `string` | Yes      | Text description of the edit to apply                          |
-| `image`  | `string` | Yes      | Source image — see **Image input formats** below               |
-| `mask`   | `string` | No       | Mask image (white = area to edit) — same formats as `image`    |
-| `size`   | `string` | No       | Output dimensions, e.g. `"1024x1024"` (default)               |
+| Field    | Type     | Required | Description                                                 |
+| -------- | -------- | -------- | ----------------------------------------------------------- |
+| `model`  | `string` | No       | Model ID (default: `openai/gpt-image-1`)                    |
+| `prompt` | `string` | Yes      | Text description of the edit to apply                       |
+| `image`  | `string` | Yes      | Source image — see **Image input formats** below            |
+| `mask`   | `string` | No       | Mask image (white = area to edit) — same formats as `image` |
+| `size`   | `string` | No       | Output dimensions, e.g. `"1024x1024"` (default)             |
 
 **Image input formats** — the `image` and `mask` fields accept any of:
 
-| Format              | Example                              | Description                                    |
-| ------------------- | ------------------------------------ | ---------------------------------------------- |
-| Local file path     | `"/Users/me/photo.png"`              | Absolute path — ClawRouter reads the file      |
-| Home-relative path  | `"~/photo.png"`                      | Expands `~` to home directory                  |
-| HTTP/HTTPS URL      | `"https://example.com/photo.png"`    | ClawRouter downloads the image automatically   |
-| Base64 data URI     | `"data:image/png;base64,iVBOR..."`   | Passed through directly (no conversion needed) |
+| Format             | Example                            | Description                                    |
+| ------------------ | ---------------------------------- | ---------------------------------------------- |
+| Local file path    | `"/Users/me/photo.png"`            | Absolute path — ClawRouter reads the file      |
+| Home-relative path | `"~/photo.png"`                    | Expands `~` to home directory                  |
+| HTTP/HTTPS URL     | `"https://example.com/photo.png"`  | ClawRouter downloads the image automatically   |
+| Base64 data URI    | `"data:image/png;base64,iVBOR..."` | Passed through directly (no conversion needed) |
 
 Supported image formats: **PNG**, **JPG/JPEG**, **WebP**.
 
@@ -119,9 +119,9 @@ Supported image formats: **PNG**, **JPG/JPEG**, **WebP**.
 
 ```typescript
 {
-  created: number;          // Unix timestamp
+  created: number; // Unix timestamp
   data: Array<{
-    url: string;            // Locally cached image URL (http://localhost:8402/images/...)
+    url: string; // Locally cached image URL (http://localhost:8402/images/...)
     revised_prompt?: string; // Model's rewritten prompt
   }>;
 }
@@ -171,7 +171,7 @@ const response = await fetch("http://localhost:8402/v1/images/generations", {
   }),
 });
 
-const result = await response.json() as {
+const result = (await response.json()) as {
   created: number;
   data: Array<{ url: string; revised_prompt?: string }>;
 };
@@ -206,7 +206,7 @@ print(image_url)
 import OpenAI from "openai";
 
 const client = new OpenAI({
-  apiKey: "blockrun",               // any non-empty string
+  apiKey: "blockrun", // any non-empty string
   baseURL: "http://localhost:8402/v1",
 });
 
@@ -352,12 +352,12 @@ When using ClawRouter with OpenClaw, generate and edit images directly from any 
 /img2img --image /tmp/portrait.png --size 1536x1024 add a hat
 ```
 
-| Flag      | Default        | Description                           |
-| --------- | -------------- | ------------------------------------- |
-| `--image` | _(required)_   | Local image file path (supports `~/`) |
-| `--mask`  | _(none)_       | Mask image (white = area to edit)     |
-| `--model` | `gpt-image-1`  | Model to use                          |
-| `--size`  | `1024x1024`    | Output size                           |
+| Flag      | Default       | Description                           |
+| --------- | ------------- | ------------------------------------- |
+| `--image` | _(required)_  | Local image file path (supports `~/`) |
+| `--mask`  | _(none)_      | Mask image (white = area to edit)     |
+| `--model` | `gpt-image-1` | Model to use                          |
+| `--size`  | `1024x1024`   | Output size                           |
 
 ### Model shorthands
 
@@ -366,7 +366,7 @@ When using ClawRouter with OpenClaw, generate and edit images directly from any 
 | `nano-banana` | `google/nano-banana`        |
 | `banana-pro`  | `google/nano-banana-pro`    |
 | `dall-e-3`    | `openai/dall-e-3`           |
-| `gpt-image`   | `openai/gpt-image-1`       |
+| `gpt-image`   | `openai/gpt-image-1`        |
 | `flux`        | `black-forest/flux-1.1-pro` |
 
 ---

@@ -112,10 +112,7 @@ describe("ExcludeModels", () => {
     addExclusion("anthropic/claude-sonnet-4.6", filePath);
 
     const raw = JSON.parse(readFileSync(filePath, "utf-8"));
-    expect(raw).toEqual([
-      "anthropic/claude-sonnet-4.6",
-      "openai/gpt-4o",
-    ]);
+    expect(raw).toEqual(["anthropic/claude-sonnet-4.6", "openai/gpt-4o"]);
   });
 
   it("creates parent directories if they do not exist", () => {

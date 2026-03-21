@@ -35,7 +35,12 @@ import {
 } from "./auth.js";
 import type { RoutingConfig } from "./router/index.js";
 import { BalanceMonitor } from "./balance.js";
-import { loadExcludeList, addExclusion, removeExclusion, clearExclusions } from "./exclude-models.js";
+import {
+  loadExcludeList,
+  addExclusion,
+  removeExclusion,
+  clearExclusions,
+} from "./exclude-models.js";
 
 /**
  * Wait for proxy health check to pass (quick check, not RPC).
@@ -499,7 +504,9 @@ async function startProxyInBackground(api: OpenClawPluginApi): Promise<void> {
 
   const startupExclusions = loadExcludeList();
   if (startupExclusions.size > 0) {
-    api.logger.info(`Model exclusions active (${startupExclusions.size}): ${[...startupExclusions].join(", ")}`);
+    api.logger.info(
+      `Model exclusions active (${startupExclusions.size}): ${[...startupExclusions].join(", ")}`,
+    );
   }
 
   api.logger.info(`ClawRouter ready — smart routing enabled`);
@@ -602,7 +609,10 @@ async function createExcludeCommand(): Promise<OpenClawPluginCommandDefinition> 
             text: "No models excluded.\n\nUsage:\n  /exclude add <model>  — block a model\n  /exclude remove <model> — unblock\n  /exclude clear — remove all",
           };
         }
-        const models = [...list].sort().map((m) => `  • ${m}`).join("\n");
+        const models = [...list]
+          .sort()
+          .map((m) => `  • ${m}`)
+          .join("\n");
         return {
           text: `Excluded models (${list.size}):\n${models}\n\nUse /exclude remove <model> to unblock.`,
         };
@@ -611,12 +621,18 @@ async function createExcludeCommand(): Promise<OpenClawPluginCommandDefinition> 
       // /exclude add <model>
       if (subcommand === "add") {
         if (!modelArg) {
-          return { text: "Usage: /exclude add <model>\nExample: /exclude add nvidia/gpt-oss-120b", isError: true };
+          return {
+            text: "Usage: /exclude add <model>\nExample: /exclude add nvidia/gpt-oss-120b",
+            isError: true,
+          };
         }
         const resolved = addExclusion(modelArg);
         const list = loadExcludeList();
         return {
-          text: `Excluded: ${resolved}\n\nActive exclusions (${list.size}):\n${[...list].sort().map((m) => `  • ${m}`).join("\n")}`,
+          text: `Excluded: ${resolved}\n\nActive exclusions (${list.size}):\n${[...list]
+            .sort()
+            .map((m) => `  • ${m}`)
+            .join("\n")}`,
         };
       }
 
@@ -631,7 +647,14 @@ async function createExcludeCommand(): Promise<OpenClawPluginCommandDefinition> 
         }
         const list = loadExcludeList();
         return {
-          text: `Unblocked: ${modelArg}\n\nActive exclusions (${list.size}):\n${list.size > 0 ? [...list].sort().map((m) => `  • ${m}`).join("\n") : "  (none)"}`,
+          text: `Unblocked: ${modelArg}\n\nActive exclusions (${list.size}):\n${
+            list.size > 0
+              ? [...list]
+                  .sort()
+                  .map((m) => `  • ${m}`)
+                  .join("\n")
+              : "  (none)"
+          }`,
         };
       }
 

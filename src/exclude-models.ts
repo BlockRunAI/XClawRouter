@@ -10,12 +10,7 @@ import { join, dirname } from "node:path";
 import { homedir } from "node:os";
 import { resolveModelAlias } from "./models.js";
 
-const DEFAULT_FILE_PATH = join(
-  homedir(),
-  ".openclaw",
-  "blockrun",
-  "exclude-models.json",
-);
+const DEFAULT_FILE_PATH = join(homedir(), ".openclaw", "blockrun", "exclude-models.json");
 
 /**
  * Load the exclude list from disk.
@@ -49,10 +44,7 @@ function saveExcludeList(set: Set<string>, filePath: string): void {
  * Resolves aliases before persisting.
  * @returns The resolved model ID.
  */
-export function addExclusion(
-  model: string,
-  filePath: string = DEFAULT_FILE_PATH,
-): string {
+export function addExclusion(model: string, filePath: string = DEFAULT_FILE_PATH): string {
   const resolved = resolveModelAlias(model);
   const set = loadExcludeList(filePath);
   set.add(resolved);
@@ -65,10 +57,7 @@ export function addExclusion(
  * Resolves aliases before removing.
  * @returns true if the model was present and removed, false otherwise.
  */
-export function removeExclusion(
-  model: string,
-  filePath: string = DEFAULT_FILE_PATH,
-): boolean {
+export function removeExclusion(model: string, filePath: string = DEFAULT_FILE_PATH): boolean {
   const resolved = resolveModelAlias(model);
   const set = loadExcludeList(filePath);
   const had = set.delete(resolved);

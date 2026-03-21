@@ -576,7 +576,9 @@ async function runTests() {
   // Uses blockrun/auto (routing profile) so ClawRouter chose the model and can downgrade.
   // cap=$0.0015: first request succeeds ($0.001 minimum cost), second is downgraded ($0.0005 left).
   {
-    console.log("\n--- Test 10b: maxCostPerRun graceful mode (routing profile mid-task downgrade) ---");
+    console.log(
+      "\n--- Test 10b: maxCostPerRun graceful mode (routing profile mid-task downgrade) ---",
+    );
     modelCalls.length = 0;
     rateLimitOnceModels.clear();
     rateLimitAttempts.clear();
@@ -658,7 +660,9 @@ async function runTests() {
   // Explicit model requests bypass graceful downgrade: user chose a specific model,
   // substituting it with free model would be deceptive regardless of task complexity.
   {
-    console.log("\n--- Test 10d: maxCostPerRun graceful mode (explicit model → blocked, not silently downgraded) ---");
+    console.log(
+      "\n--- Test 10d: maxCostPerRun graceful mode (explicit model → blocked, not silently downgraded) ---",
+    );
     modelCalls.length = 0;
     rateLimitOnceModels.clear();
     rateLimitAttempts.clear();
@@ -759,8 +763,12 @@ async function runTests() {
           },
         };
       },
-      deductEstimated(_amount: bigint) { /* no-op */ },
-      invalidate() { /* no-op */ },
+      deductEstimated(_amount: bigint) {
+        /* no-op */
+      },
+      invalidate() {
+        /* no-op */
+      },
     };
 
     const emptyWalletProxy = await startProxy({
@@ -776,7 +784,10 @@ async function runTests() {
 
     const res = await fetch(`${emptyWalletProxy.baseUrl}/v1/chat/completions`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-session-id": `empty-wallet-test-${Date.now()}` },
+      headers: {
+        "Content-Type": "application/json",
+        "x-session-id": `empty-wallet-test-${Date.now()}`,
+      },
       body: JSON.stringify({
         model: "openai/gpt-4o",
         messages: [{ role: "user", content: uniqueMessage("empty wallet with budget cap") }],
@@ -803,7 +814,9 @@ async function runTests() {
 
   // Test 10c: maxCostPerRun graceful mode — tools request blocked when budget can't afford any model
   {
-    console.log("\n--- Test 10c: maxCostPerRun graceful mode (tools → blocked, not silent downgrade) ---");
+    console.log(
+      "\n--- Test 10c: maxCostPerRun graceful mode (tools → blocked, not silent downgrade) ---",
+    );
     modelCalls.length = 0;
     rateLimitOnceModels.clear();
     rateLimitAttempts.clear();

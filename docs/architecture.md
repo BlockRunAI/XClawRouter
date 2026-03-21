@@ -378,8 +378,8 @@ const solanaAccount = await deriveSlip10Ed25519Key(mnemonic, "m/44'/501'/0'/0'")
 // Build SPL Token USDC transfer instruction
 const transaction = buildSolanaPaymentTransaction({
   from: solanaAddress,
-  to: payTo,            // base58 recipient
-  mint: USDC_SOLANA,   // EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+  to: payTo, // base58 recipient
+  mint: USDC_SOLANA, // EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
   amount: BigInt(5000), // 0.005 USDC (6 decimals)
 });
 
@@ -547,13 +547,13 @@ src/
 
 ### Key Files
 
-| File                  | Purpose                                                     |
-| --------------------- | ----------------------------------------------------------- |
-| `proxy.ts`            | Core request handling, SSE simulation, fallback chain       |
-| `wallet.ts`           | BIP-39 mnemonic generation, EVM + Solana (SLIP-10) derivation |
-| `router/rules.ts`     | 15-dimension weighted scorer, 9-language keyword sets       |
-| `x402.ts`             | EIP-712 typed data signing, payment header formatting       |
-| `balance.ts`          | USDC balance via Base RPC (EVM), caching, thresholds        |
-| `solana-balance.ts`   | USDC balance via Solana RPC (SPL Token), caching, retries   |
-| `payment-preauth.ts`  | Pre-authorization cache (EVM; skipped for Solana)           |
-| `dedup.ts`            | SHA-256 hashing, 30s response cache                         |
+| File                 | Purpose                                                       |
+| -------------------- | ------------------------------------------------------------- |
+| `proxy.ts`           | Core request handling, SSE simulation, fallback chain         |
+| `wallet.ts`          | BIP-39 mnemonic generation, EVM + Solana (SLIP-10) derivation |
+| `router/rules.ts`    | 15-dimension weighted scorer, 9-language keyword sets         |
+| `x402.ts`            | EIP-712 typed data signing, payment header formatting         |
+| `balance.ts`         | USDC balance via Base RPC (EVM), caching, thresholds          |
+| `solana-balance.ts`  | USDC balance via Solana RPC (SPL Token), caching, retries     |
+| `payment-preauth.ts` | Pre-authorization cache (EVM; skipped for Solana)             |
+| `dedup.ts`           | SHA-256 hashing, 30s response cache                           |

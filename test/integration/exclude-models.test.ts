@@ -28,10 +28,7 @@ describe("exclude-models e2e", () => {
   let originalLog: typeof console.log;
 
   // Models to exclude for this test
-  const EXCLUDED_MODELS = new Set([
-    "nvidia/gpt-oss-120b",
-    "google/gemini-2.5-flash-lite",
-  ]);
+  const EXCLUDED_MODELS = new Set(["nvidia/gpt-oss-120b", "google/gemini-2.5-flash-lite"]);
 
   beforeAll(async () => {
     // Capture console.log to inspect which models the proxy tries
@@ -92,9 +89,7 @@ describe("exclude-models e2e", () => {
     await new Promise((r) => setTimeout(r, 500));
 
     // Check that the exclude filter log appeared
-    const excludeFilterLogs = consoleLogs.filter((l) =>
-      l.includes("[ClawRouter] Exclude filter:"),
-    );
+    const excludeFilterLogs = consoleLogs.filter((l) => l.includes("[ClawRouter] Exclude filter:"));
     expect(excludeFilterLogs.length).toBeGreaterThan(0);
 
     // Check that excluded models appear in the filter log
@@ -106,9 +101,7 @@ describe("exclude-models e2e", () => {
     }
 
     // Check that excluded models were NEVER tried
-    const tryingLogs = consoleLogs.filter((l) =>
-      l.includes("[ClawRouter] Trying model"),
-    );
+    const tryingLogs = consoleLogs.filter((l) => l.includes("[ClawRouter] Trying model"));
     for (const tryLog of tryingLogs) {
       for (const excluded of EXCLUDED_MODELS) {
         expect(tryLog).not.toContain(excluded);
@@ -133,9 +126,7 @@ describe("exclude-models e2e", () => {
     await new Promise((r) => setTimeout(r, 500));
 
     // nvidia/gpt-oss-120b (FREE_MODEL) should never be tried
-    const tryingLogs = consoleLogs.filter((l) =>
-      l.includes("[ClawRouter] Trying model"),
-    );
+    const tryingLogs = consoleLogs.filter((l) => l.includes("[ClawRouter] Trying model"));
     for (const tryLog of tryingLogs) {
       expect(tryLog).not.toContain("nvidia/gpt-oss-120b");
     }
@@ -157,9 +148,7 @@ describe("exclude-models e2e", () => {
     await new Promise((r) => setTimeout(r, 500));
 
     // At least one model should have been tried
-    const tryingLogs = consoleLogs.filter((l) =>
-      l.includes("[ClawRouter] Trying model"),
-    );
+    const tryingLogs = consoleLogs.filter((l) => l.includes("[ClawRouter] Trying model"));
     expect(tryingLogs.length).toBeGreaterThan(0);
   }, 30_000);
 });

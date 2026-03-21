@@ -1,6 +1,6 @@
 # Stop Overpaying for Claude: How ClawRouter Cuts Your Anthropic Bill by 70%
 
-*You love Claude. Your wallet doesn't. Here's how to keep frontier-quality answers — at a fraction of the cost.*
+_You love Claude. Your wallet doesn't. Here's how to keep frontier-quality answers — at a fraction of the cost._
 
 ---
 
@@ -87,17 +87,17 @@ ClawRouter scores every prompt against 14 dimensions in <1ms and routes it to th
 
 From real production data across 20,000+ paying user requests:
 
-| Model | % of Requests | Price (input/output per M) |
-|---|---|---|
-| gemini-2.5-flash-lite | 34.5% | $0.10 / $0.40 |
-| **claude-sonnet-4.6** | **22.7%** | **$3.00 / $15.00** |
-| kimi-k2.5 | 16.2% | $0.60 / $3.00 |
-| minimax-m2.5 | 6.5% | $0.30 / $1.20 |
-| grok-code-fast | 6.1% | $0.20 / $1.50 |
-| claude-haiku-4.5 | 2.7% | $1.00 / $5.00 |
-| nvidia/gpt-oss-120b | 2.1% | FREE |
-| grok-reasoning | 2.9% | $0.20 / $0.50 |
-| Others | 6.3% | varies |
+| Model                 | % of Requests | Price (input/output per M) |
+| --------------------- | ------------- | -------------------------- |
+| gemini-2.5-flash-lite | 34.5%         | $0.10 / $0.40              |
+| **claude-sonnet-4.6** | **22.7%**     | **$3.00 / $15.00**         |
+| kimi-k2.5             | 16.2%         | $0.60 / $3.00              |
+| minimax-m2.5          | 6.5%          | $0.30 / $1.20              |
+| grok-code-fast        | 6.1%          | $0.20 / $1.50              |
+| claude-haiku-4.5      | 2.7%          | $1.00 / $5.00              |
+| nvidia/gpt-oss-120b   | 2.1%          | FREE                       |
+| grok-reasoning        | 2.9%          | $0.20 / $0.50              |
+| Others                | 6.3%          | varies                     |
 
 **Result:** 77% of requests go to models that cost 5-150x less than Sonnet. Only the ~23% that genuinely need Claude still go to Claude.
 
@@ -107,11 +107,11 @@ Even when a request does go to Claude, ClawRouter reduces the tokens you pay for
 
 **How it works:**
 
-| Compression Layer | What It Does | Savings |
-|---|---|---|
-| **Deduplication** | Removes duplicate messages in conversation history | 2-5% |
-| **Whitespace normalization** | Strips excess whitespace, trailing spaces, empty lines | 3-8% |
-| **JSON compaction** | Minifies JSON in tool calls and results | 2-4% |
+| Compression Layer            | What It Does                                           | Savings |
+| ---------------------------- | ------------------------------------------------------ | ------- |
+| **Deduplication**            | Removes duplicate messages in conversation history     | 2-5%    |
+| **Whitespace normalization** | Strips excess whitespace, trailing spaces, empty lines | 3-8%    |
+| **JSON compaction**          | Minifies JSON in tool calls and results                | 2-4%    |
 
 These three layers are **enabled by default** and are completely safe — they don't change semantic meaning. The compression triggers automatically on requests larger than 180KB (common in agent workflows and long conversations).
 
@@ -126,6 +126,7 @@ This matters most on expensive models. If you're sending a 50K-token agent conve
 ClawRouter caches responses locally. If your app sends the same request within 10 minutes, you get an instant response at **zero cost** — no API call, no tokens billed.
 
 This is more common than you'd think:
+
 - **Retry logic** — Your app retries on timeout. Without dedup, you pay twice. With ClawRouter, the retry resolves from cache instantly.
 - **Redundant requests** — Multiple users or processes asking the same thing? One API call, multiple responses.
 - **Agent loops** — Agentic frameworks often re-query with identical context. Cache catches these.
@@ -146,44 +147,44 @@ The deduplicator also catches in-flight duplicates: if two identical requests ar
 
 ### Direct Anthropic API
 
-| Approach | Input (10M tokens) | Output (5M tokens) | Monthly Total |
-|---|---|---|---|
-| All Claude Sonnet | $30.00 | $75.00 | **$105.00** |
-| All Claude Opus | $50.00 | $125.00 | **$175.00** |
+| Approach          | Input (10M tokens) | Output (5M tokens) | Monthly Total |
+| ----------------- | ------------------ | ------------------ | ------------- |
+| All Claude Sonnet | $30.00             | $75.00             | **$105.00**   |
+| All Claude Opus   | $50.00             | $125.00            | **$175.00**   |
 
 ### ClawRouter (real paying-user distribution)
 
-| Tier | % Requests | Routed To | Cost |
-|---|---|---|---|
-| Cheap models | 34.5% | gemini-flash-lite | $0.76 |
-| Mid-tier | 16.2% | kimi-k2.5 | $2.43 |
-| **Claude (complex)** | **22.7%** | **claude-sonnet-4.6** | **$17.44** |
-| Code models | 6.1% | grok-code-fast | $0.52 |
-| Reasoning | 2.9% | grok-reasoning | $0.03 |
-| Haiku | 2.7% | claude-haiku-4.5 | $0.76 |
-| Free | 2.1% | nvidia/gpt-oss-120b | $0.00 |
-| Other | 12.8% | various | $1.18 |
-| **Subtotal (routing)** | | | **$23.12** |
-| Token compression (~10%) | | | **-$2.31** |
-| Cache hits (~5% est.) | | | **-$1.16** |
-| **Final Total** | | | **~$19.65** |
+| Tier                     | % Requests | Routed To             | Cost        |
+| ------------------------ | ---------- | --------------------- | ----------- |
+| Cheap models             | 34.5%      | gemini-flash-lite     | $0.76       |
+| Mid-tier                 | 16.2%      | kimi-k2.5             | $2.43       |
+| **Claude (complex)**     | **22.7%**  | **claude-sonnet-4.6** | **$17.44**  |
+| Code models              | 6.1%       | grok-code-fast        | $0.52       |
+| Reasoning                | 2.9%       | grok-reasoning        | $0.03       |
+| Haiku                    | 2.7%       | claude-haiku-4.5      | $0.76       |
+| Free                     | 2.1%       | nvidia/gpt-oss-120b   | $0.00       |
+| Other                    | 12.8%      | various               | $1.18       |
+| **Subtotal (routing)**   |            |                       | **$23.12**  |
+| Token compression (~10%) |            |                       | **-$2.31**  |
+| Cache hits (~5% est.)    |            |                       | **-$1.16**  |
+| **Final Total**          |            |                       | **~$19.65** |
 
 ### The Bottom Line
 
-| Approach | Monthly Cost | Savings |
-|---|---|---|
-| Direct Claude Sonnet | $105.00 | — |
-| Direct Claude Opus | $175.00 | — |
-| **ClawRouter** | **~$20** | **~81% vs Sonnet, ~89% vs Opus** |
+| Approach             | Monthly Cost | Savings                          |
+| -------------------- | ------------ | -------------------------------- |
+| Direct Claude Sonnet | $105.00      | —                                |
+| Direct Claude Opus   | $175.00      | —                                |
+| **ClawRouter**       | **~$20**     | **~81% vs Sonnet, ~89% vs Opus** |
 
 Breaking down where the savings come from:
 
-| Savings Source | Estimated Impact | How |
-|---|---|---|
-| **Smart routing** | ~68% cost reduction | 77% of requests → cheaper models |
-| **Token compression** | ~7-15% on remaining cost | Fewer tokens billed per request |
-| **Response cache** | ~3-5% additional | Repeat requests cost $0 |
-| **Request dedup** | Prevents overcharges | Retries don't double-bill |
+| Savings Source        | Estimated Impact         | How                              |
+| --------------------- | ------------------------ | -------------------------------- |
+| **Smart routing**     | ~68% cost reduction      | 77% of requests → cheaper models |
+| **Token compression** | ~7-15% on remaining cost | Fewer tokens billed per request  |
+| **Response cache**    | ~3-5% additional         | Repeat requests cost $0          |
+| **Request dedup**     | Prevents overcharges     | Retries don't double-bill        |
 
 ---
 
@@ -191,22 +192,22 @@ Breaking down where the savings come from:
 
 ClawRouter runs a weighted scoring algorithm on every prompt — entirely locally, in under 1 millisecond, zero external API calls.
 
-| Dimension | Weight | Detects |
-|---|---|---|
-| Reasoning Markers | 0.18 | "prove," "step by step," "analyze" |
-| Code Presence | 0.15 | `function`, `class`, `import`, code blocks |
-| Multi-Step Patterns | 0.12 | "first...then," numbered steps |
-| Technical Terms | 0.10 | Domain-specific vocabulary |
-| Token Count | 0.08 | Short vs. long context |
-| Question Complexity | 0.05 | Nested or compound questions |
-| Creative Markers | 0.05 | Creative writing indicators |
-| Constraint Count | 0.04 | "max," "minimum," "at most" |
-| Imperative Verbs | 0.03 | "create," "generate," "build" |
-| Output Format | 0.03 | JSON, YAML, table, markdown |
-| Simple Indicators | 0.02 | "what is," "define," "translate" |
-| Reference Complexity | 0.02 | "the code above," "the docs" |
-| Domain Specificity | 0.02 | Quantum, genomics, etc. |
-| Negation Complexity | 0.01 | "don't," "never," "avoid" |
+| Dimension            | Weight | Detects                                    |
+| -------------------- | ------ | ------------------------------------------ |
+| Reasoning Markers    | 0.18   | "prove," "step by step," "analyze"         |
+| Code Presence        | 0.15   | `function`, `class`, `import`, code blocks |
+| Multi-Step Patterns  | 0.12   | "first...then," numbered steps             |
+| Technical Terms      | 0.10   | Domain-specific vocabulary                 |
+| Token Count          | 0.08   | Short vs. long context                     |
+| Question Complexity  | 0.05   | Nested or compound questions               |
+| Creative Markers     | 0.05   | Creative writing indicators                |
+| Constraint Count     | 0.04   | "max," "minimum," "at most"                |
+| Imperative Verbs     | 0.03   | "create," "generate," "build"              |
+| Output Format        | 0.03   | JSON, YAML, table, markdown                |
+| Simple Indicators    | 0.02   | "what is," "define," "translate"           |
+| Reference Complexity | 0.02   | "the code above," "the docs"               |
+| Domain Specificity   | 0.02   | Quantum, genomics, etc.                    |
+| Negation Complexity  | 0.01   | "don't," "never," "avoid"                  |
 
 The weighted score maps to four tiers:
 
@@ -234,6 +235,7 @@ Starts a local proxy on port 8402. Auto-generates a crypto wallet. Done.
 ### Step 2: Update Your Code
 
 **Python** — change 2 lines:
+
 ```python
 from openai import OpenAI
 
@@ -249,6 +251,7 @@ response = client.chat.completions.create(
 ```
 
 **TypeScript** — same idea:
+
 ```typescript
 import OpenAI from "openai";
 
@@ -258,12 +261,13 @@ const client = new OpenAI({
 });
 
 const response = await client.chat.completions.create({
-  model: "blockrun/auto",  // or "eco" for max savings, "premium" for best quality
+  model: "blockrun/auto", // or "eco" for max savings, "premium" for best quality
   messages: [{ role: "user", content: "Your prompt here" }],
 });
 ```
 
 **Routing profiles:**
+
 - `blockrun/auto` — Balanced cost/quality (default)
 - `blockrun/eco` — Maximum savings (free tier aggressively)
 - `blockrun/premium` — Best quality (Opus/Sonnet/GPT-5)
@@ -305,17 +309,17 @@ $ /stats 7
 
 ## Why ClawRouter Instead of OpenRouter?
 
-| | ClawRouter | OpenRouter |
-|---|---|---|
-| **Smart routing** | Automatic — 14-dimension scorer picks the model | Manual — you pick the model |
-| **Token optimization** | Built-in compression (7-15% savings) | None |
-| **Response caching** | Local cache, repeat requests = $0 | None |
-| **Request dedup** | Retries don't double-bill | None |
-| **Routing latency** | <1ms (local, on your machine) | Additional network hop |
-| **Payments** | Non-custodial USDC on Base (your wallet, your keys) | Prepaid credit balance (custodial) |
-| **Free tier** | NVIDIA GPT-OSS-120B (always available) | No free models |
-| **API keys** | Zero — proxy handles all auth | You manage keys per provider |
-| **Algorithm** | Open-source, MIT license, modify it yourself | Proprietary |
+|                        | ClawRouter                                          | OpenRouter                         |
+| ---------------------- | --------------------------------------------------- | ---------------------------------- |
+| **Smart routing**      | Automatic — 14-dimension scorer picks the model     | Manual — you pick the model        |
+| **Token optimization** | Built-in compression (7-15% savings)                | None                               |
+| **Response caching**   | Local cache, repeat requests = $0                   | None                               |
+| **Request dedup**      | Retries don't double-bill                           | None                               |
+| **Routing latency**    | <1ms (local, on your machine)                       | Additional network hop             |
+| **Payments**           | Non-custodial USDC on Base (your wallet, your keys) | Prepaid credit balance (custodial) |
+| **Free tier**          | NVIDIA GPT-OSS-120B (always available)              | No free models                     |
+| **API keys**           | Zero — proxy handles all auth                       | You manage keys per provider       |
+| **Algorithm**          | Open-source, MIT license, modify it yourself        | Proprietary                        |
 
 The fundamental difference: **OpenRouter is a model marketplace where you choose.** ClawRouter is an intelligent proxy that **chooses for you**, compresses your tokens, caches your responses, and pays per-request with crypto from your own wallet.
 
@@ -323,16 +327,16 @@ The fundamental difference: **OpenRouter is a model marketplace where you choose
 
 ## TL;DR
 
-| What | Details |
-|---|---|
-| **Problem** | You pay Claude $3-25/M tokens on every request, but ~70% don't need Claude |
-| **Solution** | ClawRouter auto-routes + compresses + caches |
-| **Savings** | ~81% vs Sonnet, ~89% vs Opus |
-| **How** | Routing (68%) + token compression (7-15%) + caching (3-5%) |
-| **Code change** | 2 lines (base_url + model name) |
-| **Setup time** | 3 minutes |
-| **Quality tradeoff** | None — complex tasks still go to Claude |
-| **Open source** | MIT license, local proxy, non-custodial payments |
+| What                 | Details                                                                    |
+| -------------------- | -------------------------------------------------------------------------- |
+| **Problem**          | You pay Claude $3-25/M tokens on every request, but ~70% don't need Claude |
+| **Solution**         | ClawRouter auto-routes + compresses + caches                               |
+| **Savings**          | ~81% vs Sonnet, ~89% vs Opus                                               |
+| **How**              | Routing (68%) + token compression (7-15%) + caching (3-5%)                 |
+| **Code change**      | 2 lines (base_url + model name)                                            |
+| **Setup time**       | 3 minutes                                                                  |
+| **Quality tradeoff** | None — complex tasks still go to Claude                                    |
+| **Open source**      | MIT license, local proxy, non-custodial payments                           |
 
 ```bash
 # Start saving now:
@@ -340,10 +344,11 @@ npx @blockrun/clawrouter
 ```
 
 **Links:**
+
 - [ClawRouter on GitHub](https://github.com/blockrunai/ClawRouter) — MIT License
 - [BlockRun](https://blockrun.ai) — AI model marketplace
 - [x402 Protocol](https://www.x402.org/) — Per-request crypto payments for AI
 
 ---
 
-*Cost data based on real production traffic from paying users across 20,000+ requests, March 2026. Savings vary by workload — agent-heavy and long-context workloads see larger compression benefits. ClawRouter is open-source and part of the BlockRun ecosystem.*
+_Cost data based on real production traffic from paying users across 20,000+ requests, March 2026. Savings vary by workload — agent-heavy and long-context workloads see larger compression benefits. ClawRouter is open-source and part of the BlockRun ecosystem._
