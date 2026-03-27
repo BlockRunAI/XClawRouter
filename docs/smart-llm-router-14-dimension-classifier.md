@@ -28,7 +28,7 @@ Before building the router, we needed ground truth. We benchmarked all 55+ model
 ```
 Setup:     ClawRouter v0.12.47 proxy on localhost
            → BlockRun x402 gateway (Base EVM chain)
-           → Provider APIs (OpenAI, Anthropic, Google, xAI, DeepSeek, Moonshot, MiniMax, NVIDIA, Z.AI)
+           → Provider APIs (OpenAI, Anthropic, Google, xAI, DeepSeek, Moonshot, MiniMax, Z.AI)
 
 Prompts:   3 Python coding tasks (IPv4 validation, LCS algorithm, LRU cache)
            2 requests per model per prompt

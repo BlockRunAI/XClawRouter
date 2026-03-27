@@ -25,7 +25,7 @@ All notable changes to ClawRouter.
 ### Added
 
 - **11 free models** — GPT-OSS 20B/120B, Nemotron Ultra 253B, Nemotron Super 49B/120B, DeepSeek V3.2, Mistral Large 3, Qwen3 Coder 480B, Devstral 2 123B, GLM 4.7, Llama 4 Maverick. All free, no wallet balance needed.
-- **`/model free` alias** — Points to nvidia/nemotron-ultra-253b (strongest free model). All 11 free models individually selectable via `/model` picker.
+- **`/model free` alias** — Points to nemotron-ultra-253b (strongest free model). All 11 free models individually selectable via `/model` picker.
 - **New model aliases** — `nemotron`, `devstral`, `qwen-coder`, `maverick`, `deepseek-free`, `mistral-free`, `glm-free`, `llama-free`, and more (16 total).
 
 ### Fixed
@@ -226,7 +226,7 @@ Generate images from chat. Calls BlockRun's image generation API with x402 micro
 ## v0.10.20 / v0.10.21 — Feb 27, 2026
 
 - **Stop hijacking model picker** — removed allowlist injection that hid non-BlockRun models from `/model` picker
-- **Silent fallback to free model** — insufficient funds now skips remaining paid models and jumps to `nvidia/gpt-oss-120b` instead of showing payment errors
+- **Silent fallback to free model** — insufficient funds now skips remaining paid models and jumps to the free tier instead of showing payment errors
 
 ---
 

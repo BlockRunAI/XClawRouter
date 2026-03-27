@@ -56,7 +56,7 @@ This is where you're paying for real value:
 ┌─────────────┐     ┌──────────────────────────────┐     ┌──────────────────┐
 │  Your App    │────▶│       ClawRouter              │────▶│  41+ AI Models   │
 │  (OpenAI     │     │       (local proxy)           │     │                  │
-│   SDK)       │     │                               │     │  FREE  (nvidia)  │
+│   SDK)       │     │                               │     │  FREE  (11 free) │
 │              │     │  1. Route to cheapest model    │     │  $0.10 (gemini)  │
 │  model:      │     │  2. Compress tokens            │     │  $3.00 (sonnet)  │
 │  "auto"      │     │  3. Cache repeated requests    │     │  $0.20 (grok)    │
@@ -317,7 +317,7 @@ $ /stats 7
 | **Request dedup**      | Retries don't double-bill                           | None                               |
 | **Routing latency**    | <1ms (local, on your machine)                       | Additional network hop             |
 | **Payments**           | Non-custodial USDC on Base (your wallet, your keys) | Prepaid credit balance (custodial) |
-| **Free tier**          | NVIDIA GPT-OSS-120B (always available)              | No free models                     |
+| **Free tier**          | GPT-OSS-120B (always available)                     | No free models                     |
 | **API keys**           | Zero — proxy handles all auth                       | You manage keys per provider       |
 | **Algorithm**          | Open-source, MIT license, modify it yourself        | Proprietary                        |
 

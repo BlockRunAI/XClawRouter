@@ -147,7 +147,7 @@ x-clawrouter-savings: 82%
 x-clawrouter-model: google/gemini-2.5-flash
 ```
 
-**Per-request USDC payments.** No prepaid balance to drain. Each request shows its price before you pay. When the wallet is empty, requests don't fail — they fall back to the free tier (NVIDIA GPT-OSS-120B).
+**Per-request USDC payments.** No prepaid balance to drain. Each request shows its price before you pay. When the wallet is empty, requests don't fail — they fall back to the free tier (GPT-OSS-120B).
 
 **Budget guard.** `maxCostPerRun` caps per-session spending. Two modes: `graceful` (downgrade to cheaper models) or `strict` (hard stop). The $248/day heartbeat scenario is structurally impossible.
 
@@ -194,7 +194,7 @@ x-clawrouter-reasoning: "Code task with moderate complexity"
 | `auto`    | Balanced quality + cost | 74–100% |
 | `eco`     | Cheapest possible       | 95–100% |
 | `premium` | Best quality always     | 0%      |
-| `free`    | NVIDIA GPT-OSS only     | 100%    |
+| `free`    | Free models only        | 100%    |
 
 No black box. No mystery routing. Full visibility, full control.
 
@@ -240,7 +240,7 @@ When new models launch, OpenRouter's catalog lags. Users configure a model that 
 
 ### How ClawRouter Solves This
 
-ClawRouter maintains a curated catalog of 55+ models across 9 providers (including 11 free NVIDIA models), updated with each release. Delisted models have automatic redirect aliases:
+ClawRouter maintains a curated catalog of 55+ models across 9 providers (including 11 free models), updated with each release. Delisted models have automatic redirect aliases:
 
 ```typescript
 // Delisted models redirect automatically
