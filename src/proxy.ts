@@ -4415,6 +4415,24 @@ async function proxyRequest(
 
       let responseBody = Buffer.concat(bodyParts);
 
+      // Strip thinking tokens from non-streaming responses (same as streaming path)
+      if (responseBody.length > 0) {
+        try {
+          const parsed = JSON.parse(responseBody.toString()) as {
+            choices?: Array<{ message?: { content?: string } }>;
+          };
+          if (parsed.choices?.[0]?.message?.content) {
+            const stripped = stripThinkingTokens(parsed.choices[0].message.content);
+            if (stripped !== parsed.choices[0].message.content) {
+              parsed.choices[0].message.content = stripped;
+              responseBody = Buffer.from(JSON.stringify(parsed));
+            }
+          }
+        } catch {
+          /* not JSON, skip */
+        }
+      }
+
       // Prepend balance fallback notice to response content
       if (balanceFallbackNotice && responseBody.length > 0) {
         try {
