@@ -74,7 +74,7 @@ This is the stack that lets agents operate autonomously: **x402 + USDC + local r
 
 ## Quick Start
 
-### Option A — OpenClaw (Claude Code agent)
+### Option A — OpenClaw Agent
 
 [OpenClaw](https://openclaw.ai) is an AI coding agent. If you're using it, ClawRouter installs as a plugin:
 
@@ -86,6 +86,8 @@ openclaw gateway restart
 Done. Smart routing (`blockrun/auto`) is now your default model.
 
 ### Option B — Standalone (continue.dev, Cursor, VS Code, any OpenAI-compatible client)
+
+> **Using Claude Code?** Check out [BRCC](https://github.com/BlockRunAI/brcc) — it's purpose-built for Claude Code with the same smart routing and x402 payments.
 
 No OpenClaw required. ClawRouter runs as a local proxy on port 8402.
 
