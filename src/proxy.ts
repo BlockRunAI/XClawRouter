@@ -962,7 +962,7 @@ type ExtendedChatMessage = ChatMessage & {
  *   "400 thinking is enabled but reasoning_content is missing in assistant tool call message"
  *   "400 thinking is enabled but reasoning_content is missing in assistant message"
  */
-function normalizeMessagesForThinking(messages: ExtendedChatMessage[]): ExtendedChatMessage[] {
+export function normalizeMessagesForThinking(messages: ExtendedChatMessage[]): ExtendedChatMessage[] {
   if (!messages || messages.length === 0) return messages;
 
   let hasChanges = false;
