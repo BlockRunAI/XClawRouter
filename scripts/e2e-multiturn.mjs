@@ -54,7 +54,10 @@ async function collectSSE(response) {
     for (const line of lines) {
       if (!line.startsWith("data: ")) continue;
       const raw = line.slice(6).trim();
-      if (raw === "[DONE]") { done = true; break; }
+      if (raw === "[DONE]") {
+        done = true;
+        break;
+      }
 
       let chunk;
       try {

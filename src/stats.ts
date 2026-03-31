@@ -314,7 +314,9 @@ export async function formatRecentLogs(days: number = 1): Promise<string> {
 
   const lines: string[] = [];
   lines.push("╔════════════════════════════════════════════════════════════════════════╗");
-  lines.push(`║  ClawRouter Request Log — last ${days === 1 ? "24h" : `${days} days`}`.padEnd(72) + "║");
+  lines.push(
+    `║  ClawRouter Request Log — last ${days === 1 ? "24h" : `${days} days`}`.padEnd(72) + "║",
+  );
   lines.push("╠══════════════════╦══════════════════════════╦═════════╦══════╦════════╣");
   lines.push("║  Time            ║  Model                   ║  Cost   ║  ms  ║ Status ║");
   lines.push("╠══════════════════╬══════════════════════════╬═════════╬══════╬════════╣");
@@ -331,7 +333,8 @@ export async function formatRecentLogs(days: number = 1): Promise<string> {
     const model = e.model.length > 24 ? e.model.slice(0, 21) + "..." : e.model;
     const cost = `$${e.cost.toFixed(4)}`;
     const ms = e.latencyMs > 9999 ? `${(e.latencyMs / 1000).toFixed(1)}s` : `${e.latencyMs}ms`;
-    const status = (e as UsageEntry & { status?: string }).status === "error" ? " ERROR  " : " OK     ";
+    const status =
+      (e as UsageEntry & { status?: string }).status === "error" ? " ERROR  " : " OK     ";
     totalCost += e.cost;
     lines.push(
       `║  ${displayTime.padEnd(16)}║  ${model.padEnd(24)}║  ${cost.padStart(7)}║  ${ms.padStart(4)}║${status}║`,
@@ -340,8 +343,9 @@ export async function formatRecentLogs(days: number = 1): Promise<string> {
 
   lines.push("╠══════════════════╩══════════════════════════╩═════════╩══════╩════════╣");
   lines.push(
-    `║  ${allEntries.length} request${allEntries.length !== 1 ? "s" : ""}  Total spent: $${totalCost.toFixed(4)}`.padEnd(72) +
-      "║",
+    `║  ${allEntries.length} request${allEntries.length !== 1 ? "s" : ""}  Total spent: $${totalCost.toFixed(4)}`.padEnd(
+      72,
+    ) + "║",
   );
   lines.push(
     "║  Logs: ~/.openclaw/blockrun/logs/  (JSONL — one entry per request)".padEnd(72) + "║",

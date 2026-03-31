@@ -41,7 +41,9 @@ describe("normalizeMessagesForThinking — issue #135 multi-turn fix", () => {
       {
         role: "assistant",
         content: null,
-        tool_calls: [{ id: "call_1", type: "function", function: { name: "read_file", arguments: "{}" } }],
+        tool_calls: [
+          { id: "call_1", type: "function", function: { name: "read_file", arguments: "{}" } },
+        ],
       },
     ];
 
@@ -80,9 +82,7 @@ describe("normalizeMessagesForThinking — issue #135 multi-turn fix", () => {
   });
 
   it("returns same reference when no changes needed (all already have reasoning_content)", () => {
-    const messages = [
-      { role: "assistant", content: "hi", reasoning_content: "" },
-    ];
+    const messages = [{ role: "assistant", content: "hi", reasoning_content: "" }];
 
     const result = normalizeMessagesForThinking(messages as never);
     expect(result).toBe(messages); // same reference — no unnecessary copy

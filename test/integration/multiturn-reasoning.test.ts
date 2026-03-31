@@ -51,7 +51,9 @@ function startMockUpstream(): Promise<{ server: Server; url: string }> {
           parsed = JSON.parse(body);
         } catch {
           res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: { message: "invalid json", type: "invalid_request_error" } }));
+          res.end(
+            JSON.stringify({ error: { message: "invalid json", type: "invalid_request_error" } }),
+          );
           return;
         }
 
@@ -65,7 +67,8 @@ function startMockUpstream(): Promise<{ server: Server; url: string }> {
           res.end(
             JSON.stringify({
               error: {
-                message: "thinking is enabled but reasoning_content is missing in assistant message",
+                message:
+                  "thinking is enabled but reasoning_content is missing in assistant message",
                 type: "invalid_request_error",
               },
             }),
@@ -176,7 +179,7 @@ describe("multi-turn reasoning model (issue #135)", () => {
     expect(res.status).toBe(200);
   }, 15_000);
 
-  it("SSE error format: when all models fail, error is in {\"error\":{...}} shape", async () => {
+  it('SSE error format: when all models fail, error is in {"error":{...}} shape', async () => {
     // Use a model that the mock doesn't have (not kimi, not free), so it will fail.
     // Verify the SSE error payload has the correct OpenAI shape.
     const res = await fetch(`${proxy.baseUrl}/v1/chat/completions`, {
