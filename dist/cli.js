@@ -45644,6 +45644,48 @@ async function getStats(days = 7) {
     // How many entries have valid baseline tracking
   };
 }
+async function formatRecentLogs(days = 1) {
+  const logFiles = await getLogFiles();
+  const filesToRead = logFiles.slice(0, days);
+  const allEntries = [];
+  for (const file of filesToRead) {
+    const entries = await parseLogFile(join4(LOG_DIR2, file));
+    allEntries.push(...entries);
+  }
+  allEntries.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+  const lines = [];
+  lines.push("\u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557");
+  lines.push(`\u2551  ClawRouter Request Log \u2014 last ${days === 1 ? "24h" : `${days} days`}`.padEnd(72) + "\u2551");
+  lines.push("\u2560\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2566\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2566\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2566\u2550\u2550\u2550\u2550\u2550\u2550\u2566\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2563");
+  lines.push("\u2551  Time            \u2551  Model                   \u2551  Cost   \u2551  ms  \u2551 Status \u2551");
+  lines.push("\u2560\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256C\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256C\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256C\u2550\u2550\u2550\u2550\u2550\u2550\u256C\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2563");
+  if (allEntries.length === 0) {
+    lines.push("\u2551  No requests found".padEnd(72) + "\u2551");
+  }
+  let totalCost = 0;
+  for (const e7 of allEntries) {
+    const time = e7.timestamp.slice(11, 19);
+    const date = e7.timestamp.slice(5, 10);
+    const displayTime = `${date} ${time}`;
+    const model = e7.model.length > 24 ? e7.model.slice(0, 21) + "..." : e7.model;
+    const cost = `$${e7.cost.toFixed(4)}`;
+    const ms = e7.latencyMs > 9999 ? `${(e7.latencyMs / 1e3).toFixed(1)}s` : `${e7.latencyMs}ms`;
+    const status = e7.status === "error" ? " ERROR  " : " OK     ";
+    totalCost += e7.cost;
+    lines.push(
+      `\u2551  ${displayTime.padEnd(16)}\u2551  ${model.padEnd(24)}\u2551  ${cost.padStart(7)}\u2551  ${ms.padStart(4)}\u2551${status}\u2551`
+    );
+  }
+  lines.push("\u2560\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2569\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2569\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2569\u2550\u2550\u2550\u2550\u2550\u2550\u2569\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2563");
+  lines.push(
+    `\u2551  ${allEntries.length} request${allEntries.length !== 1 ? "s" : ""}  Total spent: $${totalCost.toFixed(4)}`.padEnd(72) + "\u2551"
+  );
+  lines.push(
+    "\u2551  Logs: ~/.openclaw/blockrun/logs/  (JSONL \u2014 one entry per request)".padEnd(72) + "\u2551"
+  );
+  lines.push("\u255A\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255D");
+  return lines.join("\n");
+}
 async function clearStats() {
   try {
     const files = await readdir(LOG_DIR2);
@@ -52439,6 +52481,7 @@ async function proxyRequest(req, res, apiBase, payFetch, options, routerOpts, de
   let accumulatedContent = "";
   let responseInputTokens;
   let responseOutputTokens;
+  let requestHadError = false;
   const isChatCompletion = req.url?.includes("/chat/completions");
   const sessionId = getSessionId(req.headers);
   let effectiveSessionId = sessionId;
@@ -53703,6 +53746,7 @@ data: [DONE]
       const rawErrBody = lastError?.body || structuredMessage;
       const errStatus = lastError?.status || 502;
       const transformedErr = transformPaymentError(rawErrBody);
+      requestHadError = true;
       if (headersSentEarly) {
         let errPayload;
         try {
@@ -53744,6 +53788,21 @@ data: [DONE]
           headers: { "content-type": "application/json" },
           body: Buffer.from(transformedErr),
           completedAt: Date.now()
+        });
+      }
+      const errModel = routingDecision?.model ?? modelId;
+      if (errModel) {
+        const errPayment = paymentStore.getStore()?.amountUsd ?? 0;
+        logUsage({
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          model: errModel,
+          tier: routingDecision?.tier ?? "DIRECT",
+          cost: errPayment,
+          baselineCost: errPayment,
+          savings: 0,
+          latencyMs: Date.now() - startTime,
+          status: "error"
+        }).catch(() => {
         });
       }
       return;
@@ -54080,6 +54139,7 @@ data: [DONE]
       baselineCost: logBaseline,
       savings: logSavings,
       latencyMs: Date.now() - startTime,
+      status: requestHadError ? "error" : "success",
       ...responseInputTokens !== void 0 && { inputTokens: responseInputTokens },
       ...responseOutputTokens !== void 0 && { outputTokens: responseOutputTokens }
     };
@@ -54692,6 +54752,7 @@ Usage:
   clawrouter doctor [opus] [question]
   clawrouter partners [test]
   clawrouter report [daily|weekly|monthly] [--json]
+  clawrouter logs [--days <n>]
 
 Options:
   --version, -v     Show version number
@@ -54701,6 +54762,8 @@ Options:
 Commands:
   doctor            AI-powered diagnostics (default: Sonnet ~$0.003)
   doctor opus       Use Opus for deeper analysis (~$0.01)
+  logs              Per-request breakdown: model, cost, latency, status
+  logs --days 7     Show last 7 days of requests (default: 1 day)
   partners          List available partner APIs with pricing
   partners test     Test partner API endpoints (expect 402 = alive)
   wallet recover    Restore wallet.key from mnemonic (if generated by ClawRouter)
@@ -54735,6 +54798,8 @@ function parseArgs(args) {
     version: false,
     help: false,
     doctor: false,
+    logs: false,
+    logsDays: 1,
     partners: false,
     partnersTest: false,
     report: false,
@@ -54752,6 +54817,12 @@ function parseArgs(args) {
       result.help = true;
     } else if (arg === "doctor" || arg === "--doctor") {
       result.doctor = true;
+    } else if (arg === "logs") {
+      result.logs = true;
+      if (args[i + 1] === "--days" && args[i + 2]) {
+        result.logsDays = parseInt(args[i + 2], 10) || 1;
+        i += 2;
+      }
     } else if (arg === "partners") {
       result.partners = true;
       if (args[i + 1] === "test") {
@@ -54810,6 +54881,11 @@ async function main() {
     }
     const userQuestion = questionArgs.join(" ").trim() || void 0;
     await runDoctor(userQuestion, model);
+    process.exit(0);
+  }
+  if (args.logs) {
+    const output = await formatRecentLogs(args.logsDays);
+    console.log(output);
     process.exit(0);
   }
   if (args.partners) {

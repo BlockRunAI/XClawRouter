@@ -52959,6 +52959,7 @@ async function proxyRequest(req, res, apiBase, payFetch, options, routerOpts, de
   let accumulatedContent = "";
   let responseInputTokens;
   let responseOutputTokens;
+  let requestHadError = false;
   const isChatCompletion = req.url?.includes("/chat/completions");
   const sessionId = getSessionId(req.headers);
   let effectiveSessionId = sessionId;
@@ -54223,6 +54224,7 @@ data: [DONE]
       const rawErrBody = lastError?.body || structuredMessage;
       const errStatus = lastError?.status || 502;
       const transformedErr = transformPaymentError(rawErrBody);
+      requestHadError = true;
       if (headersSentEarly) {
         let errPayload;
         try {
@@ -54264,6 +54266,21 @@ data: [DONE]
           headers: { "content-type": "application/json" },
           body: Buffer.from(transformedErr),
           completedAt: Date.now()
+        });
+      }
+      const errModel = routingDecision?.model ?? modelId;
+      if (errModel) {
+        const errPayment = paymentStore.getStore()?.amountUsd ?? 0;
+        logUsage({
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          model: errModel,
+          tier: routingDecision?.tier ?? "DIRECT",
+          cost: errPayment,
+          baselineCost: errPayment,
+          savings: 0,
+          latencyMs: Date.now() - startTime,
+          status: "error"
+        }).catch(() => {
         });
       }
       return;
@@ -54600,6 +54617,7 @@ data: [DONE]
       baselineCost: logBaseline,
       savings: logSavings,
       latencyMs: Date.now() - startTime,
+      status: requestHadError ? "error" : "success",
       ...responseInputTokens !== void 0 && { inputTokens: responseInputTokens },
       ...responseOutputTokens !== void 0 && { outputTokens: responseOutputTokens }
     };

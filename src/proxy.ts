@@ -2484,6 +2484,7 @@ async function proxyRequest(
   let accumulatedContent = ""; // For session journal event extraction
   let responseInputTokens: number | undefined;
   let responseOutputTokens: number | undefined;
+  let requestHadError = false; // Set to true when all models fail → used in logUsage
   const isChatCompletion = req.url?.includes("/chat/completions");
 
   // Extract session ID early for journal operations (header-only at this point)
@@ -4148,6 +4149,9 @@ async function proxyRequest(
       // Transform payment errors into user-friendly messages
       const transformedErr = transformPaymentError(rawErrBody);
 
+      // Mark as error for usage logging (logs this failed attempt with cost)
+      requestHadError = true;
+
       if (headersSentEarly) {
         // Streaming: send error as SSE event in OpenAI error format.
         // The OpenAI SDK (used by continue.dev and others) expects {"error": {...}}.
@@ -4198,6 +4202,23 @@ async function proxyRequest(
           body: Buffer.from(transformedErr),
           completedAt: Date.now(),
         });
+      }
+
+      // Log failed request so users can see it in `clawrouter logs`
+      // cost = actual x402 payment if any was made, otherwise 0
+      const errModel = routingDecision?.model ?? modelId;
+      if (errModel) {
+        const errPayment = paymentStore.getStore()?.amountUsd ?? 0;
+        logUsage({
+          timestamp: new Date().toISOString(),
+          model: errModel,
+          tier: routingDecision?.tier ?? "DIRECT",
+          cost: errPayment,
+          baselineCost: errPayment,
+          savings: 0,
+          latencyMs: Date.now() - startTime,
+          status: "error",
+        }).catch(() => {});
       }
       return;
     }
@@ -4661,6 +4682,7 @@ async function proxyRequest(
       baselineCost: logBaseline,
       savings: logSavings,
       latencyMs: Date.now() - startTime,
+      status: requestHadError ? "error" : "success",
       ...(responseInputTokens !== undefined && { inputTokens: responseInputTokens }),
       ...(responseOutputTokens !== undefined && { outputTokens: responseOutputTokens }),
     };

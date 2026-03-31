@@ -296,6 +296,62 @@ export function formatStatsAscii(stats: AggregatedStats): string {
 }
 
 /**
+ * Format per-request log entries as an ASCII table for terminal display.
+ * Reads the last N days of log files and shows each request individually.
+ */
+export async function formatRecentLogs(days: number = 1): Promise<string> {
+  const logFiles = await getLogFiles();
+  const filesToRead = logFiles.slice(0, days);
+
+  const allEntries: UsageEntry[] = [];
+  for (const file of filesToRead) {
+    const entries = await parseLogFile(join(LOG_DIR, file));
+    allEntries.push(...entries);
+  }
+
+  // Sort chronologically (oldest first)
+  allEntries.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+
+  const lines: string[] = [];
+  lines.push("╔════════════════════════════════════════════════════════════════════════╗");
+  lines.push(`║  ClawRouter Request Log — last ${days === 1 ? "24h" : `${days} days`}`.padEnd(72) + "║");
+  lines.push("╠══════════════════╦══════════════════════════╦═════════╦══════╦════════╣");
+  lines.push("║  Time            ║  Model                   ║  Cost   ║  ms  ║ Status ║");
+  lines.push("╠══════════════════╬══════════════════════════╬═════════╬══════╬════════╣");
+
+  if (allEntries.length === 0) {
+    lines.push("║  No requests found".padEnd(72) + "║");
+  }
+
+  let totalCost = 0;
+  for (const e of allEntries) {
+    const time = e.timestamp.slice(11, 19); // HH:MM:SS
+    const date = e.timestamp.slice(5, 10); // MM-DD
+    const displayTime = `${date} ${time}`;
+    const model = e.model.length > 24 ? e.model.slice(0, 21) + "..." : e.model;
+    const cost = `$${e.cost.toFixed(4)}`;
+    const ms = e.latencyMs > 9999 ? `${(e.latencyMs / 1000).toFixed(1)}s` : `${e.latencyMs}ms`;
+    const status = (e as UsageEntry & { status?: string }).status === "error" ? " ERROR  " : " OK     ";
+    totalCost += e.cost;
+    lines.push(
+      `║  ${displayTime.padEnd(16)}║  ${model.padEnd(24)}║  ${cost.padStart(7)}║  ${ms.padStart(4)}║${status}║`,
+    );
+  }
+
+  lines.push("╠══════════════════╩══════════════════════════╩═════════╩══════╩════════╣");
+  lines.push(
+    `║  ${allEntries.length} request${allEntries.length !== 1 ? "s" : ""}  Total spent: $${totalCost.toFixed(4)}`.padEnd(72) +
+      "║",
+  );
+  lines.push(
+    "║  Logs: ~/.openclaw/blockrun/logs/  (JSONL — one entry per request)".padEnd(72) + "║",
+  );
+  lines.push("╚════════════════════════════════════════════════════════════════════════╝");
+
+  return lines.join("\n");
+}
+
+/**
  * Delete all usage log files, resetting stats to zero.
  */
 export async function clearStats(): Promise<{ deletedFiles: number }> {

@@ -924,6 +924,8 @@ type UsageEntry = {
     baselineCost: number;
     savings: number;
     latencyMs: number;
+    /** Whether the request completed successfully or ended in an error */
+    status?: "success" | "error";
     /** Input (prompt) tokens reported by the provider */
     inputTokens?: number;
     /** Output (completion) tokens reported by the provider */
