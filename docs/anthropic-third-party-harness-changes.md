@@ -48,17 +48,18 @@ Claude is still there when you need it — for complex reasoning, nuanced code r
 
 From 20,000+ production requests:
 
-| Where requests actually go | % of traffic | Cost per M tokens |
-|---|---|---|
-| Gemini Flash Lite (simple tasks) | 34.5% | $0.10 / $0.40 |
-| Claude Sonnet (complex only) | 22.7% | $3.00 / $15.00 |
-| Kimi-K2.5 (medium tasks) | 16.2% | $0.60 / $3.00 |
-| Free models (trivial tasks) | 12.8% | $0.00 |
-| Others | 13.8% | varies |
+| Where requests actually go       | % of traffic | Cost per M tokens |
+| -------------------------------- | ------------ | ----------------- |
+| Gemini Flash Lite (simple tasks) | 34.5%        | $0.10 / $0.40     |
+| Claude Sonnet (complex only)     | 22.7%        | $3.00 / $15.00    |
+| Kimi-K2.5 (medium tasks)         | 16.2%        | $0.60 / $3.00     |
+| Free models (trivial tasks)      | 12.8%        | $0.00             |
+| Others                           | 13.8%        | varies            |
 
 **Result: 81% savings vs. Sonnet-for-everything, 89% vs. Opus-for-everything.**
 
 A typical user running 10K mixed requests/month:
+
 - Direct Claude Sonnet: ~$105/month
 - Direct Claude Opus: ~$175/month
 - **ClawRouter: ~$20/month**
@@ -82,12 +83,12 @@ Then point your agent at `http://localhost:8402/v1/` with any OpenAI-compatible 
 
 ### Routing Profiles
 
-| Profile | Strategy | Savings | Command |
-|---|---|---|---|
-| `auto` | Balanced cost + quality | 74–100% | `/model auto` |
-| `eco` | Maximum savings | 95–100% | `/model eco` |
-| `premium` | Best quality always | 0% | `/model premium` |
-| `free` | Free models only | 100% | `/model free` |
+| Profile   | Strategy                | Savings | Command          |
+| --------- | ----------------------- | ------- | ---------------- |
+| `auto`    | Balanced cost + quality | 74–100% | `/model auto`    |
+| `eco`     | Maximum savings         | 95–100% | `/model eco`     |
+| `premium` | Best quality always     | 0%      | `/model premium` |
+| `free`    | Free models only        | 100%    | `/model free`    |
 
 ## The Bottom Line
 
@@ -105,4 +106,4 @@ Your agents keep working. Your costs stay under control. Claude is still there w
 
 ---
 
-*ClawRouter is built by [BlockRun](https://blockrun.ai). Source code: [github.com/BlockRunAI/ClawRouter](https://github.com/BlockRunAI/ClawRouter)*
+_ClawRouter is built by [BlockRun](https://blockrun.ai). Source code: [github.com/BlockRunAI/ClawRouter](https://github.com/BlockRunAI/ClawRouter)_
