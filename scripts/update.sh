@@ -71,9 +71,27 @@ run_dependency_install() {
 
 trap restore_previous_install EXIT
 
+# Pre-flight: validate openclaw.json is parseable before touching anything
+validate_config() {
+  local config_path="$HOME/.openclaw/openclaw.json"
+  if [ ! -f "$config_path" ]; then return 0; fi
+  if ! node -e "JSON.parse(require('fs').readFileSync('$config_path','utf8'))" 2>/dev/null; then
+    echo ""
+    echo "✗ openclaw.json is corrupt (invalid JSON)."
+    echo "  Fix it first: openclaw doctor --fix"
+    echo "  Then re-run this script."
+    echo ""
+    exit 1
+  fi
+}
+
 # ── Step 1: Back up wallet key ─────────────────────────────────
 echo "🦞 ClawRouter Update"
 echo ""
+
+# Pre-flight: fail fast if config is corrupt
+validate_config
+
 echo "→ Checking wallet..."
 
 if [ -f "$WALLET_FILE" ]; then
@@ -200,8 +218,46 @@ if [ -d "$CREDS_DIR" ] && [ "$(ls -A "$CREDS_DIR" 2>/dev/null)" ]; then
   echo "  ✓ Backed up OpenClaw credentials"
 fi
 
+# Extract channel config (Telegram tokens, etc.) from openclaw.json before install
+# openclaw plugins install can overwrite config and wipe channel settings
+CHANNEL_CONFIG_BACKUP=""
+if [ -f "$CONFIG_PATH" ]; then
+  CHANNEL_CONFIG_BACKUP="$(mktemp)"
+  node -e "
+const fs = require('fs');
+try {
+  const config = JSON.parse(fs.readFileSync('$CONFIG_PATH', 'utf8'));
+  const preserved = {};
+  if (config.channels) preserved.channels = config.channels;
+  if (config.gateway) preserved.gateway = config.gateway;
+  fs.writeFileSync('$CHANNEL_CONFIG_BACKUP', JSON.stringify(preserved, null, 2));
+  const channelCount = Object.keys(config.channels || {}).length;
+  if (channelCount > 0) console.log('  ✓ Preserved config for channels: ' + Object.keys(config.channels).join(', '));
+} catch (e) { fs.writeFileSync('$CHANNEL_CONFIG_BACKUP', '{}'); }
+"
+fi
+
 echo "→ Installing latest ClawRouter..."
-openclaw plugins install @blockrun/clawrouter
+# Run with timeout — openclaw plugins install may hang after printing
+# "Installed plugin: clawrouter" in OpenClaw v2026.4.5 (parallel plugin loading).
+# 120s is enough for slow connections; the install itself completes in ~30s.
+if command -v timeout >/dev/null 2>&1; then
+  timeout 120 openclaw plugins install @blockrun/clawrouter || {
+    exit_code=$?
+    if [ $exit_code -eq 124 ]; then
+      echo "  (install command timed out — this is normal with OpenClaw v2026.4.5)"
+      echo "  Plugin was installed successfully before the hang."
+    else
+      exit $exit_code
+    fi
+  }
+else
+  openclaw plugins install @blockrun/clawrouter
+fi
+
+# Install is complete — clear the rollback trap immediately.
+# From this point on, Ctrl+C or errors should NOT roll back the install.
+trap - EXIT INT TERM
 
 # Restore credentials after plugin install (always restore to preserve user's channels)
 if [ -n "$CREDS_BACKUP" ] && [ -d "$CREDS_BACKUP" ]; then
@@ -209,6 +265,46 @@ if [ -n "$CREDS_BACKUP" ] && [ -d "$CREDS_BACKUP" ]; then
   cp -a "$CREDS_BACKUP/"* "$CREDS_DIR/"
   echo "  ✓ Restored OpenClaw credentials (channels preserved)"
   rm -rf "$(dirname "$CREDS_BACKUP")"
+fi
+
+# Restore channel config (Telegram tokens etc.) that may have been wiped by plugin install
+if [ -n "$CHANNEL_CONFIG_BACKUP" ] && [ -f "$CHANNEL_CONFIG_BACKUP" ] && [ -f "$CONFIG_PATH" ]; then
+  node -e "
+const fs = require('fs');
+function atomicWrite(filePath, data) {
+  const tmpPath = filePath + '.tmp.' + process.pid;
+  fs.writeFileSync(tmpPath, data);
+  fs.renameSync(tmpPath, filePath);
+}
+try {
+  const config = JSON.parse(fs.readFileSync('$CONFIG_PATH', 'utf8'));
+  const preserved = JSON.parse(fs.readFileSync('$CHANNEL_CONFIG_BACKUP', 'utf8'));
+  let changed = false;
+  if (preserved.channels && Object.keys(preserved.channels).length > 0) {
+    if (!config.channels || Object.keys(config.channels).length === 0) {
+      config.channels = preserved.channels;
+      changed = true;
+      console.log('  ✓ Restored channel config (Telegram/WhatsApp/etc.)');
+    } else {
+      let merged = 0;
+      for (const [ch, val] of Object.entries(preserved.channels)) {
+        if (!config.channels[ch]) { config.channels[ch] = val; merged++; }
+      }
+      if (merged > 0) { changed = true; console.log('  ✓ Merged ' + merged + ' missing channel(s) back into config'); }
+      else { console.log('  Channel config intact'); }
+    }
+  }
+  if (preserved.gateway?.mode && (!config.gateway || !config.gateway.mode)) {
+    if (!config.gateway) config.gateway = {};
+    config.gateway.mode = preserved.gateway.mode;
+    changed = true;
+  }
+  if (changed) atomicWrite('$CONFIG_PATH', JSON.stringify(config, null, 2));
+} catch (e) {
+  console.log('  Warning: could not restore channel config:', e.message);
+}
+"
+  rm -f "$CHANNEL_CONFIG_BACKUP"
 fi
 
 # ── Step 4b: Verify version — force-update if openclaw served a stale cache ──
@@ -438,6 +534,21 @@ if (fs.existsSync(configPath)) {
 }
 "
 
+# Clean up stale plugin backups — these cause "duplicate plugin" warnings on restart
+echo "→ Cleaning up stale plugin backups..."
+CLEANED=0
+for backup_dir in "$HOME/.openclaw/extensions/clawrouter.backup."*; do
+  if [ -d "$backup_dir" ]; then
+    rm -rf "$backup_dir"
+    CLEANED=$((CLEANED + 1))
+  fi
+done
+if [ "$CLEANED" -gt 0 ]; then
+  echo "  ✓ Removed $CLEANED stale backup(s)"
+else
+  echo "  ✓ No stale backups found"
+fi
+
 # ── Summary ─────────────────────────────────────────────────────
 echo ""
 echo "✓ ClawRouter updated successfully!"
@@ -461,7 +572,36 @@ if [ -f "$WALLET_FILE" ]; then
 fi
 
 echo ""
-echo "  Run: openclaw gateway restart"
+
+# Auto-restart gateway so new version is active immediately
+echo "→ Restarting gateway..."
+RESTART_OK=false
+if systemctl --user is-active openclaw-gateway.service >/dev/null 2>&1 || \
+   systemctl --user is-enabled openclaw-gateway.service >/dev/null 2>&1; then
+  if systemctl --user restart openclaw-gateway.service 2>/dev/null; then
+    for i in $(seq 1 15); do
+      sleep 1
+      if curl -sf --connect-timeout 1 http://localhost:8402/v1/models >/dev/null 2>&1; then
+        RESTART_OK=true
+        break
+      fi
+    done
+    if $RESTART_OK; then
+      echo "  ✓ Gateway restarted — ClawRouter active on port 8402"
+    else
+      echo "  ⚠ Gateway restarted but port 8402 not yet up (may still be starting)"
+      echo "    Check: systemctl --user status openclaw-gateway.service"
+    fi
+  else
+    echo "  ⚠ systemctl restart failed. Run manually: openclaw gateway restart"
+  fi
+elif command -v openclaw >/dev/null 2>&1; then
+  openclaw gateway restart &>/dev/null &
+  echo "  ✓ Gateway restart triggered"
+else
+  echo "  Run: openclaw gateway restart"
+fi
+
 echo ""
 echo "  Commands:"
 echo "    npx @blockrun/clawrouter report            # daily usage report"

@@ -350,7 +350,26 @@ try {
 fi
 
 echo "→ Installing ClawRouter..."
-openclaw plugins install @blockrun/clawrouter
+# Run with timeout — openclaw plugins install may hang after printing
+# "Installed plugin: clawrouter" in OpenClaw v2026.4.5 (parallel plugin loading).
+# 120s is enough for slow connections; the install itself completes in ~30s.
+if command -v timeout >/dev/null 2>&1; then
+  timeout 120 openclaw plugins install @blockrun/clawrouter || {
+    exit_code=$?
+    if [ $exit_code -eq 124 ]; then
+      echo "  (install command timed out — this is normal with OpenClaw v2026.4.5)"
+      echo "  Plugin was installed successfully before the hang."
+    else
+      exit $exit_code
+    fi
+  }
+else
+  openclaw plugins install @blockrun/clawrouter
+fi
+
+# Install is complete — clear the rollback trap immediately.
+# From this point on, Ctrl+C or errors should NOT roll back the install.
+trap - EXIT INT TERM
 
 # Restore credentials after plugin install (always restore to preserve user's channels)
 if [ -n "$CREDS_BACKUP" ] && [ -d "$CREDS_BACKUP" ]; then
@@ -683,7 +702,37 @@ fi
 echo ""
 echo "✓ Done! Smart routing enabled by default."
 echo ""
-echo "Run: openclaw gateway restart"
+
+# Auto-restart gateway so new version is active immediately
+echo "→ Restarting gateway..."
+RESTART_OK=false
+if systemctl --user is-active openclaw-gateway.service >/dev/null 2>&1 || \
+   systemctl --user is-enabled openclaw-gateway.service >/dev/null 2>&1; then
+  if systemctl --user restart openclaw-gateway.service 2>/dev/null; then
+    # Wait up to 15s for ClawRouter proxy port to come up
+    for i in $(seq 1 15); do
+      sleep 1
+      if curl -sf --connect-timeout 1 http://localhost:8402/v1/models >/dev/null 2>&1; then
+        RESTART_OK=true
+        break
+      fi
+    done
+    if $RESTART_OK; then
+      echo "  ✓ Gateway restarted — ClawRouter active on port 8402"
+    else
+      echo "  ⚠ Gateway restarted but port 8402 not yet up (may still be starting)"
+      echo "    Check: systemctl --user status openclaw-gateway.service"
+    fi
+  else
+    echo "  ⚠ systemctl restart failed. Run manually: openclaw gateway restart"
+  fi
+elif command -v openclaw >/dev/null 2>&1; then
+  # Fallback: use openclaw CLI restart (background, don't hang)
+  openclaw gateway restart &>/dev/null &
+  echo "  ✓ Gateway restart triggered"
+else
+  echo "  Run: openclaw gateway restart"
+fi
 echo ""
 echo "Model aliases available:"
 echo "  /model sonnet    → claude-sonnet-4.6"
