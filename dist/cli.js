@@ -73558,11 +73558,11 @@ var DEFAULT_ROUTING_CONFIG = {
   // Time-windowed promotions — auto-applied when active, ignored when expired
   promotions: [
     {
-      name: "GLM-5 Launch Promo ($0.001 flat)",
+      name: "GLM-5.1 Launch Promo ($0.001 flat)",
       startDate: "2026-04-01",
       endDate: "2026-04-15",
       tierOverrides: {
-        SIMPLE: { primary: "zai/glm-5" }
+        SIMPLE: { primary: "zai/glm-5.1" }
       },
       profiles: ["auto"]
       // only auto profile — eco stays free, premium stays premium
@@ -73689,8 +73689,9 @@ var MODEL_ALIASES = {
   "minimax-m2.7": "minimax/minimax-m2.7",
   "minimax-m2.5": "minimax/minimax-m2.5",
   // Z.AI GLM-5
-  glm: "zai/glm-5",
+  glm: "zai/glm-5.1",
   "glm-5": "zai/glm-5",
+  "glm-5.1": "zai/glm-5.1",
   "glm-5-turbo": "zai/glm-5-turbo",
   // Routing profile aliases (common variations)
   "auto-router": "auto",
@@ -74386,6 +74387,17 @@ var BLOCKRUN_MODELS = [
   },
   // Z.AI GLM-5 Models
   {
+    id: "zai/glm-5.1",
+    name: "GLM-5.1",
+    version: "5.1",
+    inputPrice: 1.4,
+    outputPrice: 4.4,
+    contextWindow: 2e5,
+    maxOutput: 128e3,
+    toolCalling: true,
+    promo: { flatPrice: 1e-3, startDate: "2026-04-01", endDate: "2026-04-15" }
+  },
+  {
     id: "zai/glm-5",
     name: "GLM-5",
     version: "5",
@@ -74404,7 +74416,8 @@ var BLOCKRUN_MODELS = [
     outputPrice: 4,
     contextWindow: 2e5,
     maxOutput: 128e3,
-    toolCalling: true
+    toolCalling: true,
+    promo: { flatPrice: 1e-3, startDate: "2026-04-01", endDate: "2026-04-15" }
   }
 ];
 function getActivePromoPrice(model, now = /* @__PURE__ */ new Date()) {
@@ -78033,6 +78046,30 @@ async function proxyRequest(req, res, apiBase, payFetch, options, routerOpts, de
       const parsedMessages = Array.isArray(parsed.messages) ? parsed.messages : [];
       const lastUserMsg = [...parsedMessages].reverse().find((m) => m.role === "user");
       hasTools = Array.isArray(parsed.tools) && parsed.tools.length > 0;
+      if (hasTools && parsed.tools) {
+        const OPENCLAW_INTERNAL_TOOLS = /* @__PURE__ */ new Set([
+          "update_plan",
+          "read",
+          "write",
+          "edit",
+          "apply_patch",
+          "exec",
+          "web_search",
+          "web_fetch",
+          "browser",
+          "memory_search"
+        ]);
+        const originalCount = parsed.tools.length;
+        parsed.tools = parsed.tools.filter((t) => !OPENCLAW_INTERNAL_TOOLS.has(t?.function?.name ?? ""));
+        const removed = originalCount - parsed.tools.length;
+        if (removed > 0) {
+          console.log(
+            `[ClawRouter] Filtered ${removed} internal OpenClaw tool${removed > 1 ? "s" : ""} (update_plan, etc.)`
+          );
+          bodyModified = true;
+          hasTools = parsed.tools.length > 0;
+        }
+      }
       const rawLastContent = lastUserMsg?.content;
       const lastContent = typeof rawLastContent === "string" ? rawLastContent : Array.isArray(rawLastContent) ? rawLastContent.filter((b) => b.type === "text").map((b) => b.text ?? "").join(" ") : "";
       if (sessionId && parsedMessages.length > 0) {
@@ -78958,6 +78995,13 @@ async function proxyRequest(req, res, apiBase, payFetch, options, routerOpts, de
   const timeoutMs = options.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
   const globalController = new AbortController();
   const timeoutId = setTimeout(() => globalController.abort(), timeoutMs);
+  const onClientClose = () => {
+    if (!globalController.signal.aborted) {
+      console.log(`[ClawRouter] Client disconnected \u2014 aborting upstream request`);
+      globalController.abort();
+    }
+  };
+  req.on("close", onClientClose);
   try {
     let modelsToTry;
     const excludeList = options.excludeModels ?? loadExcludeList();
@@ -79267,6 +79311,7 @@ data: [DONE]
       break;
     }
     clearTimeout(timeoutId);
+    req.removeListener("close", onClientClose);
     if (heartbeatInterval) {
       clearInterval(heartbeatInterval);
       heartbeatInterval = void 0;
@@ -79656,6 +79701,7 @@ data: [DONE]
     completed = true;
   } catch (err) {
     clearTimeout(timeoutId);
+    req.removeListener("close", onClientClose);
     if (heartbeatInterval) {
       clearInterval(heartbeatInterval);
       heartbeatInterval = void 0;

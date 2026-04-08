@@ -2682,6 +2682,37 @@ async function proxyRequest(
       // Early tool detection for ALL request types (explicit model + routing profile).
       // The routing-profile branch may re-assign below (no-op since same value).
       hasTools = Array.isArray(parsed.tools) && (parsed.tools as unknown[]).length > 0;
+
+      // Filter out OpenClaw internal tools that upstream models don't understand.
+      // These are agent-framework tools (update_plan, read, write, etc.) that OpenClaw
+      // injects for its own use — forwarding them causes errors or hallucinated tool_calls.
+      if (hasTools && parsed.tools) {
+        const OPENCLAW_INTERNAL_TOOLS = new Set([
+          "update_plan",
+          "read",
+          "write",
+          "edit",
+          "apply_patch",
+          "exec",
+          "web_search",
+          "web_fetch",
+          "browser",
+          "memory_search",
+        ]);
+        const originalCount = (parsed.tools as unknown[]).length;
+        parsed.tools = (
+          parsed.tools as Array<{ function?: { name?: string } }>
+        ).filter((t) => !OPENCLAW_INTERNAL_TOOLS.has(t?.function?.name ?? ""));
+        const removed = originalCount - (parsed.tools as unknown[]).length;
+        if (removed > 0) {
+          console.log(
+            `[ClawRouter] Filtered ${removed} internal OpenClaw tool${removed > 1 ? "s" : ""} (update_plan, etc.)`,
+          );
+          bodyModified = true;
+          hasTools = (parsed.tools as unknown[]).length > 0;
+        }
+      }
+
       const rawLastContent = lastUserMsg?.content;
       const lastContent =
         typeof rawLastContent === "string"
@@ -3882,6 +3913,17 @@ async function proxyRequest(
   const globalController = new AbortController();
   const timeoutId = setTimeout(() => globalController.abort(), timeoutMs);
 
+  // Abort in-flight upstream requests when the client disconnects.
+  // OpenClaw 2026.4.7+ aborts gateway requests on client disconnect;
+  // without this, ClawRouter would leave orphan upstream fetches running.
+  const onClientClose = () => {
+    if (!globalController.signal.aborted) {
+      console.log(`[ClawRouter] Client disconnected — aborting upstream request`);
+      globalController.abort();
+    }
+  };
+  req.on("close", onClientClose);
+
   try {
     // --- Build fallback chain ---
     // If we have a routing decision, get the full fallback chain for the tier
@@ -4297,8 +4339,9 @@ async function proxyRequest(
       break;
     }
 
-    // Clear timeout — request attempts completed
+    // Clear timeout and client-close listener — request attempts completed
     clearTimeout(timeoutId);
+    req.removeListener("close", onClientClose);
 
     // Clear heartbeat — real data is about to flow
     if (heartbeatInterval) {
@@ -4830,8 +4873,9 @@ async function proxyRequest(
     // Mark request as completed (for client disconnect cleanup)
     completed = true;
   } catch (err) {
-    // Clear timeout on error
+    // Clear timeout and client-close listener on error
     clearTimeout(timeoutId);
+    req.removeListener("close", onClientClose);
 
     // Clear heartbeat on error
     if (heartbeatInterval) {
