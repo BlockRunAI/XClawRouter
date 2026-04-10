@@ -30,10 +30,7 @@ import type {
 } from "./types.js";
 import { blockrunProvider, setActiveProxy } from "./provider.js";
 import { startProxy, getProxyPort } from "./proxy.js";
-import {
-  BLOCKRUN_EXA_PROVIDER_ID,
-  blockrunExaWebSearchProvider,
-} from "./web-search-provider.js";
+import { BLOCKRUN_EXA_PROVIDER_ID, blockrunExaWebSearchProvider } from "./web-search-provider.js";
 import {
   resolveOrGenerateWalletKey,
   setupSolana,
@@ -758,6 +755,49 @@ async function startProxyInBackground(api: OpenClawPluginApi): Promise<void> {
     });
 }
 
+/**
+ * Probe the proxy port and start the proxy in the background if free.
+ * Extracted so the deferred-startup timer (#147 fix) can call it too.
+ */
+function startProxyAfterPortProbe(api: OpenClawPluginApi): void {
+  const proxyPort = getProxyPort();
+  const portProbe = import("node:net").then(
+    (net) =>
+      new Promise<boolean>((resolve) => {
+        const sock = net.connect({ host: "127.0.0.1", port: proxyPort }, () => {
+          sock.destroy();
+          resolve(true); // port is already in use
+        });
+        sock.on("error", () => resolve(false)); // port is free
+        sock.setTimeout(500, () => {
+          sock.destroy();
+          resolve(false);
+        });
+      }),
+  );
+  portProbe
+    .then((portInUse) => {
+      if (portInUse) {
+        api.logger.info(
+          `Port ${proxyPort} already in use — skipping proxy startup (another instance running)`,
+        );
+        return;
+      }
+      return startProxyInBackground(api).then(async () => {
+        const port = getProxyPort();
+        const healthy = await waitForProxyHealth(port, 15000);
+        if (!healthy) {
+          api.logger.warn(`Proxy health check timed out, commands may not work immediately`);
+        }
+      });
+    })
+    .catch((err) => {
+      api.logger.error(
+        `Failed to start BlockRun proxy: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    });
+}
+
 // createStatsCommand moved to src/commands/stats.ts
 
 // createExcludeCommand moved to src/commands/exclude.ts
@@ -1327,7 +1367,10 @@ const plugin: OpenClawPluginDefinition = {
     }
     api.config.tools.web.search.provider = BLOCKRUN_EXA_PROVIDER_ID;
     api.config.tools.web.search.enabled = true;
-    const runtimeMcpResult = ensureBlockrunMcpServerConfig(api.config, blockrunMcpServer.definition);
+    const runtimeMcpResult = ensureBlockrunMcpServerConfig(
+      api.config,
+      blockrunMcpServer.definition,
+    );
 
     api.logger.info("BlockRun provider registered (55+ models via x402)");
     if (typeof api.registerWebSearchProvider === "function") {
@@ -1340,9 +1383,7 @@ const plugin: OpenClawPluginDefinition = {
           : `Configured BlockRun MCP server (${BLOCKRUN_MCP_SERVER_NAME}) via npx @blockrun/mcp@latest`,
       );
     } else if (runtimeMcpResult.status === "preserved") {
-      api.logger.info(
-        `Preserved custom BlockRun MCP server config (${BLOCKRUN_MCP_SERVER_NAME})`,
-      );
+      api.logger.info(`Preserved custom BlockRun MCP server config (${BLOCKRUN_MCP_SERVER_NAME})`);
     }
 
     // Register partner API tools (Twitter/X lookup, etc.)
@@ -1474,50 +1515,60 @@ const plugin: OpenClawPluginDefinition = {
     // instances (stale install-stage dirs), each calls register() — provider/command
     // registration above is idempotent, but proxy startup must happen exactly once.
     //
-    // Port probe: if another process already owns 8402, skip startup to avoid
-    // EADDRINUSE during gateway supervisor restarts (short-lived parallel processes).
+    // Defer startup to handle multi-phase register() (#147): OpenClaw calls
+    // register() twice during gateway startup. The first call happens before
+    // openclaw.json has been parsed, so api.pluginConfig is empty. If we start
+    // the proxy synchronously on that first call, the second call (which has
+    // the user's routing config) gets blocked by the proxyAlreadyStarted guard
+    // and the user's custom routing/wallet config is silently ignored.
+    //
+    // Strategy: when pluginConfig is empty, mark this register() call as a
+    // pending "deferred start". A short timer schedules the actual startup.
+    // If a second register() call arrives BEFORE the timer fires (the normal
+    // case — OpenClaw calls them back-to-back), it cancels the deferred start
+    // and starts the proxy immediately with the now-populated pluginConfig.
+    // If only ever one call happens (rare — user with no plugin config and
+    // single-phase gateway), the timer fires and starts the proxy with empty
+    // config (defaults) so we don't deadlock.
+    const pluginConfigEmpty =
+      !api.pluginConfig ||
+      typeof api.pluginConfig !== "object" ||
+      Object.keys(api.pluginConfig).length === 0;
+
     if (proxyAlreadyStarted) {
       api.logger.info("Proxy already started by earlier register() call — skipping");
       return;
     }
-    proc.__clawrouterProxyStarted = true;
 
-    const proxyPort = getProxyPort();
-    const portProbe = import("node:net").then(
-      (net) =>
-        new Promise<boolean>((resolve) => {
-          const sock = net.connect({ host: "127.0.0.1", port: proxyPort }, () => {
-            sock.destroy();
-            resolve(true); // port is already in use
-          });
-          sock.on("error", () => resolve(false)); // port is free
-          sock.setTimeout(500, () => {
-            sock.destroy();
-            resolve(false);
-          });
-        }),
-    );
-    portProbe
-      .then((portInUse) => {
-        if (portInUse) {
-          api.logger.info(
-            `Port ${proxyPort} already in use — skipping proxy startup (another instance running)`,
-          );
-          return;
-        }
-        return startProxyInBackground(api).then(async () => {
-          const port = getProxyPort();
-          const healthy = await waitForProxyHealth(port, 15000);
-          if (!healthy) {
-            api.logger.warn(`Proxy health check timed out, commands may not work immediately`);
-          }
-        });
-      })
-      .catch((err) => {
-        api.logger.error(
-          `Failed to start BlockRun proxy: ${err instanceof Error ? err.message : String(err)}`,
-        );
-      });
+    // If we have a pending deferred start from a prior call, cancel it — this
+    // call (with potentially populated pluginConfig) takes over.
+    const procDeferred = proc as typeof proc & {
+      __clawrouterDeferredStartTimer?: ReturnType<typeof setTimeout>;
+    };
+    if (procDeferred.__clawrouterDeferredStartTimer) {
+      clearTimeout(procDeferred.__clawrouterDeferredStartTimer);
+      procDeferred.__clawrouterDeferredStartTimer = undefined;
+      api.logger.info("Superseding earlier deferred proxy start — using current pluginConfig");
+    }
+
+    if (pluginConfigEmpty) {
+      // Defer 250ms so OpenClaw's second register() call (with populated
+      // pluginConfig) has a chance to supersede this one.
+      api.logger.info(
+        "pluginConfig empty — deferring proxy startup 250ms in case a populated config arrives",
+      );
+      procDeferred.__clawrouterDeferredStartTimer = setTimeout(() => {
+        procDeferred.__clawrouterDeferredStartTimer = undefined;
+        if (proc.__clawrouterProxyStarted) return;
+        proc.__clawrouterProxyStarted = true;
+        api.logger.info("Deferred timer fired — starting proxy with default config");
+        startProxyAfterPortProbe(api);
+      }, 250);
+      return;
+    }
+
+    proc.__clawrouterProxyStarted = true;
+    startProxyAfterPortProbe(api);
   },
 
   /**
