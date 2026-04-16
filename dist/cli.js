@@ -76266,6 +76266,7 @@ async function checkForUpdates() {
       console.log("");
       console.log(`\x1B[33m\u2B06\uFE0F  ClawRouter ${latest} available (you have ${VERSION})\x1B[0m`);
       console.log(`   Run: \x1B[36mnpx @blockrun/clawrouter@latest\x1B[0m`);
+      console.log(`   Docs: \x1B[36mhttps://blockrun.ai/clawrouter.md\x1B[0m`);
       console.log("");
     }
   } catch {
@@ -79405,10 +79406,7 @@ data: [DONE]
         if (!globalController.signal.aborted) {
           const retryController = new AbortController();
           const retryTimeoutId = setTimeout(() => retryController.abort(), PER_MODEL_TIMEOUT_MS);
-          const retrySignal = AbortSignal.any([
-            globalController.signal,
-            retryController.signal
-          ]);
+          const retrySignal = AbortSignal.any([globalController.signal, retryController.signal]);
           const retryResult = await tryModelRequest(
             upstreamUrl,
             req.method ?? "POST",
@@ -80739,7 +80737,7 @@ Environment Variables:
   BLOCKRUN_WALLET_KEY     Private key for x402 payments (auto-generated if not set)
   BLOCKRUN_PROXY_PORT     Default proxy port (default: 8402)
 
-For more info: https://github.com/BlockRunAI/ClawRouter
+For more info: https://blockrun.ai/clawrouter.md
 `);
 }
 async function queryProxy(path, port) {

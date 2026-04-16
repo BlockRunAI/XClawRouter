@@ -4,6 +4,12 @@ All notable changes to ClawRouter.
 
 ---
 
+## v0.12.151 — Apr 16, 2026
+
+- **Stop bundling blockrun-mcp** — ClawRouter no longer auto-injects `mcp.servers.blockrun` into `~/.openclaw/openclaw.json`. The `npx -y @blockrun/mcp@latest` spawns were leaking shell-wrapper + node grandchildren processes on the host (see reports of 70+ orphaned processes accumulating). Removal of the injection call is matched by a one-shot migration that strips any previously managed `mcp.servers.blockrun` entry the next time the gateway starts. User-defined `blockrun` MCP entries are preserved. **Restart your gateway after upgrading** to free any already-leaked processes. Users who still want the MCP bridge can opt in manually: `openclaw mcp add blockrun npx -y @blockrun/mcp@latest`.
+
+---
+
 ## v0.12.89 — Mar 30, 2026
 
 - **Predexon tools registered** — 8 Predexon endpoints now registered as real OpenClaw tools (`blockrun_predexon_events`, `blockrun_predexon_leaderboard`, `blockrun_predexon_markets`, `blockrun_predexon_smart_money`, `blockrun_predexon_smart_activity`, `blockrun_predexon_wallet`, `blockrun_predexon_wallet_pnl`, `blockrun_predexon_matching_markets`). Agent will now call these directly instead of falling back to browser scraping.

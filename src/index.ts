@@ -81,13 +81,7 @@ import { getStats } from "./stats.js";
 import { buildPartnerTools, PARTNER_SERVICES } from "./partners/index.js";
 import { createStatsCommand } from "./commands/stats.js";
 import { createExcludeCommand } from "./commands/exclude.js";
-import {
-  BLOCKRUN_MCP_SERVER_NAME,
-  createBlockrunMcpServerDefinition,
-  ensureBlockrunMcpServerConfig,
-  removeManagedBlockrunMcpServerConfig,
-  type McpServerDefinition,
-} from "./mcp-config.js";
+import { BLOCKRUN_MCP_SERVER_NAME, removeManagedBlockrunMcpServerConfig } from "./mcp-config.js";
 
 function getPackageRoot(): string {
   return join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -197,31 +191,6 @@ function isGatewayMode(): boolean {
   return args.includes("gateway");
 }
 
-function resolveBlockrunMcpServerDefinition(): {
-  definition: McpServerDefinition;
-  source: "local" | "npm";
-} {
-  const packageRoot = getPackageRoot();
-  const siblingRepoRoot = join(packageRoot, "..", "blockrun-mcp");
-  const siblingDistEntry = join(siblingRepoRoot, "dist", "index.js");
-
-  if (existsSync(siblingDistEntry)) {
-    return {
-      definition: createBlockrunMcpServerDefinition({
-        localDistPath: siblingDistEntry,
-        cwd: siblingRepoRoot,
-        nodeCommand: process.execPath,
-      }),
-      source: "local",
-    };
-  }
-
-  return {
-    definition: createBlockrunMcpServerDefinition(),
-    source: "npm",
-  };
-}
-
 /**
  * Inject BlockRun models config into OpenClaw config file.
  * This is required because registerProvider() alone doesn't make models available.
@@ -233,11 +202,13 @@ function resolveBlockrunMcpServerDefinition(): {
  * - Config exists but uses old port/models (update them)
  *
  * This function is called on EVERY plugin load to ensure config is always correct.
+ *
+ * Also strips any previously managed `mcp.servers.blockrun` entry we wrote in
+ * older releases — ClawRouter no longer bundles the MCP bridge (the npx-spawned
+ * grandchildren were leaking). The scrub only removes entries matching the
+ * managed shape; user-defined `blockrun` MCP servers are left alone.
  */
-function injectModelsConfig(
-  logger: { info: (msg: string) => void },
-  blockrunMcpServer: McpServerDefinition,
-): void {
+function injectModelsConfig(logger: { info: (msg: string) => void }): void {
   const configDir = join(homedir(), ".openclaw");
   const configPath = join(configDir, "openclaw.json");
 
@@ -491,13 +462,10 @@ function injectModelsConfig(
     needsWrite = true;
   }
 
-  const mcpResult = ensureBlockrunMcpServerConfig(config, blockrunMcpServer);
-  if (mcpResult.changed) {
+  if (removeManagedBlockrunMcpServerConfig(config)) {
     needsWrite = true;
     logger.info(
-      mcpResult.status === "added"
-        ? `Injected BlockRun MCP server config (${BLOCKRUN_MCP_SERVER_NAME})`
-        : `Updated BlockRun MCP server config (${BLOCKRUN_MCP_SERVER_NAME})`,
+      `Removed bundled BlockRun MCP server config (${BLOCKRUN_MCP_SERVER_NAME}) — restart the gateway to free any leaked processes`,
     );
   }
 
@@ -1466,7 +1434,6 @@ const plugin: OpenClawPluginDefinition = {
     // appear in OpenClaw's /imagine and music generation UIs.
     api.registerImageGenerationProvider(buildImageGenerationProvider());
     api.registerMusicGenerationProvider(buildMusicGenerationProvider());
-    const blockrunMcpServer = resolveBlockrunMcpServerDefinition();
     if (typeof api.registerWebSearchProvider === "function") {
       api.registerWebSearchProvider(blockrunExaWebSearchProvider);
     } else {
@@ -1477,7 +1444,7 @@ const plugin: OpenClawPluginDefinition = {
 
     // Inject models config into OpenClaw config file
     // This persists the config so models are recognized on restart
-    injectModelsConfig(api.logger, blockrunMcpServer.definition);
+    injectModelsConfig(api.logger);
 
     // Inject dummy auth profiles into agent auth stores
     // OpenClaw's agent system looks for auth even if provider has auth: []
@@ -1509,10 +1476,7 @@ const plugin: OpenClawPluginDefinition = {
     }
     api.config.tools.web.search.provider = BLOCKRUN_EXA_PROVIDER_ID;
     api.config.tools.web.search.enabled = true;
-    const runtimeMcpResult = ensureBlockrunMcpServerConfig(
-      api.config,
-      blockrunMcpServer.definition,
-    );
+    const runtimeMcpRemoved = removeManagedBlockrunMcpServerConfig(api.config);
 
     // Only log provider/tool registration on the first register() call.
     // OpenClaw calls register() 4+ times per gateway startup; logging every
@@ -1527,15 +1491,9 @@ const plugin: OpenClawPluginDefinition = {
       if (typeof api.registerWebSearchProvider === "function") {
         api.logger.info(`Registered BlockRun web_search provider (${BLOCKRUN_EXA_PROVIDER_ID})`);
       }
-      if (runtimeMcpResult.status === "added" || runtimeMcpResult.status === "updated") {
+      if (runtimeMcpRemoved) {
         api.logger.info(
-          blockrunMcpServer.source === "local"
-            ? `Configured BlockRun MCP server (${BLOCKRUN_MCP_SERVER_NAME}) from local blockrun-mcp build`
-            : `Configured BlockRun MCP server (${BLOCKRUN_MCP_SERVER_NAME}) via npx @blockrun/mcp@latest`,
-        );
-      } else if (runtimeMcpResult.status === "preserved") {
-        api.logger.info(
-          `Preserved custom BlockRun MCP server config (${BLOCKRUN_MCP_SERVER_NAME})`,
+          `Removed bundled BlockRun MCP server config (${BLOCKRUN_MCP_SERVER_NAME}) — restart the gateway to free any leaked processes`,
         );
       }
     }

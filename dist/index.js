@@ -76169,6 +76169,7 @@ async function checkForUpdates() {
       console.log("");
       console.log(`\x1B[33m\u2B06\uFE0F  ClawRouter ${latest} available (you have ${VERSION})\x1B[0m`);
       console.log(`   Run: \x1B[36mnpx @blockrun/clawrouter@latest\x1B[0m`);
+      console.log(`   Docs: \x1B[36mhttps://blockrun.ai/clawrouter.md\x1B[0m`);
       console.log("");
     }
   } catch {
@@ -79333,10 +79334,7 @@ data: [DONE]
         if (!globalController.signal.aborted) {
           const retryController = new AbortController();
           const retryTimeoutId = setTimeout(() => retryController.abort(), PER_MODEL_TIMEOUT_MS);
-          const retrySignal = AbortSignal.any([
-            globalController.signal,
-            retryController.signal
-          ]);
+          const retrySignal = AbortSignal.any([globalController.signal, retryController.signal]);
           const retryResult = await tryModelRequest(
             upstreamUrl,
             req.method ?? "POST",
@@ -80657,59 +80655,17 @@ Usage:
 
 // src/mcp-config.ts
 var BLOCKRUN_MCP_SERVER_NAME = "blockrun";
-var BLOCKRUN_MCP_NPM_SPEC = "@blockrun/mcp@latest";
-var BLOCKRUN_MCP_DEFAULT_TIMEOUT_MS = 3e4;
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 function isStringArray(value) {
   return Array.isArray(value) && value.every((entry) => typeof entry === "string");
 }
-function normalizeStringRecord(value) {
-  if (!isRecord(value)) return void 0;
-  const entries = Object.entries(value).filter((entry) => {
-    return typeof entry[1] === "string";
-  });
-  if (entries.length === 0) return void 0;
-  entries.sort(([a], [b]) => a.localeCompare(b));
-  return Object.fromEntries(entries);
-}
-function normalizeServerDefinition(server) {
-  const normalized = {};
-  for (const key of ["command", "url", "transport", "cwd", "connectionTimeoutMs"]) {
-    const value = server[key];
-    if (value !== void 0) normalized[key] = value;
-  }
-  if (isStringArray(server.args)) {
-    normalized.args = [...server.args];
-  }
-  const env = normalizeStringRecord(server.env);
-  if (env) normalized.env = env;
-  const headers = normalizeStringRecord(server.headers);
-  if (headers) normalized.headers = headers;
-  return normalized;
-}
 function looksLikeBlockrunPackageArgs(args) {
   return args.some((arg) => arg.startsWith("@blockrun/mcp"));
 }
 function looksLikeLocalBlockrunDistArgs(args) {
   return args.some((arg) => arg.replaceAll("\\", "/").endsWith("/blockrun-mcp/dist/index.js"));
-}
-function createBlockrunMcpServerDefinition(opts) {
-  const connectionTimeoutMs = opts?.connectionTimeoutMs ?? BLOCKRUN_MCP_DEFAULT_TIMEOUT_MS;
-  if (opts?.localDistPath) {
-    return {
-      command: opts.nodeCommand ?? process.execPath,
-      args: [opts.localDistPath],
-      cwd: opts.cwd,
-      connectionTimeoutMs
-    };
-  }
-  return {
-    command: "npx",
-    args: ["-y", BLOCKRUN_MCP_NPM_SPEC],
-    connectionTimeoutMs
-  };
 }
 function isManagedBlockrunMcpServerDefinition(value) {
   if (!isRecord(value)) return false;
@@ -80718,35 +80674,6 @@ function isManagedBlockrunMcpServerDefinition(value) {
     return looksLikeBlockrunPackageArgs(args);
   }
   return looksLikeLocalBlockrunDistArgs(args);
-}
-function ensureBlockrunMcpServerConfig(config, desiredServer) {
-  if (!config.mcp || typeof config.mcp !== "object" || Array.isArray(config.mcp)) {
-    config.mcp = {};
-  }
-  const mcp = config.mcp;
-  if (!mcp.servers || typeof mcp.servers !== "object" || Array.isArray(mcp.servers)) {
-    mcp.servers = {};
-  }
-  const servers = mcp.servers;
-  const existing = servers[BLOCKRUN_MCP_SERVER_NAME];
-  if (!existing) {
-    servers[BLOCKRUN_MCP_SERVER_NAME] = desiredServer;
-    return { changed: true, status: "added" };
-  }
-  if (!isRecord(existing)) {
-    servers[BLOCKRUN_MCP_SERVER_NAME] = desiredServer;
-    return { changed: true, status: "updated" };
-  }
-  if (!isManagedBlockrunMcpServerDefinition(existing)) {
-    return { changed: false, status: "preserved" };
-  }
-  const existingNormalized = JSON.stringify(normalizeServerDefinition(existing));
-  const desiredNormalized = JSON.stringify(normalizeServerDefinition(desiredServer));
-  if (existingNormalized === desiredNormalized) {
-    return { changed: false, status: "unchanged" };
-  }
-  servers[BLOCKRUN_MCP_SERVER_NAME] = desiredServer;
-  return { changed: true, status: "updated" };
 }
 function removeManagedBlockrunMcpServerConfig(config) {
   if (!config.mcp || typeof config.mcp !== "object" || Array.isArray(config.mcp)) {
@@ -81148,26 +81075,7 @@ function isGatewayMode() {
   const args = process.argv;
   return args.includes("gateway");
 }
-function resolveBlockrunMcpServerDefinition() {
-  const packageRoot = getPackageRoot();
-  const siblingRepoRoot = join10(packageRoot, "..", "blockrun-mcp");
-  const siblingDistEntry = join10(siblingRepoRoot, "dist", "index.js");
-  if (existsSync3(siblingDistEntry)) {
-    return {
-      definition: createBlockrunMcpServerDefinition({
-        localDistPath: siblingDistEntry,
-        cwd: siblingRepoRoot,
-        nodeCommand: process.execPath
-      }),
-      source: "local"
-    };
-  }
-  return {
-    definition: createBlockrunMcpServerDefinition(),
-    source: "npm"
-  };
-}
-function injectModelsConfig(logger, blockrunMcpServer) {
+function injectModelsConfig(logger) {
   const configDir = join10(homedir7(), ".openclaw");
   const configPath = join10(configDir, "openclaw.json");
   let config = {};
@@ -81372,11 +81280,10 @@ function injectModelsConfig(logger, blockrunMcpServer) {
     search.enabled = true;
     needsWrite = true;
   }
-  const mcpResult = ensureBlockrunMcpServerConfig(config, blockrunMcpServer);
-  if (mcpResult.changed) {
+  if (removeManagedBlockrunMcpServerConfig(config)) {
     needsWrite = true;
     logger.info(
-      mcpResult.status === "added" ? `Injected BlockRun MCP server config (${BLOCKRUN_MCP_SERVER_NAME})` : `Updated BlockRun MCP server config (${BLOCKRUN_MCP_SERVER_NAME})`
+      `Removed bundled BlockRun MCP server config (${BLOCKRUN_MCP_SERVER_NAME}) \u2014 restart the gateway to free any leaked processes`
     );
   }
   if (needsWrite) {
@@ -82106,7 +82013,6 @@ var plugin = {
     api.registerProvider(blockrunProvider);
     api.registerImageGenerationProvider(buildImageGenerationProvider());
     api.registerMusicGenerationProvider(buildMusicGenerationProvider());
-    const blockrunMcpServer = resolveBlockrunMcpServerDefinition();
     if (typeof api.registerWebSearchProvider === "function") {
       api.registerWebSearchProvider(blockrunExaWebSearchProvider);
     } else {
@@ -82114,7 +82020,7 @@ var plugin = {
         "OpenClaw runtime does not expose registerWebSearchProvider(); blockrun-exa search is unavailable on this version."
       );
     }
-    injectModelsConfig(api.logger, blockrunMcpServer.definition);
+    injectModelsConfig(api.logger);
     injectAuthProfile(api.logger);
     const runtimePort = getProxyPort();
     if (!api.config.models) {
@@ -82141,10 +82047,7 @@ var plugin = {
     }
     api.config.tools.web.search.provider = BLOCKRUN_EXA_PROVIDER_ID;
     api.config.tools.web.search.enabled = true;
-    const runtimeMcpResult = ensureBlockrunMcpServerConfig(
-      api.config,
-      blockrunMcpServer.definition
-    );
+    const runtimeMcpRemoved = removeManagedBlockrunMcpServerConfig(api.config);
     const shouldLogRegistration = !proc.__clawrouterRegistrationLogged;
     proc.__clawrouterRegistrationLogged = true;
     if (shouldLogRegistration) {
@@ -82152,13 +82055,9 @@ var plugin = {
       if (typeof api.registerWebSearchProvider === "function") {
         api.logger.info(`Registered BlockRun web_search provider (${BLOCKRUN_EXA_PROVIDER_ID})`);
       }
-      if (runtimeMcpResult.status === "added" || runtimeMcpResult.status === "updated") {
+      if (runtimeMcpRemoved) {
         api.logger.info(
-          blockrunMcpServer.source === "local" ? `Configured BlockRun MCP server (${BLOCKRUN_MCP_SERVER_NAME}) from local blockrun-mcp build` : `Configured BlockRun MCP server (${BLOCKRUN_MCP_SERVER_NAME}) via npx @blockrun/mcp@latest`
-        );
-      } else if (runtimeMcpResult.status === "preserved") {
-        api.logger.info(
-          `Preserved custom BlockRun MCP server config (${BLOCKRUN_MCP_SERVER_NAME})`
+          `Removed bundled BlockRun MCP server config (${BLOCKRUN_MCP_SERVER_NAME}) \u2014 restart the gateway to free any leaked processes`
         );
       }
     }
