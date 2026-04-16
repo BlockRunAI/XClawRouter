@@ -496,6 +496,97 @@ describe("plugin lifecycle", () => {
     }
   });
 
+  it("strips managed blockrun MCP server from api.config on register and does not re-inject", async () => {
+    vi.doMock("./proxy.js", () => ({
+      getProxyPort: () => 8402,
+      startProxy: vi.fn(),
+    }));
+    vi.doMock("./auth.js", () => ({
+      resolveOrGenerateWalletKey: vi.fn(async () => ({
+        key: "0x1234567890123456789012345678901234567890123456789012345678901234",
+        address: "0x1111111111111111111111111111111111111111",
+        source: "saved",
+      })),
+      setupSolana: vi.fn(),
+      savePaymentChain: vi.fn(),
+      resolvePaymentChain: vi.fn(async () => "base"),
+      WALLET_FILE: "/tmp/wallet",
+      MNEMONIC_FILE: "/tmp/mnemonic",
+    }));
+    vi.doMock("./provider.js", () => ({
+      blockrunProvider: { id: "blockrun" },
+      setActiveProxy: vi.fn(),
+    }));
+    vi.doMock("./models.js", () => ({
+      OPENCLAW_MODELS: [],
+    }));
+    vi.doMock("./web-search-provider.js", () => ({
+      BLOCKRUN_EXA_PROVIDER_ID: "blockrun-exa",
+      blockrunExaWebSearchProvider: { id: "blockrun-exa" },
+    }));
+    vi.doMock("./partners/index.js", () => ({
+      buildPartnerTools: vi.fn(() => []),
+      PARTNER_SERVICES: [],
+    }));
+    vi.doMock("./commands/stats.js", () => ({
+      createStatsCommand: vi.fn(() => ({ name: "stats", handler: vi.fn() })),
+    }));
+    vi.doMock("./commands/exclude.js", () => ({
+      createExcludeCommand: vi.fn(() => ({ name: "exclude", handler: vi.fn() })),
+    }));
+    vi.doMock("./version.js", () => ({
+      VERSION: "test",
+    }));
+    vi.doMock("./exclude-models.js", () => ({
+      loadExcludeList: vi.fn(() => new Set()),
+    }));
+    // Exercise the real ./mcp-config.js migration path. Override any
+    // lingering doMock from earlier tests in this file by pointing back
+    // at the actual implementation.
+    vi.doMock("./mcp-config.js", async () => await vi.importActual("./mcp-config.js"));
+
+    const { default: plugin } = await import("./index.js");
+
+    const api = {
+      id: "test",
+      name: "test",
+      source: "local",
+      config: {
+        mcp: {
+          servers: {
+            blockrun: {
+              command: "npx",
+              args: ["-y", "@blockrun/mcp@latest"],
+              connectionTimeoutMs: 30_000,
+            },
+          },
+        },
+      },
+      pluginConfig: {},
+      logger: {
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+      },
+      registerProvider: vi.fn(),
+      registerImageGenerationProvider: vi.fn(),
+      registerMusicGenerationProvider: vi.fn(),
+      registerWebSearchProvider: vi.fn(),
+      registerTool: vi.fn(),
+      registerHook: vi.fn(),
+      registerHttpRoute: vi.fn(),
+      registerService: vi.fn(),
+      registerCommand: vi.fn(),
+      resolvePath: vi.fn((input: string) => input),
+      on: vi.fn(),
+    } as unknown as import("./types.js").OpenClawPluginApi;
+
+    plugin.register?.(api);
+
+    const runtimeConfig = api.config as import("./types.js").OpenClawConfig;
+    expect(runtimeConfig.mcp?.servers).toBeUndefined();
+  });
+
   it("closes stale in-flight proxy startups that finish after deactivate", async () => {
     vi.useFakeTimers();
 
