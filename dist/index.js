@@ -74190,7 +74190,7 @@ var DEFAULT_ROUTING_CONFIG = {
     {
       name: "GLM-5.1 Launch Promo ($0.001 flat)",
       startDate: "2026-04-01",
-      endDate: "2026-04-15",
+      endDate: "2026-05-01",
       tierOverrides: {
         SIMPLE: { primary: "zai/glm-5.1" }
       },
@@ -78039,6 +78039,24 @@ async function startProxy(options) {
     })
   };
 }
+function isDegenerateCompletion(bodyBuf) {
+  try {
+    const parsed = JSON.parse(bodyBuf.toString());
+    const choice = parsed.choices?.[0];
+    const finishReason = choice?.finish_reason;
+    if (finishReason !== "length") return false;
+    const content = choice?.message?.content ?? "";
+    if (content.length < 80) return false;
+    const tail = content.slice(-80);
+    const tailChars = [...tail];
+    const firstChar = tailChars[0];
+    if (!/[^\p{L}\p{N}\s]/u.test(firstChar)) return false;
+    const sameCount = tailChars.filter((c) => c === firstChar).length;
+    return sameCount >= 60;
+  } catch {
+    return false;
+  }
+}
 async function tryModelRequest(upstreamUrl, method, headers, body, modelId, maxTokens, payFetch, balanceMonitor, signal) {
   let requestBody = body;
   try {
@@ -79302,7 +79320,25 @@ data: [DONE]
         continue;
       }
       if (result.success && result.response) {
-        upstream = result.response;
+        const bodyChunks2 = await readBodyWithTimeout(result.response.body);
+        const bodyBuf = Buffer.concat(bodyChunks2);
+        if (isDegenerateCompletion(bodyBuf) && !isLastAttempt) {
+          console.warn(
+            `[ClawRouter] \u26A0\uFE0F  Degenerate output from ${tryModel} (finish_reason=length + repetition loop) \u2014 retrying with next fallback`
+          );
+          recordProviderError(tryModel, "server_error");
+          failedAttempts.push({
+            model: tryModel,
+            reason: "degenerate_output",
+            status: 200
+          });
+          continue;
+        }
+        upstream = new Response(new Uint8Array(bodyBuf), {
+          status: result.response.status,
+          statusText: result.response.statusText,
+          headers: result.response.headers
+        });
         actualModelUsed = tryModel;
         console.log(`[ClawRouter] Success with model: ${tryModel}`);
         if (options.maxCostPerRunUsd && effectiveSessionId && !FREE_MODELS.has(tryModel)) {
@@ -79909,6 +79945,18 @@ data: [DONE]
             responseOutputTokens = rspJson.usage.completion_tokens;
         }
       } catch {
+      }
+    }
+    if (accumulatedContent.length >= 80) {
+      const tail = accumulatedContent.slice(-80);
+      const tailChars = [...tail];
+      const firstChar = tailChars[0];
+      const isPunct = /[^\p{L}\p{N}\s]/u.test(firstChar);
+      const sameCount = tailChars.filter((c) => c === firstChar).length;
+      if (isPunct && sameCount >= 60) {
+        console.warn(
+          `[ClawRouter] \u26A0\uFE0F  Degenerate output detected \u2014 model=${actualModelUsed || "unknown"} len=${accumulatedContent.length} head=${JSON.stringify(accumulatedContent.slice(0, 40))} tail_repeats_${JSON.stringify(firstChar)}=${sameCount}/80`
+        );
       }
     }
     if (sessionId && accumulatedContent) {

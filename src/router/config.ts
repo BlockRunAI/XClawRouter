@@ -1217,7 +1217,7 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
     {
       name: "GLM-5.1 Launch Promo ($0.001 flat)",
       startDate: "2026-04-01",
-      endDate: "2026-04-15",
+      endDate: "2026-05-01",
       tierOverrides: {
         SIMPLE: { primary: "zai/glm-5.1" },
       },

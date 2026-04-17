@@ -2617,6 +2617,42 @@ type ModelRequestResult = {
 };
 
 /**
+ * Detect degenerate completions (repetition loops).
+ *
+ * Pattern observed in production (2026-04-16): `nvidia/kimi-k2.5` on long
+ * Chinese agentic conversations returned e.g. ` 好的!!!!!!!!...` for 1024
+ * tokens and hit `finish_reason: "length"`. Similar failures occur with
+ * other models on certain inputs.
+ *
+ * Criteria (conservative to avoid false positives on markdown tables etc.):
+ *   - `finish_reason` must be "length" (didn't self-terminate)
+ *   - tail has ≥60 of the same punctuation char in the last 80 chars
+ */
+function isDegenerateCompletion(bodyBuf: Buffer): boolean {
+  try {
+    const parsed = JSON.parse(bodyBuf.toString()) as {
+      choices?: Array<{ message?: { content?: string }; finish_reason?: string }>;
+    };
+    const choice = parsed.choices?.[0];
+    const finishReason = choice?.finish_reason;
+    if (finishReason !== "length") return false;
+
+    const content = choice?.message?.content ?? "";
+    if (content.length < 80) return false;
+
+    const tail = content.slice(-80);
+    const tailChars = [...tail];
+    const firstChar = tailChars[0];
+    if (!/[^\p{L}\p{N}\s]/u.test(firstChar)) return false;
+
+    const sameCount = tailChars.filter((c) => c === firstChar).length;
+    return sameCount >= 60;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Attempt a request with a specific model.
  * Returns the response or error details for fallback decision.
  */
@@ -4350,7 +4386,30 @@ async function proxyRequest(
       }
 
       if (result.success && result.response) {
-        upstream = result.response;
+        // Buffer the body so we can peek for degenerate output before committing
+        // to this model. Non-streaming JSON responses are small; this is cheap.
+        const bodyChunks = await readBodyWithTimeout(result.response.body);
+        const bodyBuf = Buffer.concat(bodyChunks);
+
+        if (isDegenerateCompletion(bodyBuf) && !isLastAttempt) {
+          console.warn(
+            `[ClawRouter] ⚠️  Degenerate output from ${tryModel} (finish_reason=length + repetition loop) — retrying with next fallback`,
+          );
+          recordProviderError(tryModel, "server_error");
+          failedAttempts.push({
+            model: tryModel,
+            reason: "degenerate_output",
+            status: 200,
+          });
+          continue;
+        }
+
+        // Re-wrap the buffered body so downstream code can read upstream.body normally
+        upstream = new Response(new Uint8Array(bodyBuf), {
+          status: result.response.status,
+          statusText: result.response.statusText,
+          headers: result.response.headers,
+        });
         actualModelUsed = tryModel;
         console.log(`[XClawRouter] Success with model: ${tryModel}`);
         // Accumulate estimated cost to session for maxCostPerRun tracking
@@ -5151,6 +5210,20 @@ async function proxyRequest(
         }
       } catch {
         // Ignore parse errors - journal just won't have content for this response
+      }
+    }
+
+    // --- Degenerate-output diagnostic (fires only on repetition loops) ---
+    if (accumulatedContent.length >= 80) {
+      const tail = accumulatedContent.slice(-80);
+      const tailChars = [...tail];
+      const firstChar = tailChars[0];
+      const isPunct = /[^\p{L}\p{N}\s]/u.test(firstChar);
+      const sameCount = tailChars.filter((c) => c === firstChar).length;
+      if (isPunct && sameCount >= 60) {
+        console.warn(
+          `[ClawRouter] ⚠️  Degenerate output detected — model=${actualModelUsed || "unknown"} len=${accumulatedContent.length} head=${JSON.stringify(accumulatedContent.slice(0, 40))} tail_repeats_${JSON.stringify(firstChar)}=${sameCount}/80`,
+        );
       }
     }
 
