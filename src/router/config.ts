@@ -1076,7 +1076,8 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
         "anthropic/claude-sonnet-4.6", // 2,110ms, IQ 52 — quality fallback
         "deepseek/deepseek-chat", // 1,431ms, IQ 32
         "google/gemini-2.5-flash", // 1,238ms, IQ 20 — cheap last resort
-        "openai/gpt-5.4", // 6,213ms, IQ 57 — slowest but highest quality
+        "openai/gpt-5.5", // Newest OpenAI flagship — 1M+ ctx, native agent + computer use; benchmark TBD
+        "openai/gpt-5.4", // 6,213ms, IQ 57 — previous flagship, benchmarked
       ],
     },
     REASONING: {
@@ -1162,7 +1163,8 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
         "xai/grok-4-0709", // 503-resistant flagship
         "moonshot/kimi-k2.6", // Moonshot flagship, independent infra
         "moonshot/kimi-k2.5",
-        "openai/gpt-5.4", // Newest OpenAI flagship (slow but stable)
+        "openai/gpt-5.5", // Newest OpenAI flagship — 1M+ ctx, native agent + computer use
+        "openai/gpt-5.4", // Previous flagship (slow but stable, benchmarked at 6,213ms)
         "openai/gpt-5.3-codex",
         "deepseek/deepseek-chat", // Cheap, reliable
         "free/qwen3-coder-480b", // NVIDIA free ultimate backstop
@@ -1209,7 +1211,8 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
         "anthropic/claude-opus-4.6", // 2,139ms
         "xai/grok-4-0709", // 1,348ms — strong tool use, independent infra
         "moonshot/kimi-k2.5", // strong tool use, independent infra
-        "openai/gpt-5.4", // 6,213ms — slow but reliable flagship
+        "openai/gpt-5.5", // Newest flagship — native agent + computer use (exactly the agentic-tier use case)
+        "openai/gpt-5.4", // Previous flagship — 6,213ms, reliable
         "deepseek/deepseek-chat", // 1,431ms — cheap, reliable
         "free/qwen3-coder-480b", // NVIDIA free ultimate backstop
       ],

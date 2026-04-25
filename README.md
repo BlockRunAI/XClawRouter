@@ -340,6 +340,7 @@ Edit existing images with `/img2img`:
 | anthropic/claude-sonnet-4.6 |     $3.00 |     $15.00 |    $0.0090 | 200K    | reasoning, vision, agentic, tools |
 | xai/grok-3                  |     $3.00 |     $15.00 |    $0.0090 | 131K    | reasoning, tools                  |
 | anthropic/claude-opus-4.6   |     $5.00 |     $25.00 |    $0.0150 | 200K    | reasoning, vision, agentic, tools |
+| openai/gpt-5.5              |     $5.00 |     $30.00 |    $0.0175 | 1M      | reasoning, vision, agentic, tools |
 | openai/o1                   |    $15.00 |     $60.00 |    $0.0375 | 200K    | reasoning, tools                  |
 | openai/gpt-5.2-pro          |    $21.00 |    $168.00 |    $0.0945 | 400K    | reasoning, tools                  |
 | openai/gpt-5.4-pro          |    $30.00 |    $180.00 |    $0.1050 | 400K    | reasoning, tools                  |

@@ -378,7 +378,9 @@ function injectModelsConfig(logger: { info: (msg: string) => void }): void {
     "anthropic/claude-sonnet-4.6",
     "anthropic/claude-opus-4.7",
     "anthropic/claude-opus-4.6",
+    "anthropic/claude-opus-4.5",
     "anthropic/claude-haiku-4.5",
+    "openai/gpt-5.5",
     "openai/gpt-5.4",
     "openai/gpt-5.3",
     "openai/gpt-5.3-codex",
@@ -390,7 +392,7 @@ function injectModelsConfig(logger: { info: (msg: string) => void }): void {
     "moonshot/kimi-k2.6",
     "moonshot/kimi-k2.5",
     "xai/grok-3",
-    "minimax/minimax-m2.5",
+    "minimax/minimax-m2.7",
     // Free models (free/ prefix so users see "free" in picker)
     "free/gpt-oss-120b",
     "free/gpt-oss-20b",

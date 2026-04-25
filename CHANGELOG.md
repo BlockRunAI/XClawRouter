@@ -4,6 +4,17 @@ All notable changes to ClawRouter.
 
 ---
 
+## v0.12.168 — Apr 25, 2026
+
+- **Propagate `openai/gpt-5.5` everywhere it should appear.** v0.12.167 added the model to `BLOCKRUN_MODELS`, the `gpt-5.5` alias, and the install-script `TOP_MODELS` allowlist — but every other place ClawRouter advertises a flagship still pointed at `gpt-5.4`. This release closes the gap so 5.5 is a first-class citizen across routing, the picker, marketing, and the OpenClaw skill page.
+  - **`src/router/config.ts` — three fallback-chain insertions, no primary changes.** `openai/gpt-5.5` slots in immediately before `openai/gpt-5.4` in `auto.COMPLEX.fallback`, `premiumTiers.COMPLEX.fallback`, and `agenticTiers.COMPLEX.fallback`. Both stay reachable; 5.5 gets preference when the chain reaches OpenAI. Comments updated so 5.5 is "newest flagship — 1M+ ctx, native agent + computer use" and 5.4 is "previous flagship — benchmarked at 6,213ms, IQ 57". Tier primaries are unchanged: promoting 5.5 to a primary slot needs measured latency/IQ data, which we don't have yet — that's a separate decision tracked outside this release.
+  - **`src/index.ts` — `/model` picker allowlist updated.** `src/index.ts` carries its own copy of `TOP_MODELS` (separate from the install scripts' identical-but-distinct list — both populate the OpenClaw allowlist depending on install path). Added `openai/gpt-5.5` and `anthropic/claude-opus-4.5` (also missed in v0.12.167's `BLOCKRUN_MODELS` add for opus-4.5), and replaced the now-deprecated `minimax/minimax-m2.5` with `minimax/minimax-m2.7` so the picker matches the deprecation we landed yesterday.
+  - **`README.md` — Premium Models pricing table.** Added the `openai/gpt-5.5` row at $5.00/$30.00 per 1M tokens (~$0.0175 per 0.5K-in-0.5K-out request), 1M context, full feature set. Placed between `claude-opus-4.6` ($0.0150) and `o1` ($0.0375) so the table stays sorted by approximate $/request.
+  - **`skills/clawrouter/SKILL.md` — model list line.** The "55+ models including..." line now leads `gpt-5.5, gpt-5.4, ...` and includes `claude-opus-4.5` alongside 4.7/4.6.
+- **Files deliberately not touched:** `docs/smart-llm-router-14-dimension-classifier.md` and `docs/llm-router-benchmark-46-models-sub-1ms-routing.md` are frozen benchmark archives — adding 5.5 to a benchmark table without measured numbers would falsify the document. The `posts/*.md` marketing content is similarly point-in-time. Those will be refreshed if/when 5.5 gets benchmarked.
+
+---
+
 ## v0.12.167 — Apr 24, 2026
 
 - **Realign the model registry to BlockRun source-of-truth.** Audit found three drifts where ClawRouter's `BLOCKRUN_MODELS` table didn't match what `blockrun/src/lib/models.ts` actually exposes. The server is the source of truth for which models exist and what they cost; the proxy's local view should mirror that 1:1 so cost estimation, the `/model` picker, and routing tier selection all see the same world the server does.
