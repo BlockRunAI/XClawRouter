@@ -532,8 +532,9 @@ describe("tool forwarding", () => {
 
     // The XML must NOT leak as delta.content
     const xmlLeak = chunks.some((chunk) =>
-      chunk.choices?.some((choice) =>
-        typeof choice.delta?.content === "string" && choice.delta.content.includes("<tool_call>"),
+      chunk.choices?.some(
+        (choice) =>
+          typeof choice.delta?.content === "string" && choice.delta.content.includes("<tool_call>"),
       ),
     );
     expect(xmlLeak).toBe(false);
@@ -652,7 +653,9 @@ describe("tool forwarding", () => {
       }>;
     };
     expect(json.choices?.[0]?.finish_reason).toBe("stop");
-    expect(json.choices?.[0]?.message?.content).toBe("Plain assistant prose with no tool calls at all.");
+    expect(json.choices?.[0]?.message?.content).toBe(
+      "Plain assistant prose with no tool calls at all.",
+    );
     expect(json.choices?.[0]?.message?.tool_calls ?? []).toHaveLength(0);
   });
 

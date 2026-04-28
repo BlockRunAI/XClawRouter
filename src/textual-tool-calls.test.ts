@@ -80,10 +80,10 @@ describe("extractTextualToolCalls", () => {
 
     it("extracts multiple invokes inside one function_calls block", () => {
       const content =
-        '<function_calls>' +
+        "<function_calls>" +
         '<invoke name="a"><parameter name="q">1</parameter></invoke>' +
         '<invoke name="b"><parameter name="q">2</parameter></invoke>' +
-        '</function_calls>';
+        "</function_calls>";
       const result = extractTextualToolCalls(content);
       expect(result.toolCalls).toHaveLength(2);
       expect(result.toolCalls.map((c) => c.function.name)).toEqual(["a", "b"]);
