@@ -20,8 +20,8 @@ Agents can only sign transactions.<br><br>
 
 [![npm version](https://img.shields.io/npm/v/@blockrun/clawrouter.svg?style=flat-square&color=cb3837)](https://npmjs.com/package/@blockrun/clawrouter)
 [![npm downloads](https://img.shields.io/npm/dm/@blockrun/clawrouter.svg?style=flat-square&color=blue)](https://npmjs.com/package/@blockrun/clawrouter)
-[![GitHub stars](https://img.shields.io/github/stars/BlockRunAI/ClawRouter?style=flat-square&label=GitHub%20stars)](https://github.com/BlockRunAI/ClawRouter)
-[![CI](https://img.shields.io/github/actions/workflow/status/BlockRunAI/ClawRouter/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/BlockRunAI/ClawRouter/actions)
+[![GitHub stars](https://img.shields.io/github/stars/BlockRunAI/XClawRouter?style=flat-square&label=GitHub%20stars)](https://github.com/BlockRunAI/XClawRouter)
+[![CI](https://img.shields.io/github/actions/workflow/status/BlockRunAI/XClawRouter/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/BlockRunAI/XClawRouter/actions)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://typescriptlang.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
@@ -280,38 +280,38 @@ Edit existing images with `/img2img`:
 
 ### Budget Models (under $0.001/request)
 
-| Model                                          | Input $/M | Output $/M | ~$/request | Context | Features                          |
-| ---------------------------------------------- | --------: | ---------: | ---------: | ------- | --------------------------------- |
-| nvidia/gpt-oss-120b                            |  **FREE** |   **FREE** |     **$0** | 128K    | default free model                |
-| nvidia/gpt-oss-20b                             |  **FREE** |   **FREE** |     **$0** | 128K    | smaller, faster                   |
-| nvidia/mistral-small-4-119b                    |  **FREE** |   **FREE** |     **$0** | 131K    | fastest free chat (114 tok/s)     |
-| nvidia/deepseek-v4-pro                         |  **FREE** |   **FREE** |     **$0** | 1M      | reasoning, MMLU-Pro 87.5          |
-| nvidia/deepseek-v4-flash                       |  **FREE** |   **FREE** |     **$0** | 1M      | reasoning, ~5x faster than v4-pro |
-| nvidia/qwen3-next-80b-a3b-thinking             |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                         |
-| nvidia/qwen3-coder-480b                        |  **FREE** |   **FREE** |     **$0** | 131K    | coding                            |
-| nvidia/glm-4.7                                 |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                         |
-| nvidia/llama-4-maverick                        |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                         |
-| nvidia/nemotron-3-nano-omni-30b-a3b-reasoning  |  **FREE** |   **FREE** |     **$0** | 256K    | reasoning, **vision** (text+img+video+audio) |
-| openai/gpt-5-nano                  |     $0.05 |      $0.40 |    $0.0002 | 128K    | tools                             |
-| openai/gpt-4.1-nano                |     $0.10 |      $0.40 |    $0.0003 | 128K    | tools                             |
-| google/gemini-2.5-flash-lite       |     $0.10 |      $0.40 |    $0.0003 | 1M      | tools                             |
-| openai/gpt-4o-mini                 |     $0.15 |      $0.60 |    $0.0004 | 128K    | tools                             |
-| xai/grok-4-fast                    |     $0.20 |      $0.50 |    $0.0004 | 131K    | tools                             |
-| xai/grok-4-fast-reasoning          |     $0.20 |      $0.50 |    $0.0004 | 131K    | reasoning, tools                  |
-| xai/grok-4-1-fast                  |     $0.20 |      $0.50 |    $0.0004 | 131K    | tools                             |
-| xai/grok-4-1-fast-reasoning        |     $0.20 |      $0.50 |    $0.0004 | 131K    | reasoning, tools                  |
-| xai/grok-4-0709                    |     $0.20 |      $1.50 |    $0.0009 | 131K    | reasoning, tools                  |
-| openai/gpt-5-mini                  |     $0.25 |      $2.00 |    $0.0011 | 200K    | tools                             |
-| deepseek/deepseek-chat             |     $0.28 |      $0.42 |    $0.0004 | 128K    | tools                             |
-| deepseek/deepseek-reasoner         |     $0.28 |      $0.42 |    $0.0004 | 128K    | reasoning, tools                  |
-| xai/grok-3-mini                    |     $0.30 |      $0.50 |    $0.0004 | 131K    | tools                             |
-| minimax/minimax-m2.7               |     $0.30 |      $1.20 |    $0.0008 | 205K    | reasoning, agentic, tools         |
-| minimax/minimax-m2.5               |     $0.30 |      $1.20 |    $0.0008 | 205K    | reasoning, agentic, tools         |
-| google/gemini-2.5-flash            |     $0.30 |      $2.50 |    $0.0014 | 1M      | vision, tools                     |
-| openai/gpt-4.1-mini                |     $0.40 |      $1.60 |    $0.0010 | 128K    | tools                             |
-| google/gemini-3-flash-preview      |     $0.50 |      $3.00 |    $0.0018 | 1M      | vision                            |
-| moonshot/kimi-k2.5                 |     $0.60 |      $3.00 |    $0.0018 | 262K    | reasoning, vision, agentic, tools |
-| moonshot/kimi-k2.6                 |     $0.95 |      $4.00 |    $0.0025 | 262K    | reasoning, vision, agentic, tools |
+| Model                                         | Input $/M | Output $/M | ~$/request | Context | Features                                     |
+| --------------------------------------------- | --------: | ---------: | ---------: | ------- | -------------------------------------------- |
+| nvidia/gpt-oss-120b                           |  **FREE** |   **FREE** |     **$0** | 128K    | default free model                           |
+| nvidia/gpt-oss-20b                            |  **FREE** |   **FREE** |     **$0** | 128K    | smaller, faster                              |
+| nvidia/mistral-small-4-119b                   |  **FREE** |   **FREE** |     **$0** | 131K    | fastest free chat (114 tok/s)                |
+| nvidia/deepseek-v4-pro                        |  **FREE** |   **FREE** |     **$0** | 1M      | reasoning, MMLU-Pro 87.5                     |
+| nvidia/deepseek-v4-flash                      |  **FREE** |   **FREE** |     **$0** | 1M      | reasoning, ~5x faster than v4-pro            |
+| nvidia/qwen3-next-80b-a3b-thinking            |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                                    |
+| nvidia/qwen3-coder-480b                       |  **FREE** |   **FREE** |     **$0** | 131K    | coding                                       |
+| nvidia/glm-4.7                                |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                                    |
+| nvidia/llama-4-maverick                       |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                                    |
+| nvidia/nemotron-3-nano-omni-30b-a3b-reasoning |  **FREE** |   **FREE** |     **$0** | 256K    | reasoning, **vision** (text+img+video+audio) |
+| openai/gpt-5-nano                             |     $0.05 |      $0.40 |    $0.0002 | 128K    | tools                                        |
+| openai/gpt-4.1-nano                           |     $0.10 |      $0.40 |    $0.0003 | 128K    | tools                                        |
+| google/gemini-2.5-flash-lite                  |     $0.10 |      $0.40 |    $0.0003 | 1M      | tools                                        |
+| openai/gpt-4o-mini                            |     $0.15 |      $0.60 |    $0.0004 | 128K    | tools                                        |
+| xai/grok-4-fast                               |     $0.20 |      $0.50 |    $0.0004 | 131K    | tools                                        |
+| xai/grok-4-fast-reasoning                     |     $0.20 |      $0.50 |    $0.0004 | 131K    | reasoning, tools                             |
+| xai/grok-4-1-fast                             |     $0.20 |      $0.50 |    $0.0004 | 131K    | tools                                        |
+| xai/grok-4-1-fast-reasoning                   |     $0.20 |      $0.50 |    $0.0004 | 131K    | reasoning, tools                             |
+| xai/grok-4-0709                               |     $0.20 |      $1.50 |    $0.0009 | 131K    | reasoning, tools                             |
+| openai/gpt-5-mini                             |     $0.25 |      $2.00 |    $0.0011 | 200K    | tools                                        |
+| deepseek/deepseek-chat                        |     $0.28 |      $0.42 |    $0.0004 | 128K    | tools                                        |
+| deepseek/deepseek-reasoner                    |     $0.28 |      $0.42 |    $0.0004 | 128K    | reasoning, tools                             |
+| xai/grok-3-mini                               |     $0.30 |      $0.50 |    $0.0004 | 131K    | tools                                        |
+| minimax/minimax-m2.7                          |     $0.30 |      $1.20 |    $0.0008 | 205K    | reasoning, agentic, tools                    |
+| minimax/minimax-m2.5                          |     $0.30 |      $1.20 |    $0.0008 | 205K    | reasoning, agentic, tools                    |
+| google/gemini-2.5-flash                       |     $0.30 |      $2.50 |    $0.0014 | 1M      | vision, tools                                |
+| openai/gpt-4.1-mini                           |     $0.40 |      $1.60 |    $0.0010 | 128K    | tools                                        |
+| google/gemini-3-flash-preview                 |     $0.50 |      $3.00 |    $0.0018 | 1M      | vision                                       |
+| moonshot/kimi-k2.5                            |     $0.60 |      $3.00 |    $0.0018 | 262K    | reasoning, vision, agentic, tools            |
+| moonshot/kimi-k2.6                            |     $0.95 |      $4.00 |    $0.0025 | 262K    | reasoning, vision, agentic, tools            |
 
 ### Mid-Range Models ($0.001–$0.01/request)
 
@@ -486,7 +486,7 @@ npx @blockrun/clawrouter doctor opus "深度分析我的配置"
 ## Development
 
 ```bash
-git clone https://github.com/BlockRunAI/ClawRouter.git
+git clone https://github.com/BlockRunAI/XClawRouter.git
 cd ClawRouter
 npm install
 npm run build

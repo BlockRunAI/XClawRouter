@@ -89,7 +89,9 @@ describe("exclude-models e2e", () => {
     await new Promise((r) => setTimeout(r, 500));
 
     // Check that the exclude filter log appeared
-    const excludeFilterLogs = consoleLogs.filter((l) => l.includes("[XClawRouter] Exclude filter:"));
+    const excludeFilterLogs = consoleLogs.filter((l) =>
+      l.includes("[XClawRouter] Exclude filter:"),
+    );
     expect(excludeFilterLogs.length).toBeGreaterThan(0);
 
     // Check that excluded models appear in the filter log

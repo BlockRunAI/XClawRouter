@@ -16,7 +16,7 @@ BlockRun's answer: just take them.
 
 ## The Lineup: 11 Models, $0.00
 
-Through [ClawRouter](https://github.com/BlockRunAI/ClawRouter) — BlockRun's local AI routing proxy — you get zero-cost access to the following:
+Through [ClawRouter](https://github.com/BlockRunAI/XClawRouter) — BlockRun's local AI routing proxy — you get zero-cost access to the following:
 
 | Model                     | Parameters | Context | Reasoning | Best For                                      |
 | ------------------------- | ---------- | ------- | --------- | --------------------------------------------- |

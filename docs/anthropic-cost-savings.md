@@ -50,7 +50,7 @@ This is where you're paying for real value:
 
 ## The Solution: ClawRouter
 
-[ClawRouter](https://github.com/BlockRunAI/ClawRouter) is an open-source local proxy that sits between your app and 41+ AI models. It saves you money in three ways: **smart routing**, **token optimization**, and **response caching**.
+[ClawRouter](https://github.com/BlockRunAI/XClawRouter) is an open-source local proxy that sits between your app and 41+ AI models. It saves you money in three ways: **smart routing**, **token optimization**, and **response caching**.
 
 ```
 ┌─────────────┐     ┌──────────────────────────────┐     ┌──────────────────┐
@@ -345,7 +345,7 @@ npx @blockrun/clawrouter
 
 **Links:**
 
-- [ClawRouter on GitHub](https://github.com/BlockRunAI/ClawRouter) — MIT License
+- [ClawRouter on GitHub](https://github.com/BlockRunAI/XClawRouter) — MIT License
 - [BlockRun](https://blockrun.ai) — AI model marketplace
 - [x402 Protocol](https://www.x402.org/) — Per-request crypto payments for AI
 
