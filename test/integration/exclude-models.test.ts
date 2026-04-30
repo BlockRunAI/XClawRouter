@@ -125,7 +125,7 @@ describe("exclude-models e2e", () => {
 
     await new Promise((r) => setTimeout(r, 500));
 
-    // nvidia/gpt-oss-120b (FREE_MODEL) should never be tried
+    // free/gpt-oss-120b (FREE_MODEL) should never be tried
     const tryingLogs = consoleLogs.filter((l) => l.includes("[ClawRouter] Trying model"));
     for (const tryLog of tryingLogs) {
       expect(tryLog).not.toContain("free/gpt-oss-120b");

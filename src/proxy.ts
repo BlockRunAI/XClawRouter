@@ -110,15 +110,19 @@ const ROUTING_PROFILES = new Set([
   "blockrun/premium",
   "premium",
 ]);
+// Default free model first (auto-pick order). gpt-oss-120b is the historical
+// default — heavy users rely on it. New entries appended in chain order.
 const FREE_MODELS = new Set([
   "free/gpt-oss-120b",
   "free/gpt-oss-20b",
-  "free/deepseek-v3.2",
+  "free/mistral-small-4-119b", // 114 tok/s — fastest free chat
+  "free/deepseek-v4-pro", // 1M ctx, MMLU-Pro 87.5 — strongest free reasoning
+  "free/deepseek-v4-flash", // 1M ctx, ~5x faster than v4-pro
+  "free/qwen3-next-80b-a3b-thinking", // 116 tok/s reasoning
   "free/qwen3-coder-480b",
   "free/glm-4.7",
   "free/llama-4-maverick",
-  "free/qwen3-next-80b-a3b-thinking",
-  "free/mistral-small-4-119b",
+  "free/nemotron-3-nano-omni-30b-a3b-reasoning", // first vision-capable free
 ]);
 /** Pick the best available free model that isn't excluded. */
 function pickFreeModel(excludeList?: Set<string>): string | undefined {

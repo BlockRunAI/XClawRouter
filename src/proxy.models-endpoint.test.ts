@@ -9,9 +9,11 @@ describe("buildProxyModelList", () => {
 
     expect(ids.has("flash")).toBe(true);
     expect(ids.has("kimi")).toBe(true);
+    expect(ids.has("kimi-k2.6")).toBe(true);
     expect(ids.has("free")).toBe(true);
     expect(ids.has("google/gemini-2.5-flash")).toBe(true);
     expect(ids.has("moonshot/kimi-k2.5")).toBe(true);
+    expect(ids.has("moonshot/kimi-k2.6")).toBe(true);
   });
 
   it("returns unique model IDs", () => {

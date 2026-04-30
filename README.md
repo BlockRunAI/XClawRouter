@@ -7,11 +7,11 @@
 <p>Agents can't sign up for accounts. Agents can't enter credit cards.<br>
 Agents can only sign transactions.<br><br>
 <strong>ClawRouter is the only LLM router that lets agents operate independently.</strong><br><br>
-<em>8 models free, no crypto required. No signup. No API key. No credit card.</em></p>
+<em>10 models free, no crypto required. No signup. No API key. No credit card.</em></p>
 
 <br>
 
-<img src="https://img.shields.io/badge/🆓_8_Free_Models-success?style=for-the-badge" alt="8 free models">&nbsp;
+<img src="https://img.shields.io/badge/🆓_10_Free_Models-success?style=for-the-badge" alt="10 free models">&nbsp;
 <img src="https://img.shields.io/badge/🤖_Agent--Native-black?style=for-the-badge" alt="Agent native">&nbsp;
 <img src="https://img.shields.io/badge/🔑_Zero_API_Keys-blue?style=for-the-badge" alt="No API keys">&nbsp;
 <img src="https://img.shields.io/badge/⚡_Local_Routing-yellow?style=for-the-badge" alt="Local routing">&nbsp;
@@ -46,7 +46,7 @@ Every other LLM router was built for **human developers** — create an account,
 
 ClawRouter is built for the agent-first world:
 
-- **Starts at $0** — 8 NVIDIA models are free forever, no balance needed to start
+- **Starts at $0** — 10 NVIDIA models are free forever (incl. 1M-context DeepSeek V4 + a vision-capable Nemotron Omni)
 - **No accounts** — a wallet is generated locally, no signup
 - **No API keys** — your wallet signature IS authentication
 - **No model selection** — 15-dimension scoring picks the right model automatically
@@ -78,7 +78,7 @@ This is the stack that lets agents operate autonomously: **x402 + USDC + local r
 
 ## Quick Start
 
-> **No wallet? 8 models work free out of the box.** Install, run, and pin `nvidia/gpt-oss-120b` — no crypto, no signup, no balance required. Add USDC later when you want paid models.
+> **No wallet? 10 models work free out of the box.** Install, run, and pin `nvidia/gpt-oss-120b` (or any of the 10) — no crypto, no signup, no balance required. Add USDC later when you want paid models.
 
 ### Option A — OpenClaw Agent
 
@@ -104,7 +104,7 @@ npx @blockrun/clawrouter
 ```
 
 **2. Fund your wallet** — optional, skip for free tier
-Your wallet address is printed on first run. For paid models, send a few USDC on Base or Solana — $5 covers thousands of requests. To stay at $0, pin any of the 8 free models (e.g. `nvidia/gpt-oss-120b`) or use `/model free` inside OpenClaw.
+Your wallet address is printed on first run. For paid models, send a few USDC on Base or Solana — $5 covers thousands of requests. To stay at $0, pin any of the 10 free models (e.g. `nvidia/gpt-oss-120b`) or use `/model free` inside OpenClaw.
 
 **3. Point your client at `http://localhost:8402`**
 
@@ -195,7 +195,7 @@ Request → Weighted Scorer (15 dimensions) → Tier → Best Model → Response
 
 | Tier      | ECO Model                           | AUTO Model                            | PREMIUM Model                |
 | --------- | ----------------------------------- | ------------------------------------- | ---------------------------- |
-| SIMPLE    | nvidia/gpt-oss-120b (**FREE**)      | gemini-2.5-flash ($0.30/$2.50)        | kimi-k2.5                    |
+| SIMPLE    | nvidia/gpt-oss-120b (**FREE**)      | gemini-2.5-flash ($0.30/$2.50)        | kimi-k2.6                    |
 | MEDIUM    | gemini-3.1-flash-lite ($0.25/$1.50) | kimi-k2.5 ($0.60/$3.00)               | gpt-5.3-codex ($1.75/$14.00) |
 | COMPLEX   | gemini-3.1-flash-lite ($0.25/$1.50) | gemini-3.1-pro ($2/$12)               | claude-opus-4.6 ($5/$25)     |
 | REASONING | grok-4-1-fast ($0.20/$0.50)         | grok-4-1-fast-reasoning ($0.20/$0.50) | claude-sonnet-4.6 ($3/$15)   |
@@ -280,16 +280,18 @@ Edit existing images with `/img2img`:
 
 ### Budget Models (under $0.001/request)
 
-| Model                              | Input $/M | Output $/M | ~$/request | Context | Features                          |
-| ---------------------------------- | --------: | ---------: | ---------: | ------- | --------------------------------- |
-| nvidia/gpt-oss-120b                |  **FREE** |   **FREE** |     **$0** | 128K    |                                   |
-| nvidia/gpt-oss-20b                 |  **FREE** |   **FREE** |     **$0** | 128K    |                                   |
-| nvidia/deepseek-v3.2               |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                         |
-| nvidia/qwen3-coder-480b            |  **FREE** |   **FREE** |     **$0** | 131K    | coding                            |
-| nvidia/glm-4.7                     |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                         |
-| nvidia/llama-4-maverick            |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                         |
-| nvidia/qwen3-next-80b-a3b-thinking |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                         |
-| nvidia/mistral-small-4-119b        |  **FREE** |   **FREE** |     **$0** | 131K    |                                   |
+| Model                                          | Input $/M | Output $/M | ~$/request | Context | Features                          |
+| ---------------------------------------------- | --------: | ---------: | ---------: | ------- | --------------------------------- |
+| nvidia/gpt-oss-120b                            |  **FREE** |   **FREE** |     **$0** | 128K    | default free model                |
+| nvidia/gpt-oss-20b                             |  **FREE** |   **FREE** |     **$0** | 128K    | smaller, faster                   |
+| nvidia/mistral-small-4-119b                    |  **FREE** |   **FREE** |     **$0** | 131K    | fastest free chat (114 tok/s)     |
+| nvidia/deepseek-v4-pro                         |  **FREE** |   **FREE** |     **$0** | 1M      | reasoning, MMLU-Pro 87.5          |
+| nvidia/deepseek-v4-flash                       |  **FREE** |   **FREE** |     **$0** | 1M      | reasoning, ~5x faster than v4-pro |
+| nvidia/qwen3-next-80b-a3b-thinking             |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                         |
+| nvidia/qwen3-coder-480b                        |  **FREE** |   **FREE** |     **$0** | 131K    | coding                            |
+| nvidia/glm-4.7                                 |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                         |
+| nvidia/llama-4-maverick                        |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                         |
+| nvidia/nemotron-3-nano-omni-30b-a3b-reasoning  |  **FREE** |   **FREE** |     **$0** | 256K    | reasoning, **vision** (text+img+video+audio) |
 | openai/gpt-5-nano                  |     $0.05 |      $0.40 |    $0.0002 | 128K    | tools                             |
 | openai/gpt-4.1-nano                |     $0.10 |      $0.40 |    $0.0003 | 128K    | tools                             |
 | google/gemini-2.5-flash-lite       |     $0.10 |      $0.40 |    $0.0003 | 1M      | tools                             |
@@ -345,7 +347,7 @@ Edit existing images with `/img2img`:
 | openai/gpt-5.2-pro          |    $21.00 |    $168.00 |    $0.0945 | 400K    | reasoning, tools                  |
 | openai/gpt-5.4-pro          |    $30.00 |    $180.00 |    $0.1050 | 400K    | reasoning, tools                  |
 
-> **Free tier:** 8 models cost nothing — `/model free` points to gpt-oss-120b, or pick any free model directly (e.g., `/model qwen-thinking`, `/model mistral-small`, `/model deepseek-free`).
+> **Free tier:** 10 models cost nothing — `/model free` points to gpt-oss-120b, or pick any free model directly (e.g., `/model deepseek-v4-pro` for reasoning, `/model nemotron-omni` for vision, `/model qwen-thinking`, `/model deepseek-v4-flash` for 1M context, `/model mistral-small`).
 > **Best value:** `gpt-5-nano` and `gemini-2.5-flash-lite` deliver strong results at ~$0.0003/request.
 
 ---
@@ -421,7 +423,7 @@ For basic usage, no configuration needed. For advanced options:
 Block specific models from being routed to. Useful if a model doesn't follow your agent instructions or you want to control costs.
 
 ```bash
-/exclude add nvidia/gpt-oss-120b   # Block the free model
+/exclude add nvidia/gpt-oss-120b   # Block the default free model
 /exclude add grok-4                # Aliases work — blocks all grok-4 variants
 /exclude add gpt-5.4               # Skip expensive models
 /exclude                           # Show current exclusions
@@ -585,7 +587,7 @@ ClawRouter works with any tool that makes OpenAI-compatible API calls — point 
 
 ### Is ClawRouter free?
 
-ClawRouter itself is free and MIT licensed. You pay only for the LLM API calls routed through it — and 8 NVIDIA-hosted models (`gpt-oss-120b`, `gpt-oss-20b`, `deepseek-v3.2`, `qwen3-coder-480b`, `glm-4.7`, `llama-4-maverick`, `qwen3-next-80b-a3b-thinking`, `mistral-small-4-119b`) are completely free. Use `/model free` to smart-route across them, or pick any by name.
+ClawRouter itself is free and MIT licensed. You pay only for the LLM API calls routed through it — and 10 NVIDIA-hosted models (`gpt-oss-120b`, `gpt-oss-20b`, `mistral-small-4-119b`, `deepseek-v4-pro`, `deepseek-v4-flash`, `qwen3-next-80b-a3b-thinking`, `qwen3-coder-480b`, `glm-4.7`, `llama-4-maverick`, `nemotron-3-nano-omni-30b-a3b-reasoning`) are completely free. Use `/model free` to smart-route across them, or pick any by name.
 
 ---
 

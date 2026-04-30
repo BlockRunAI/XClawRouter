@@ -1094,9 +1094,12 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
   // Eco tier configs - absolute cheapest (blockrun/eco)
   ecoTiers: {
     SIMPLE: {
-      primary: "free/gpt-oss-120b", // FREE! $0.00/$0.00
+      primary: "free/gpt-oss-120b", // FREE! $0.00/$0.00 — heavy user default
       fallback: [
         "free/gpt-oss-20b", // FREE — smaller, faster
+        "free/mistral-small-4-119b", // FREE — 114 tok/s, fastest free chat
+        "free/deepseek-v4-flash", // FREE — 1M context, ~5x faster than v4-pro
+        "free/qwen3-next-80b-a3b-thinking", // FREE — 116 tok/s reasoning
         "google/gemini-3.1-flash-lite", // $0.25/$1.50 — newest flash-lite
         "openai/gpt-5.4-nano", // $0.20/$1.25 — fast nano
         "google/gemini-2.5-flash-lite", // $0.10/$0.40
