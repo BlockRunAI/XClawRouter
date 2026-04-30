@@ -195,6 +195,21 @@ function isGatewayMode(): boolean {
 }
 
 /**
+ * Detect if we're running inside an `openclaw plugins <subcommand>` invocation.
+ *
+ * OpenClaw's plugin manager hashes openclaw.json at the start of these commands
+ * and asserts the file is byte-identical when it commits the install record.
+ * If we mutate the file from inside register() / deactivate() during these
+ * commands, the commit fails with ConfigMutationConflictError. In this mode we
+ * skip our own disk writes — the install script's post-install steps and the
+ * next gateway start (which re-runs register()) will persist the config.
+ */
+function isPluginInstallMode(): boolean {
+  const args = process.argv;
+  return args.includes("plugins");
+}
+
+/**
  * Inject BlockRun models config into OpenClaw config file.
  * This is required because registerProvider() alone doesn't make models available.
  *
@@ -441,7 +456,16 @@ function injectModelsConfig(logger: { info: (msg: string) => void }): void {
   // Write config file if any changes were made
   // Use atomic write (temp file + rename) to prevent partial writes that could
   // corrupt the config and cause other plugins to lose their settings on next load.
+  //
+  // SKIP during `openclaw plugins install`: the installer holds a hash of the
+  // file and asserts it matches at commit. Writing here triggers
+  // ConfigMutationConflictError. The install script catches up via post-install
+  // steps, and the next gateway start runs register() again to persist.
   if (needsWrite) {
+    if (isPluginInstallMode()) {
+      logger.info("Deferring config persist until gateway start (plugin install in progress)");
+      return;
+    }
     try {
       const tmpPath = `${configPath}.tmp.${process.pid}`;
       writeFileSync(tmpPath, JSON.stringify(config, null, 2));
@@ -1962,54 +1986,64 @@ const plugin: OpenClawPluginDefinition = {
     resetProxyStartupState();
 
     // 2. Clean openclaw.json — remove provider, plugin entries, model allowlist
+    //
+    // Skip when invoked from `openclaw plugins uninstall`: openclaw holds a hash
+    // of the file and asserts it matches at commit. The uninstall script
+    // (uninstall.sh) handles config cleanup separately, so we lose nothing.
     try {
-      const configPath = join(homedir(), ".openclaw", "openclaw.json");
-      if (existsSync(configPath)) {
-        const config = JSON.parse(readTextFileSync(configPath));
+      if (isPluginInstallMode()) {
+        api.logger.info(
+          "Skipping in-process config cleanup (openclaw plugins is managing the file)",
+        );
+      } else {
+        const configPath = join(homedir(), ".openclaw", "openclaw.json");
+        if (existsSync(configPath)) {
+          const config = JSON.parse(readTextFileSync(configPath));
 
-        // Remove blockrun provider
-        if (config.models?.providers?.blockrun) {
-          delete config.models.providers.blockrun;
-        }
-
-        // Remove managed BlockRun MCP server config, but preserve any user-managed override.
-        removeManagedBlockrunMcpServerConfig(config as OpenClawConfig);
-
-        // Remove plugin entries (all case variants)
-        for (const key of ["clawrouter", "XClawRouter", "@blockrun/xclawrouter"]) {
-          if (config.plugins?.entries?.[key]) delete config.plugins.entries[key];
-          if (config.plugins?.installs?.[key]) delete config.plugins.installs[key];
-        }
-
-        // Remove from plugins.allow
-        if (Array.isArray(config.plugins?.allow)) {
-          config.plugins.allow = config.plugins.allow.filter(
-            (p: string) =>
-              p !== "clawrouter" && p !== "XClawRouter" && p !== "@blockrun/xclawrouter",
-          );
-        }
-
-        // Remove blockrun models from allowlist
-        if (config.agents?.defaults?.models) {
-          for (const key of Object.keys(config.agents.defaults.models)) {
-            if (key.startsWith("blockrun/")) delete config.agents.defaults.models[key];
+          // Remove blockrun provider
+          if (config.models?.providers?.blockrun) {
+            delete config.models.providers.blockrun;
           }
-        }
 
-        // Reset default model if it's blockrun
-        if (config.agents?.defaults?.model?.primary?.startsWith("blockrun/")) {
-          delete config.agents.defaults.model.primary;
-        }
+          // Remove managed BlockRun MCP server config, but preserve any user-managed override.
+          removeManagedBlockrunMcpServerConfig(config as OpenClawConfig);
 
-        if (config.tools?.web?.search?.provider === BLOCKRUN_EXA_PROVIDER_ID) {
-          delete config.tools.web.search.provider;
-        }
+          // Remove plugin entries (all case variants)
+          for (const key of ["clawrouter", "XClawRouter", "@blockrun/xclawrouter"]) {
+            if (config.plugins?.entries?.[key]) delete config.plugins.entries[key];
+            if (config.plugins?.installs?.[key]) delete config.plugins.installs[key];
+          }
 
-        // Atomic write
-        const tmpPath = `${configPath}.tmp.${process.pid}`;
-        writeFileSync(tmpPath, JSON.stringify(config, null, 2));
-        renameSync(tmpPath, configPath);
-        api.logger.info("XClawRouter config cleaned up");
+          // Remove from plugins.allow
+          if (Array.isArray(config.plugins?.allow)) {
+            config.plugins.allow = config.plugins.allow.filter(
+              (p: string) =>
+                p !== "clawrouter" && p !== "XClawRouter" && p !== "@blockrun/xclawrouter",
+            );
+          }
+
+          // Remove blockrun models from allowlist
+          if (config.agents?.defaults?.models) {
+            for (const key of Object.keys(config.agents.defaults.models)) {
+              if (key.startsWith("blockrun/")) delete config.agents.defaults.models[key];
+            }
+          }
+
+          // Reset default model if it's blockrun
+          if (config.agents?.defaults?.model?.primary?.startsWith("blockrun/")) {
+            delete config.agents.defaults.model.primary;
+          }
+
+          if (config.tools?.web?.search?.provider === BLOCKRUN_EXA_PROVIDER_ID) {
+            delete config.tools.web.search.provider;
+          }
+
+          // Atomic write
+          const tmpPath = `${configPath}.tmp.${process.pid}`;
+          writeFileSync(tmpPath, JSON.stringify(config, null, 2));
+          renameSync(tmpPath, configPath);
+          api.logger.info("XClawRouter config cleaned up");
+        }
       }
     } catch (err) {
       api.logger.warn(`Config cleanup failed: ${err instanceof Error ? err.message : String(err)}`);

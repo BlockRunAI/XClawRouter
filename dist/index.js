@@ -82220,6 +82220,10 @@ function isGatewayMode() {
   const args = process.argv;
   return args.includes("gateway");
 }
+function isPluginInstallMode() {
+  const args = process.argv;
+  return args.includes("plugins");
+}
 function injectModelsConfig(logger) {
   const configDir = join10(homedir8(), ".openclaw");
   const configPath = join10(configDir, "openclaw.json");
@@ -82397,6 +82401,10 @@ function injectModelsConfig(logger) {
     );
   }
   if (needsWrite) {
+    if (isPluginInstallMode()) {
+      logger.info("Deferring config persist until gateway start (plugin install in progress)");
+      return;
+    }
     try {
       const tmpPath = `${configPath}.tmp.${process.pid}`;
       writeFileSync3(tmpPath, JSON.stringify(config, null, 2));
@@ -83564,37 +83572,43 @@ ${errText}`
     }
     resetProxyStartupState();
     try {
-      const configPath = join10(homedir8(), ".openclaw", "openclaw.json");
-      if (existsSync4(configPath)) {
-        const config = JSON.parse(readTextFileSync(configPath));
-        if (config.models?.providers?.blockrun) {
-          delete config.models.providers.blockrun;
-        }
-        removeManagedBlockrunMcpServerConfig(config);
-        for (const key of ["clawrouter", "XClawRouter", "@blockrun/xclawrouter"]) {
-          if (config.plugins?.entries?.[key]) delete config.plugins.entries[key];
-          if (config.plugins?.installs?.[key]) delete config.plugins.installs[key];
-        }
-        if (Array.isArray(config.plugins?.allow)) {
-          config.plugins.allow = config.plugins.allow.filter(
-            (p) => p !== "clawrouter" && p !== "XClawRouter" && p !== "@blockrun/xclawrouter"
-          );
-        }
-        if (config.agents?.defaults?.models) {
-          for (const key of Object.keys(config.agents.defaults.models)) {
-            if (key.startsWith("blockrun/")) delete config.agents.defaults.models[key];
+      if (isPluginInstallMode()) {
+        api.logger.info(
+          "Skipping in-process config cleanup (openclaw plugins is managing the file)"
+        );
+      } else {
+        const configPath = join10(homedir8(), ".openclaw", "openclaw.json");
+        if (existsSync4(configPath)) {
+          const config = JSON.parse(readTextFileSync(configPath));
+          if (config.models?.providers?.blockrun) {
+            delete config.models.providers.blockrun;
           }
+          removeManagedBlockrunMcpServerConfig(config);
+          for (const key of ["clawrouter", "XClawRouter", "@blockrun/xclawrouter"]) {
+            if (config.plugins?.entries?.[key]) delete config.plugins.entries[key];
+            if (config.plugins?.installs?.[key]) delete config.plugins.installs[key];
+          }
+          if (Array.isArray(config.plugins?.allow)) {
+            config.plugins.allow = config.plugins.allow.filter(
+              (p) => p !== "clawrouter" && p !== "XClawRouter" && p !== "@blockrun/xclawrouter"
+            );
+          }
+          if (config.agents?.defaults?.models) {
+            for (const key of Object.keys(config.agents.defaults.models)) {
+              if (key.startsWith("blockrun/")) delete config.agents.defaults.models[key];
+            }
+          }
+          if (config.agents?.defaults?.model?.primary?.startsWith("blockrun/")) {
+            delete config.agents.defaults.model.primary;
+          }
+          if (config.tools?.web?.search?.provider === BLOCKRUN_EXA_PROVIDER_ID) {
+            delete config.tools.web.search.provider;
+          }
+          const tmpPath = `${configPath}.tmp.${process.pid}`;
+          writeFileSync3(tmpPath, JSON.stringify(config, null, 2));
+          renameSync(tmpPath, configPath);
+          api.logger.info("XClawRouter config cleaned up");
         }
-        if (config.agents?.defaults?.model?.primary?.startsWith("blockrun/")) {
-          delete config.agents.defaults.model.primary;
-        }
-        if (config.tools?.web?.search?.provider === BLOCKRUN_EXA_PROVIDER_ID) {
-          delete config.tools.web.search.provider;
-        }
-        const tmpPath = `${configPath}.tmp.${process.pid}`;
-        writeFileSync3(tmpPath, JSON.stringify(config, null, 2));
-        renameSync(tmpPath, configPath);
-        api.logger.info("XClawRouter config cleaned up");
       }
     } catch (err) {
       api.logger.warn(`Config cleanup failed: ${err instanceof Error ? err.message : String(err)}`);

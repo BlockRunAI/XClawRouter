@@ -4,6 +4,12 @@ All notable changes to ClawRouter.
 
 ---
 
+## v0.12.172 — Apr 30, 2026
+
+- **Fix `ConfigMutationConflictError` during `openclaw plugins install`.** OpenClaw's plugin manager hashes `~/.openclaw/openclaw.json` at the start of `plugins install` and asserts the file is byte-identical when it commits the install record. The plugin's `register()` hook was eagerly writing to that file (provider config, model allowlist, web-search provider, default routing) — the writes invalidated openclaw's hash baseline and the install commit blew up with `config changed since last load`, killing the whole install on machines where the blockrun provider didn't already exist. Plugin now defers its on-disk config persist when `argv` contains `plugins`; in-memory `api.config` is still populated so routing works for the running process, and the install script's existing post-install steps (allowlist population, baseUrl re-verification) plus the next gateway start finish writing the file. The same guard now wraps `deactivate()`'s config cleanup so `openclaw plugins uninstall` won't trip the same race.
+
+---
+
 ## v0.12.171 — Apr 29, 2026
 
 - **Three new free NVIDIA-hosted models added.** BlockRun refreshed the free catalog on 2026-04-29 with three additions, all wired into ClawRouter as `free/`-prefixed entries:
@@ -30,7 +36,7 @@ All notable changes to ClawRouter.
 
 ## v0.12.169 — Apr 28, 2026
 
-- **Synthesize structured `tool_calls` from XML/text formats some models emit in `content`.** Earlier tool-call hardening (v0.12.165, v0.12.166) handled the case where upstream returned a structured `tool_calls` array (or signaled `finish_reason: "tool_calls"`) and the model also leaked planning prose into `content`. This release closes a third gap where upstream returns *no* structured tool calls at all and the model's actual tool invocations live as XML/text inside `content` — typical when a downstream client (OpenClaw is the visible offender) prompt-engineers tool instructions instead of sending a structured `tools[]` schema, so the model dutifully honors the prompt format and emits the call as text. Two formats observed in the wild are now recognized and converted to OpenAI-shaped `tool_calls`:
+- **Synthesize structured `tool_calls` from XML/text formats some models emit in `content`.** Earlier tool-call hardening (v0.12.165, v0.12.166) handled the case where upstream returned a structured `tool_calls` array (or signaled `finish_reason: "tool_calls"`) and the model also leaked planning prose into `content`. This release closes a third gap where upstream returns _no_ structured tool calls at all and the model's actual tool invocations live as XML/text inside `content` — typical when a downstream client (OpenClaw is the visible offender) prompt-engineers tool instructions instead of sending a structured `tools[]` schema, so the model dutifully honors the prompt format and emits the call as text. Two formats observed in the wild are now recognized and converted to OpenAI-shaped `tool_calls`:
   - **OpenClaw-style** — `<tool_call>NAME<arg_key>K1</arg_key><arg_value>V1</arg_value>...<arg_key>Kn</arg_key><arg_value>Vn</arg_value></tool_call>`. Requires at least one `arg_key`/`arg_value` pair so prose like `<tool_call>name</tool_call>` in documentation does not mis-fire. Surfaced via a real ClawRouter→OpenClaw session where the agent emitted six identical `<tool_call>web_search<arg_key>...</arg_key>...` blocks in 60 seconds, none executed, then hallucinated "I need a Brave API key" as the failure explanation.
   - **Anthropic-style** — `<function_calls><invoke name="NAME"><parameter name="K">V</parameter>...</invoke></function_calls>`. Reproduction confirmed Moonshot Kimi K2.6 emits this format when given prompt-engineered tool instructions without a structured `tools[]` schema.
   - Values are best-effort coerced via `JSON.parse` so `<arg_value>5</arg_value>` becomes `5` (number) and `<arg_value>true</arg_value>` becomes `true` (boolean); strings that don't parse stay as strings. Synthesized IDs are OpenAI-shaped (`call_<base64url>`).
