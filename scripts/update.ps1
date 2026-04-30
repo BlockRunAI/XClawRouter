@@ -1,6 +1,6 @@
 # ClawRouter Update Script for Windows (PowerShell)
-# Usage: iwr -useb https://blockrun.ai/ClawRouter-update.ps1 | iex
-#    or: powershell -ExecutionPolicy Bypass -Command "iwr -useb https://blockrun.ai/ClawRouter-update.ps1 | iex"
+# Usage: iwr -useb https://blockrun.ai/XClawRouter-update.ps1 | iex
+#    or: powershell -ExecutionPolicy Bypass -Command "iwr -useb https://blockrun.ai/XClawRouter-update.ps1 | iex"
 #
 # Run as regular user (no admin needed)
 Set-StrictMode -Version Latest
