@@ -1,9 +1,9 @@
 /**
  * Partner Service Registry
  *
- * Defines available partner APIs that can be called through XClawRouter's proxy.
- * Partners provide specialized data (Twitter/X, etc.) via x402 micropayments.
- * The same wallet used for LLM calls pays for partner API calls — zero extra setup.
+ * Defines available partner APIs that can be called through ClawRouter's proxy.
+ * Partners cover prediction-market data, realtime market quotes, and image/video
+ * generation — all paid via x402 micropayments on the same wallet as LLM calls.
  */
 
 export type PartnerServiceParam = {
@@ -13,6 +13,8 @@ export type PartnerServiceParam = {
   required: boolean;
 };
 
+export type PartnerCategory = "Prediction markets" | "Market data" | "Image & Video";
+
 export type PartnerServiceDefinition = {
   /** Unique service ID used in tool names: blockrun_{id} */
   id: string;
@@ -20,7 +22,11 @@ export type PartnerServiceDefinition = {
   name: string;
   /** Partner providing this service */
   partner: string;
-  /** Short description for tool listing */
+  /** Category used for grouping in the `/partners` list view */
+  category: PartnerCategory;
+  /** Compact one-liner used in the `/partners` list (≤ 40 chars ideal) */
+  shortDescription: string;
+  /** Full description used for the tool's JSON Schema (LLM sees this) */
   description: string;
   /** Proxy path (relative to /v1) */
   proxyPath: string;
@@ -47,38 +53,6 @@ export type PartnerServiceDefinition = {
  * New partners are added here — the rest of the system picks them up automatically.
  */
 export const PARTNER_SERVICES: PartnerServiceDefinition[] = [
-  {
-    id: "x_users_lookup",
-    name: "Twitter/X User Lookup",
-    partner: "AttentionVC",
-    description:
-      "Look up real-time Twitter/X user profiles by username. " +
-      "Call this ONLY when the user explicitly asks to look up, check, or get information about a specific Twitter/X user's profile (follower count, bio, verification status, etc.). " +
-      "Do NOT call this for messages that merely contain x.com or twitter.com URLs — only invoke when the user is asking for profile information about a specific account. " +
-      "Returns: follower count, verification badge, bio, location, join date. " +
-      "Accepts up to 100 usernames per request (without @ prefix).",
-    proxyPath: "/x/users/lookup",
-    method: "POST",
-    params: [
-      {
-        name: "usernames",
-        type: "string[]",
-        description:
-          'Array of Twitter/X usernames to look up (without @ prefix). Example: ["elonmusk", "naval"]',
-        required: true,
-      },
-    ],
-    pricing: {
-      perUnit: "$0.001",
-      unit: "user",
-      minimum: "$0.01 (10 users)",
-      maximum: "$0.10 (100 users)",
-    },
-    example: {
-      input: { usernames: ["elonmusk", "naval", "balaboris"] },
-      description: "Look up 3 Twitter/X user profiles",
-    },
-  },
   // ---------------------------------------------------------------------------
   // Predexon — Prediction Market Data
   // ---------------------------------------------------------------------------
@@ -86,6 +60,8 @@ export const PARTNER_SERVICES: PartnerServiceDefinition[] = [
     id: "predexon_events",
     name: "Polymarket Events",
     partner: "Predexon",
+    category: "Prediction markets",
+    shortDescription: "Live Polymarket events",
     description:
       "Get live Polymarket prediction market events with current odds, volume, and liquidity. " +
       "Call this for ANY request about prediction markets, Polymarket markets, current odds, " +
@@ -118,6 +94,8 @@ export const PARTNER_SERVICES: PartnerServiceDefinition[] = [
     id: "predexon_leaderboard",
     name: "Polymarket Leaderboard",
     partner: "Predexon",
+    category: "Prediction markets",
+    shortDescription: "Top traders ranked by profit",
     description:
       "Get the Polymarket leaderboard of top traders ranked by profit. " +
       "Call this for ANY request about top Polymarket traders, whale wallets, best performers, " +
@@ -144,6 +122,8 @@ export const PARTNER_SERVICES: PartnerServiceDefinition[] = [
     id: "predexon_markets",
     name: "Polymarket Markets Search",
     partner: "Predexon",
+    category: "Prediction markets",
+    shortDescription: "Market search by keyword",
     description:
       "Search and filter Polymarket markets. Use this to find a market by keyword and get its conditionId " +
       "for follow-up calls (smart money, top holders, etc.). " +
@@ -174,6 +154,8 @@ export const PARTNER_SERVICES: PartnerServiceDefinition[] = [
     id: "predexon_smart_money",
     name: "Polymarket Smart Money",
     partner: "Predexon",
+    category: "Prediction markets",
+    shortDescription: "Smart-money positions on a market",
     description:
       "See how high-performing wallets are positioned on a specific Polymarket market. " +
       "Use this after finding a market's conditionId via predexon_markets or predexon_events. " +
@@ -204,6 +186,8 @@ export const PARTNER_SERVICES: PartnerServiceDefinition[] = [
     id: "predexon_smart_activity",
     name: "Polymarket Smart Activity",
     partner: "Predexon",
+    category: "Prediction markets",
+    shortDescription: "Where smart money is flowing now",
     description:
       "Discover which Polymarket markets high-performing wallets are currently active in. " +
       "Use this to find where smart money is flowing right now. " +
@@ -228,6 +212,8 @@ export const PARTNER_SERVICES: PartnerServiceDefinition[] = [
     id: "predexon_wallet",
     name: "Polymarket Wallet Profile",
     partner: "Predexon",
+    category: "Prediction markets",
+    shortDescription: "Wallet profile (PnL, winrate, positions)",
     description:
       "Get a complete profile for a Polymarket wallet address: profit, volume, win rate, markets traded, open positions. " +
       "Use this when the user asks to analyze or look up a specific wallet address.",
@@ -251,6 +237,8 @@ export const PARTNER_SERVICES: PartnerServiceDefinition[] = [
     id: "predexon_wallet_pnl",
     name: "Polymarket Wallet P&L",
     partner: "Predexon",
+    category: "Prediction markets",
+    shortDescription: "Wallet P&L time series",
     description:
       "Get P&L history and realized profit/loss time series for a Polymarket wallet. " +
       "Use this when the user wants to see how a wallet has performed over time.",
@@ -274,6 +262,8 @@ export const PARTNER_SERVICES: PartnerServiceDefinition[] = [
     id: "predexon_matching_markets",
     name: "Cross-Market Matching (Polymarket vs Kalshi)",
     partner: "Predexon",
+    category: "Prediction markets",
+    shortDescription: "Polymarket ↔ Kalshi market pairs",
     description:
       "Find equivalent markets across Polymarket and Kalshi to compare odds and spot arbitrage. " +
       "Use this when the user wants to compare prediction market prices across platforms.",
@@ -300,6 +290,8 @@ export const PARTNER_SERVICES: PartnerServiceDefinition[] = [
     id: "stock_price",
     name: "Global Stock Realtime Price",
     partner: "BlockRun",
+    category: "Market data",
+    shortDescription: "Realtime stock quote (12 markets)",
     description:
       "Get realtime price for a listed equity across 12 global markets. " +
       "Call this for ANY request about a specific stock price, quote, or current trading value " +
@@ -343,6 +335,8 @@ export const PARTNER_SERVICES: PartnerServiceDefinition[] = [
     id: "stock_history",
     name: "Global Stock OHLC History",
     partner: "BlockRun",
+    category: "Market data",
+    shortDescription: "OHLC bars (1m–monthly)",
     description:
       "Get historical OHLC (candlestick) bars for a listed equity across 12 global markets. " +
       "Use this for charting, backtesting, or any request about a stock's past price action. " +
@@ -395,6 +389,8 @@ export const PARTNER_SERVICES: PartnerServiceDefinition[] = [
     id: "stock_list",
     name: "Global Stock Ticker List",
     partner: "BlockRun",
+    category: "Market data",
+    shortDescription: "Ticker search — free",
     description:
       "List and search supported tickers for a given stock market. Use this to resolve a company " +
       "name to a ticker before calling stock_price or stock_history. FREE — no x402 payment.",
@@ -430,6 +426,8 @@ export const PARTNER_SERVICES: PartnerServiceDefinition[] = [
     id: "crypto_price",
     name: "Crypto Realtime Price",
     partner: "BlockRun",
+    category: "Market data",
+    shortDescription: "Realtime crypto price — free",
     description:
       "Get realtime crypto price. Call this for ANY request about current crypto " +
       "prices (BTC, ETH, SOL, etc.). FREE — no x402 payment. Quote is always USD. " +
@@ -456,6 +454,8 @@ export const PARTNER_SERVICES: PartnerServiceDefinition[] = [
     id: "fx_price",
     name: "Foreign Exchange Realtime Price",
     partner: "BlockRun",
+    category: "Market data",
+    shortDescription: "Realtime FX rate — free",
     description:
       "Get realtime FX rate. Call this for ANY request about currency exchange rates. " +
       "FREE — no x402 payment. Do NOT use browser or web scraping.",
@@ -480,6 +480,8 @@ export const PARTNER_SERVICES: PartnerServiceDefinition[] = [
     id: "commodity_price",
     name: "Commodity Realtime Price",
     partner: "BlockRun",
+    category: "Market data",
+    shortDescription: "Realtime commodity spot — free",
     description:
       "Get realtime commodity spot price (gold, silver, platinum, etc.). " +
       "FREE — no x402 payment. Do NOT use browser or web scraping.",
@@ -498,6 +500,148 @@ export const PARTNER_SERVICES: PartnerServiceDefinition[] = [
     example: {
       input: { symbol: "XAU-USD" },
       description: "Get realtime gold spot price",
+    },
+  },
+  // ---------------------------------------------------------------------------
+  // BlockRun — Image & Video generation
+  // ---------------------------------------------------------------------------
+  {
+    id: "image_generation",
+    name: "Image Generation",
+    partner: "BlockRun",
+    category: "Image & Video",
+    shortDescription: "8 image models (DALL-E, Flux, Grok, ...)",
+    description:
+      "Generate an image from a text prompt. Models available: google/nano-banana (default), " +
+      "google/nano-banana-pro (up to 4K), openai/gpt-image-1, openai/dall-e-3, " +
+      "black-forest/flux-1.1-pro, xai/grok-imagine-image, xai/grok-imagine-image-pro, " +
+      "zai/cogview-4. Returns a local http://localhost:8402/images/<file>.png URL.",
+    proxyPath: "/images/generations",
+    method: "POST",
+    params: [
+      {
+        name: "prompt",
+        type: "string",
+        description: "Text prompt describing the desired image.",
+        required: true,
+      },
+      {
+        name: "model",
+        type: "string",
+        description:
+          "Full model ID (e.g. 'google/nano-banana', 'openai/dall-e-3'). Default: google/nano-banana.",
+        required: false,
+      },
+      {
+        name: "size",
+        type: "string",
+        description:
+          "Image size, e.g. '1024x1024', '1792x1024', '4096x4096'. Model-dependent — see image model table.",
+        required: false,
+      },
+      {
+        name: "n",
+        type: "number",
+        description: "Number of images to generate (default 1, max 4).",
+        required: false,
+      },
+    ],
+    pricing: {
+      perUnit: "$0.015–$0.15",
+      unit: "image",
+      minimum: "$0.015 (cogview-4)",
+      maximum: "$0.15 (nano-banana-pro 4K)",
+    },
+    example: {
+      input: { model: "google/nano-banana", prompt: "a golden retriever surfing on a wave" },
+      description: "Generate an image with Nano Banana",
+    },
+  },
+  {
+    id: "image_edit",
+    name: "Image Edit / Inpainting",
+    partner: "BlockRun",
+    category: "Image & Video",
+    shortDescription: "Edit existing image (gpt-image-1)",
+    description:
+      "Edit or re-style an existing image via openai/gpt-image-1. " +
+      "Supply `image` as a data URI, https URL, or local file path; optional `mask` for inpainting.",
+    proxyPath: "/images/image2image",
+    method: "POST",
+    params: [
+      {
+        name: "prompt",
+        type: "string",
+        description: "Text prompt describing how to edit the image.",
+        required: true,
+      },
+      {
+        name: "image",
+        type: "string",
+        description: "Source image — data URI, https URL, or local path (~/... or /abs/path).",
+        required: true,
+      },
+      {
+        name: "mask",
+        type: "string",
+        description: "Optional inpainting mask in the same formats as `image`.",
+        required: false,
+      },
+    ],
+    pricing: {
+      perUnit: "$0.02–$0.04",
+      unit: "image",
+      minimum: "$0.02",
+      maximum: "$0.04 (1536x1024)",
+    },
+    example: {
+      input: { prompt: "make the sky sunset orange", image: "~/Pictures/beach.png" },
+      description: "Edit a local image with gpt-image-1",
+    },
+  },
+  {
+    id: "video_generation",
+    name: "Video Generation",
+    partner: "BlockRun",
+    category: "Image & Video",
+    shortDescription: "Grok Imagine + Seedance, 5–10s",
+    description:
+      "Generate a short video (5–10s) via xai/grok-imagine-video or bytedance/seedance-1.5-pro " +
+      "(default, cheapest) / seedance-2.0-fast / seedance-2.0. Async — upstream polling takes " +
+      "30–120 seconds. Returns a local http://localhost:8402/videos/<file>.mp4 URL.",
+    proxyPath: "/videos/generations",
+    method: "POST",
+    params: [
+      {
+        name: "prompt",
+        type: "string",
+        description: "Text prompt describing the video.",
+        required: true,
+      },
+      {
+        name: "model",
+        type: "string",
+        description:
+          "Full model ID. Options: bytedance/seedance-1.5-pro (default), bytedance/seedance-2.0-fast, " +
+          "bytedance/seedance-2.0, xai/grok-imagine-video.",
+        required: false,
+      },
+      {
+        name: "duration_seconds",
+        type: "number",
+        description: "Clip length in seconds. Supported: 5, 8, 10. Default depends on model.",
+        required: false,
+      },
+    ],
+    pricing: {
+      perUnit: "$0.03–$0.30",
+      unit: "second",
+      minimum: "$0.15 (seedance-1.5-pro 5s)",
+      maximum: "$3.00 (seedance-2.0 10s)",
+    },
+    example: {
+      input: { model: "bytedance/seedance-1.5-pro", prompt: "a cat waving", duration_seconds: 5 },
+      description: "Generate a 5-second Seedance video",
     },
   },
 ];

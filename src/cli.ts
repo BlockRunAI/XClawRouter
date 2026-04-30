@@ -70,7 +70,7 @@ Environment Variables:
   BLOCKRUN_WALLET_KEY     Private key for x402 payments (auto-generated if not set)
   BLOCKRUN_PROXY_PORT     Default proxy port (default: 8402)
 
-For more info: https://github.com/BlockRunAI/XClawRouter
+For more info: https://blockrun.ai/clawrouter.md
 `);
 }
 
@@ -393,14 +393,29 @@ async function main(): Promise<void> {
 
     console.log(`\nClawRouter Partner APIs (v${VERSION})\n`);
 
+    // Compact grouped view — one line per tool, grouped by category.
+    const byCategory = new Map<string, typeof PARTNER_SERVICES>();
     for (const svc of PARTNER_SERVICES) {
-      console.log(`  ${svc.name} (${svc.partner})`);
-      console.log(`    ${svc.description}`);
-      console.log(`    Tool:    blockrun_${svc.id}`);
-      console.log(`    Method:  ${svc.method} /v1${svc.proxyPath}`);
-      console.log(
-        `    Pricing: ${svc.pricing.perUnit} per ${svc.pricing.unit} (min ${svc.pricing.minimum}, max ${svc.pricing.maximum})`,
-      );
+      const bucket = byCategory.get(svc.category) ?? [];
+      bucket.push(svc);
+      byCategory.set(svc.category, bucket);
+    }
+    const toolWidth = Math.max(...PARTNER_SERVICES.map((s) => `blockrun_${s.id}`.length), 28);
+    const priceWidth = Math.max(
+      ...PARTNER_SERVICES.map((s) =>
+        s.pricing.perUnit === "free" ? 4 : `${s.pricing.perUnit}/${s.pricing.unit}`.length,
+      ),
+      12,
+    );
+    for (const [category, services] of byCategory) {
+      console.log(`${category}`);
+      for (const svc of services) {
+        const tool = `blockrun_${svc.id}`.padEnd(toolWidth);
+        const price = (
+          svc.pricing.perUnit === "free" ? "free" : `${svc.pricing.perUnit}/${svc.pricing.unit}`
+        ).padEnd(priceWidth);
+        console.log(`  ${tool}  ${price}  ${svc.shortDescription}`);
+      }
       console.log();
     }
 
@@ -480,8 +495,15 @@ async function main(): Promise<void> {
   // Resolve wallet key
   const wallet = await resolveOrGenerateWalletKey();
 
-  if (wallet.source === "generated") {
+  if (wallet.source === "okx") {
+    console.log(
+      `[XClawRouter] Using OKX onchainos wallet: ${wallet.address}${wallet.email ? ` (${wallet.email})` : ""}`,
+    );
+  } else if (wallet.source === "generated") {
     console.log(`[XClawRouter] Generated new wallet: ${wallet.address}`);
+    console.log(
+      `[XClawRouter] Tip: install OKX onchainos to use your OKX wallet — https://web3.okx.com/onchainos`,
+    );
   } else if (wallet.source === "saved") {
     console.log(`[XClawRouter] Using saved wallet: ${wallet.address}`);
   } else if (wallet.source === "config") {

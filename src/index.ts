@@ -63,7 +63,7 @@ async function waitForProxyHealth(port: number, timeoutMs = 3000): Promise<boole
   }
   return false;
 }
-import { OPENCLAW_MODELS } from "./models.js";
+import { OPENCLAW_MODELS, resolveModelAlias } from "./models.js";
 import {
   writeFileSync,
   existsSync,
@@ -74,6 +74,7 @@ import {
 } from "node:fs";
 import { readFile as readFileAsync } from "node:fs/promises";
 import { readTextFileSync } from "./fs-read.js";
+import { TOP_MODELS } from "./top-models.js";
 import { homedir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -367,45 +368,10 @@ function injectModelsConfig(logger: { info: (msg: string) => void }): void {
     needsWrite = true;
   }
 
-  // Populate agents.defaults.models (the allowlist) with top BlockRun models.
+  // Populate agents.defaults.models (the allowlist) with the shared curated
+  // BlockRun model list used by install/update scripts too.
   // OpenClaw uses this as a whitelist — only listed models appear in the /model picker.
   // Existing non-blockrun entries are preserved (e.g. from other providers).
-  const TOP_MODELS = [
-    "auto",
-    "free",
-    "eco",
-    "premium",
-    "anthropic/claude-sonnet-4.6",
-    "anthropic/claude-opus-4.7",
-    "anthropic/claude-opus-4.6",
-    "anthropic/claude-haiku-4.5",
-    "openai/gpt-5.4",
-    "openai/gpt-5.3",
-    "openai/gpt-5.3-codex",
-    "openai/gpt-4o",
-    "openai/o3",
-    "google/gemini-3.1-pro",
-    "google/gemini-3-flash-preview",
-    "deepseek/deepseek-chat",
-    "moonshot/kimi-k2.5",
-    "xai/grok-3",
-    "minimax/minimax-m2.5",
-    // Free models (free/ prefix so users see "free" in picker)
-    "free/gpt-oss-120b",
-    "free/gpt-oss-20b",
-    "free/nemotron-ultra-253b",
-    "free/deepseek-v3.2",
-    "free/mistral-large-3-675b",
-    "free/qwen3-coder-480b",
-    "free/devstral-2-123b",
-    "free/llama-4-maverick",
-    "free/nemotron-3-super-120b",
-    "free/nemotron-super-49b",
-    "free/glm-4.7",
-    "zai/glm-5",
-    "zai/glm-5.1",
-    "zai/glm-5-turbo",
-  ];
   if (!defaults.models || typeof defaults.models !== "object" || Array.isArray(defaults.models)) {
     defaults.models = {};
     needsWrite = true;
@@ -722,12 +688,18 @@ async function startProxyInBackground(
   }
 
   // Log wallet source
-  if (wallet.source === "generated") {
+  if (wallet.source === "okx") {
+    api.logger.info(
+      `Using OKX onchainos wallet: ${wallet.address}${wallet.email ? ` (${wallet.email})` : ""}`,
+    );
+  } else if (wallet.source === "generated") {
     api.logger.warn(`════════════════════════════════════════════════`);
     api.logger.warn(`  NEW WALLET GENERATED — BACK UP YOUR KEY NOW!`);
     api.logger.warn(`  Address : ${wallet.address}`);
     api.logger.warn(`  Run /wallet export to get your private key`);
     api.logger.warn(`  Losing this key = losing your USDC funds`);
+    api.logger.warn(`  Or install OKX onchainos to use your OKX wallet:`);
+    api.logger.warn(`     https://web3.okx.com/onchainos`);
     api.logger.warn(`════════════════════════════════════════════════`);
   } else if (wallet.source === "saved") {
     api.logger.info(`Using saved wallet: ${wallet.address}`);
@@ -921,6 +893,47 @@ const IMAGE_DIR = join(homedir(), ".openclaw", "blockrun", "images");
 const AUDIO_DIR = join(homedir(), ".openclaw", "blockrun", "audio");
 
 /**
+ * Parse a `/imagegen` or `/videogen` args string.
+ * Supports `--model=<alias>`, `--size=<WxH>`, `--n=<int>`, `--duration=<int>`.
+ * Everything else — in order — is joined into the prompt.
+ */
+function parseGenArgs(raw: string): {
+  prompt: string;
+  model?: string;
+  size?: string;
+  n?: number;
+  duration?: number;
+} {
+  const promptParts: string[] = [];
+  let model: string | undefined;
+  let size: string | undefined;
+  let n: number | undefined;
+  let duration: number | undefined;
+  // Split on whitespace but keep --flag=value together (no shell-style quoting).
+  const tokens = raw.trim().match(/(?:[^\s"]+|"[^"]*")+/g) ?? [];
+  for (const tok of tokens) {
+    const t = tok.startsWith('"') && tok.endsWith('"') ? tok.slice(1, -1) : tok;
+    const flagMatch = t.match(/^--(model|size|n|count|duration|duration_seconds)=(.+)$/);
+    if (flagMatch) {
+      const [, key, value] = flagMatch;
+      if (key === "model") model = value;
+      else if (key === "size") size = value;
+      else if (key === "n" || key === "count") n = Number(value);
+      else if (key === "duration" || key === "duration_seconds") duration = Number(value);
+      continue;
+    }
+    promptParts.push(t);
+  }
+  return {
+    prompt: promptParts.join(" ").trim(),
+    model,
+    size,
+    ...(Number.isFinite(n) ? { n } : {}),
+    ...(Number.isFinite(duration) ? { duration } : {}),
+  };
+}
+
+/**
  * Build the ImageGenerationProvider that registers BlockRun image models
  * with OpenClaw's native image generation UI.
  * Delegates to the local proxy (which handles x402 payment).
@@ -929,12 +942,16 @@ function buildImageGenerationProvider(): ImageGenerationProviderPlugin {
   return {
     id: "blockrun",
     label: "BlockRun",
-    defaultModel: "openai/gpt-image-1",
+    defaultModel: "google/nano-banana",
     models: [
-      "openai/gpt-image-1",
-      "openai/dall-e-3",
       "google/nano-banana",
       "google/nano-banana-pro",
+      "openai/gpt-image-1",
+      "openai/dall-e-3",
+      "black-forest/flux-1.1-pro",
+      "xai/grok-imagine-image",
+      "xai/grok-imagine-image-pro",
+      "zai/cogview-4",
     ],
     capabilities: {
       generate: {
@@ -943,10 +960,18 @@ function buildImageGenerationProvider(): ImageGenerationProviderPlugin {
         supportsAspectRatio: false,
         supportsResolution: false,
       },
-      edit: { enabled: false },
+      // Only openai/gpt-image-1 supports edit server-side; OpenClaw's UI picks a
+      // compatible model at edit time via /v1/images/image2image.
+      edit: { enabled: true },
       geometry: {
         sizes: [
+          "512x512",
+          "768x768",
+          "768x1344",
           "1024x1024",
+          "1216x832",
+          "1344x768",
+          "1440x1440",
           "1536x1024",
           "1024x1536",
           "1792x1024",
@@ -1120,8 +1145,10 @@ function buildVideoGenerationProvider(): VideoGenerationProviderPlugin {
         ...(imageUrl ? { image_url: imageUrl } : {}),
         ...(req.durationSeconds ? { duration_seconds: req.durationSeconds } : {}),
       });
-      // Video generation can take 30-120s (upstream polling), allow 3 minutes
-      const timeoutMs = req.timeoutMs ?? 200_000;
+      // Video generation: ClawRouter proxy internally polls upstream for up to 5 min.
+      // Client timeout must exceed that — use 330s (5.5 min) to give the proxy headroom
+      // to return the final downloaded URL after the last poll.
+      const timeoutMs = req.timeoutMs ?? 330_000;
       const resp = await fetch(`http://127.0.0.1:${port}/v1/videos/generations`, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -1593,7 +1620,7 @@ const plugin: OpenClawPluginDefinition = {
       }
     }
 
-    // Register partner API tools (Twitter/X lookup, etc.)
+    // Register partner API tools (market data, predexon, image/video, ...)
     try {
       const proxyBaseUrl = `http://127.0.0.1:${runtimePort}`;
       const partnerTools = buildPartnerTools(proxyBaseUrl);
@@ -1622,22 +1649,143 @@ const plugin: OpenClawPluginDefinition = {
           return { text: "No partner APIs available." };
         }
 
-        const lines = ["**Partner APIs** (paid via your XClawRouter wallet)", ""];
-
+        // Compact grouped view — one line per tool, grouped by category.
+        const byCategory = new Map<string, typeof PARTNER_SERVICES>();
         for (const svc of PARTNER_SERVICES) {
-          lines.push(`**${svc.name}** (${svc.partner})`);
-          lines.push(`  ${svc.description}`);
-          lines.push(`  Tool: \`${`blockrun_${svc.id}`}\``);
-          lines.push(
-            `  Pricing: ${svc.pricing.perUnit} per ${svc.pricing.unit} (min ${svc.pricing.minimum}, max ${svc.pricing.maximum})`,
-          );
-          lines.push(
-            `  **How to use:** Ask "Look up Twitter user @elonmusk" or "Get info on these X accounts: @naval, @balajis"`,
-          );
-          lines.push("");
+          const bucket = byCategory.get(svc.category) ?? [];
+          bucket.push(svc);
+          byCategory.set(svc.category, bucket);
         }
 
+        // Column width — keep tool names + pricing aligned across groups.
+        const toolWidth = Math.max(...PARTNER_SERVICES.map((s) => `blockrun_${s.id}`.length), 28);
+        const priceWidth = Math.max(
+          ...PARTNER_SERVICES.map((s) =>
+            s.pricing.perUnit === "free" ? 4 : `${s.pricing.perUnit}/${s.pricing.unit}`.length,
+          ),
+          12,
+        );
+
+        const lines = ["**Partner APIs** (paid via your ClawRouter wallet)", ""];
+        for (const [category, services] of byCategory) {
+          lines.push(`**${category}**`);
+          for (const svc of services) {
+            const tool = `blockrun_${svc.id}`.padEnd(toolWidth);
+            const price = (
+              svc.pricing.perUnit === "free" ? "free" : `${svc.pricing.perUnit}/${svc.pricing.unit}`
+            ).padEnd(priceWidth);
+            lines.push(`  \`${tool}\` ${price}  ${svc.shortDescription}`);
+          }
+          lines.push("");
+        }
+        lines.push("Tool-call any of these in chat, or use `/imagegen` / `/videogen` directly.");
+
         return { text: lines.join("\n") };
+      },
+    });
+
+    // /imagegen <prompt> [--model=alias] [--size=1024x1024] [--n=1]
+    api.registerCommand({
+      name: "imagegen",
+      description: "Generate an image (BlockRun image models, paid via wallet)",
+      acceptsArgs: true,
+      requireAuth: false,
+      handler: async (ctx: PluginCommandContext) => {
+        const parsed = parseGenArgs(ctx.args ?? "");
+        if (!parsed.prompt) {
+          return {
+            text: "Usage: `/imagegen <prompt> [--model=<alias>] [--size=1024x1024] [--n=1]`\n\nAliases: `nano-banana` (default), `banana-pro`, `dalle`, `gpt-image`, `flux`, `grok-imagine`, `grok-imagine-pro`, `cogview`.",
+          };
+        }
+        const model = resolveModelAlias(parsed.model ?? "nano-banana");
+        const port = getProxyPort();
+        try {
+          const resp = await fetch(`http://127.0.0.1:${port}/v1/images/generations`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              model,
+              prompt: parsed.prompt,
+              size: parsed.size ?? "1024x1024",
+              n: parsed.n ?? 1,
+            }),
+            signal: AbortSignal.timeout(180_000),
+          });
+          if (!resp.ok) {
+            const errText = await resp.text().catch(() => "");
+            if (resp.status === 402) {
+              return {
+                text: `Insufficient wallet balance for image generation. Top up with \`/wallet\`.\n\n${errText}`,
+              };
+            }
+            return { text: `Image generation failed (${resp.status}): ${errText}` };
+          }
+          const result = (await resp.json()) as {
+            data?: Array<{ url?: string; revised_prompt?: string }>;
+          };
+          const urls = (result.data ?? []).map((d) => d.url).filter(Boolean) as string[];
+          if (urls.length === 0) {
+            return { text: "Image generation returned no results." };
+          }
+          return {
+            text: urls.map((u, i) => `![image ${i + 1}](${u})`).join("\n\n"),
+          };
+        } catch (err) {
+          return {
+            text: `Image generation error: ${err instanceof Error ? err.message : String(err)}`,
+          };
+        }
+      },
+    });
+
+    // /videogen <prompt> [--model=alias] [--duration=5|8|10]
+    api.registerCommand({
+      name: "videogen",
+      description: "Generate a short video (Grok Imagine / Seedance, paid via wallet)",
+      acceptsArgs: true,
+      requireAuth: false,
+      handler: async (ctx: PluginCommandContext) => {
+        const parsed = parseGenArgs(ctx.args ?? "");
+        if (!parsed.prompt) {
+          return {
+            text: "Usage: `/videogen <prompt> [--model=<alias>] [--duration=5|8|10]`\n\nAliases: `seedance` (1.5-pro, default — cheapest), `seedance-2-fast`, `seedance-2`, `grok-video`.\n\n⏱️  Generation takes 60–180 seconds. Payment settles only on success.",
+          };
+        }
+        const model = resolveModelAlias(parsed.model ?? "seedance");
+        const port = getProxyPort();
+        try {
+          const resp = await fetch(`http://127.0.0.1:${port}/v1/videos/generations`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              model,
+              prompt: parsed.prompt,
+              ...(parsed.duration ? { duration_seconds: parsed.duration } : {}),
+            }),
+            signal: AbortSignal.timeout(330_000),
+          });
+          if (!resp.ok) {
+            const errText = await resp.text().catch(() => "");
+            if (resp.status === 402) {
+              return {
+                text: `Insufficient wallet balance for video generation. Top up with \`/wallet\`.\n\n${errText}`,
+              };
+            }
+            return { text: `Video generation failed (${resp.status}): ${errText}` };
+          }
+          const result = (await resp.json()) as {
+            data?: Array<{ url?: string }>;
+          };
+          const urls = (result.data ?? []).map((d) => d.url).filter(Boolean) as string[];
+          if (urls.length === 0) {
+            return { text: "Video generation returned no results." };
+          }
+          return { text: urls.map((u, i) => `Video ${i + 1}: ${u}`).join("\n") };
+        } catch (err) {
+          return {
+            text: `Video generation error: ${err instanceof Error ? err.message : String(err)}`,
+          };
+        }
       },
     });
 
@@ -1657,7 +1805,9 @@ const plugin: OpenClawPluginDefinition = {
     api.registerCommand(createStatsCommand());
     api.registerCommand(createExcludeCommand());
     if (shouldLogRegistration) {
-      api.logger.info("Commands registered: /wallet, /blockrun, /stats, /exclude");
+      api.logger.info(
+        "Commands registered: /wallet, /blockrun, /stats, /exclude, /partners, /imagegen, /videogen",
+      );
     }
 
     // Register a service with stop() for cleanup on gateway shutdown
@@ -1692,13 +1842,19 @@ const plugin: OpenClawPluginDefinition = {
         // Generate wallet on first install (even outside gateway mode)
         // This ensures users can see their wallet address immediately after install
         resolveOrGenerateWalletKey()
-          .then(({ address, source }) => {
-            if (source === "generated") {
+          .then(({ address, source, email }) => {
+            if (source === "okx") {
+              api.logger.info(
+                `Using OKX onchainos wallet: ${address}${email ? ` (${email})` : ""}`,
+              );
+            } else if (source === "generated") {
               api.logger.warn(`════════════════════════════════════════════════`);
               api.logger.warn(`  NEW WALLET GENERATED — BACK UP YOUR KEY NOW!`);
               api.logger.warn(`  Address : ${address}`);
               api.logger.warn(`  Run /wallet export to get your private key`);
               api.logger.warn(`  Losing this key = losing your USDC funds`);
+              api.logger.warn(`  Or install OKX onchainos to use your OKX wallet:`);
+              api.logger.warn(`     https://web3.okx.com/onchainos`);
               api.logger.warn(`════════════════════════════════════════════════`);
             } else if (source === "saved") {
               api.logger.info(`Using saved wallet: ${address}`);

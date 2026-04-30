@@ -184,7 +184,7 @@ Use short aliases instead of full model paths:
 /model gpt5      # openai/gpt-5.2
 /model deepseek  # deepseek/deepseek-chat
 /model reasoner  # deepseek/deepseek-reasoner
-/model kimi      # moonshot/kimi-k2.5
+/model kimi      # nvidia/kimi-k2.5 (reliable); /model kimi-k2.6 for Moonshot flagship
 /model gemini    # google/gemini-2.5-pro
 /model flash     # google/gemini-2.5-flash
 /model grok      # xai/grok-3

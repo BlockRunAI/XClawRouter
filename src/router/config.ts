@@ -1076,7 +1076,8 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
         "anthropic/claude-sonnet-4.6", // 2,110ms, IQ 52 — quality fallback
         "deepseek/deepseek-chat", // 1,431ms, IQ 32
         "google/gemini-2.5-flash", // 1,238ms, IQ 20 — cheap last resort
-        "openai/gpt-5.4", // 6,213ms, IQ 57 — slowest but highest quality
+        "openai/gpt-5.5", // Newest OpenAI flagship — 1M+ ctx, native agent + computer use; benchmark TBD
+        "openai/gpt-5.4", // 6,213ms, IQ 57 — previous flagship, benchmarked
       ],
     },
     REASONING: {
@@ -1093,9 +1094,12 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
   // Eco tier configs - absolute cheapest (blockrun/eco)
   ecoTiers: {
     SIMPLE: {
-      primary: "free/gpt-oss-120b", // FREE! $0.00/$0.00
+      primary: "free/gpt-oss-120b", // FREE! $0.00/$0.00 — heavy user default
       fallback: [
         "free/gpt-oss-20b", // FREE — smaller, faster
+        "free/mistral-small-4-119b", // FREE — 114 tok/s, fastest free chat
+        "free/deepseek-v4-flash", // FREE — 1M context, ~5x faster than v4-pro
+        "free/qwen3-next-80b-a3b-thinking", // FREE — 116 tok/s reasoning
         "google/gemini-3.1-flash-lite", // $0.25/$1.50 — newest flash-lite
         "openai/gpt-5.4-nano", // $0.20/$1.25 — fast nano
         "google/gemini-2.5-flash-lite", // $0.10/$0.40
@@ -1130,8 +1134,9 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
   // codex=complex coding, kimi=simple coding, sonnet=reasoning/instructions, opus=architecture/PM/audits
   premiumTiers: {
     SIMPLE: {
-      primary: "moonshot/kimi-k2.5", // $0.60/$3.00 - good for simple coding
+      primary: "moonshot/kimi-k2.6", // $0.95/$4.00 - Moonshot flagship (256K ctx, vision + reasoning)
       fallback: [
+        "moonshot/kimi-k2.5", // $0.60/$3.00 - proven reliable NVIDIA fallback when Moonshot direct API falters
         "google/gemini-2.5-flash", // 60% retention, fast growth
         "anthropic/claude-haiku-4.5",
         "google/gemini-2.5-flash-lite",
@@ -1141,6 +1146,7 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
     MEDIUM: {
       primary: "openai/gpt-5.3-codex", // $1.75/$14 - 400K context, 128K output, replaces 5.2
       fallback: [
+        "moonshot/kimi-k2.6", // Moonshot flagship
         "moonshot/kimi-k2.5",
         "google/gemini-2.5-flash", // 60% retention, good coding capability
         "google/gemini-2.5-pro",
@@ -1160,7 +1166,8 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
         "xai/grok-4-0709", // 503-resistant flagship
         "moonshot/kimi-k2.6", // Moonshot flagship, independent infra
         "moonshot/kimi-k2.5",
-        "openai/gpt-5.4", // Newest OpenAI flagship (slow but stable)
+        "openai/gpt-5.5", // Newest OpenAI flagship — 1M+ ctx, native agent + computer use
+        "openai/gpt-5.4", // Previous flagship (slow but stable, benchmarked at 6,213ms)
         "openai/gpt-5.3-codex",
         "deepseek/deepseek-chat", // Cheap, reliable
         "free/qwen3-coder-480b", // NVIDIA free ultimate backstop
@@ -1207,7 +1214,8 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
         "anthropic/claude-opus-4.6", // 2,139ms
         "xai/grok-4-0709", // 1,348ms — strong tool use, independent infra
         "moonshot/kimi-k2.5", // strong tool use, independent infra
-        "openai/gpt-5.4", // 6,213ms — slow but reliable flagship
+        "openai/gpt-5.5", // Newest flagship — native agent + computer use (exactly the agentic-tier use case)
+        "openai/gpt-5.4", // Previous flagship — 6,213ms, reliable
         "deepseek/deepseek-chat", // 1,431ms — cheap, reliable
         "free/qwen3-coder-480b", // NVIDIA free ultimate backstop
       ],

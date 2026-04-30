@@ -1,6 +1,6 @@
 ---
 name: clawrouter
-description: Hosted-gateway LLM router — save 67% on inference costs. A local proxy that forwards each request to the blockrun.ai gateway, which routes to the cheapest capable model across 55+ models from OpenAI, Anthropic, Google, DeepSeek, xAI, NVIDIA, and more. 11 free NVIDIA models included. Also exposes realtime market data (global stocks, crypto, FX, commodities), Twitter/X intelligence, and Polymarket prediction market data as built-in agent tools. Not a local-inference tool — prompts are sent to the blockrun.ai gateway.
+description: Hosted-gateway LLM router — save 67% on inference costs. A local proxy that forwards each request to the blockrun.ai gateway, which routes to the cheapest capable model across 55+ models from OpenAI, Anthropic, Google, DeepSeek, xAI, NVIDIA, and more. 8 free NVIDIA models included. Also exposes realtime market data (global stocks, crypto, FX, commodities), Twitter/X intelligence, and Polymarket prediction market data as built-in agent tools. Not a local-inference tool — prompts are sent to the blockrun.ai gateway.
 homepage: https://blockrun.ai/clawrouter.md
 repository: https://github.com/BlockRunAI/ClawRouter
 license: MIT
@@ -26,7 +26,7 @@ metadata:
 
 # ClawRouter
 
-Hosted-gateway LLM router that saves 67% on inference costs by forwarding each request to the blockrun.ai gateway, which picks the cheapest model capable of handling it across 55+ models from 9 providers (11 free NVIDIA models). All billing flows through one USDC wallet; you do not hold provider API keys.
+Hosted-gateway LLM router that saves 67% on inference costs by forwarding each request to the blockrun.ai gateway, which picks the cheapest model capable of handling it across 55+ models from 9 providers (8 free NVIDIA models). All billing flows through one USDC wallet; you do not hold provider API keys.
 
 **This is not a local-inference tool.** ClawRouter is a thin local proxy. Your prompts are sent over HTTPS to the blockrun.ai gateway for model execution. If your workload requires inference that never leaves your machine, use a local runtime like Ollama — ClawRouter is not the right tool for that use case.
 
@@ -108,7 +108,7 @@ Rules handle ~80% of requests in <1ms. Only ambiguous queries hit the LLM classi
 
 ## Available Models
 
-55+ models including: gpt-5.4, gpt-4o, o3, claude-opus-4.7, claude-opus-4.6, claude-sonnet-4.6, gemini-3.1-pro, gemini-2.5-flash, deepseek-chat, grok-3, kimi-k2.6, kimi-k2.5, and 11 free NVIDIA models (nemotron-ultra-253b, deepseek-v3.2, mistral-large-675b, qwen3-coder-480b, devstral-2-123b, llama-4-maverick, glm-4.7, gpt-oss-120b, gpt-oss-20b, nemotron-3-super-120b, nemotron-super-49b).
+55+ models including: gpt-5.5, gpt-5.4, gpt-4o, o3, claude-opus-4.7, claude-opus-4.6, claude-opus-4.5, claude-sonnet-4.6, gemini-3.1-pro, gemini-2.5-flash, deepseek-chat, grok-3, kimi-k2.6, kimi-k2.5, and 10 free NVIDIA models (gpt-oss-120b [default], gpt-oss-20b, mistral-small-4-119b, deepseek-v4-pro, deepseek-v4-flash, qwen3-next-80b-a3b-thinking, qwen3-coder-480b, glm-4.7, llama-4-maverick, nemotron-3-nano-omni-30b-a3b-reasoning [vision]).
 
 ## Built-in Agent Tools
 
@@ -127,11 +127,13 @@ Realtime prices and historical OHLC across every asset class. The agent should c
 | `blockrun_fx_price`        | EUR-USD, GBP-USD, JPY-USD, and more                                             | Free          |
 | `blockrun_commodity_price` | XAU-USD (gold), XAG-USD (silver), XPT-USD (platinum)                            | Free          |
 
-### Twitter/X Intelligence
+### Image & Video Generation
 
-| Tool                      | Purpose                                                                           | Price         |
-| ------------------------- | --------------------------------------------------------------------------------- | ------------- |
-| `blockrun_x_users_lookup` | Real-time user profiles (followers, bio, verification) — up to 100 usernames/call | $0.001 / user |
+| Tool                        | Purpose                                                                     | Price                |
+| --------------------------- | --------------------------------------------------------------------------- | -------------------- |
+| `blockrun_image_generation` | 8 image models — DALL-E 3, Nano Banana / Pro, Flux, Grok Imagine, CogView-4 | $0.015–$0.15 / image |
+| `blockrun_image_edit`       | Edit / inpaint existing image (openai/gpt-image-1)                          | $0.02–$0.04 / image  |
+| `blockrun_video_generation` | Grok Imagine + ByteDance Seedance (1.5-pro / 2.0-fast / 2.0), 5–10s         | $0.03–$0.30 / second |
 
 ### Polymarket (Predexon)
 

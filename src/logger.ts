@@ -26,9 +26,9 @@ export type UsageEntry = {
   inputTokens?: number;
   /** Output (completion) tokens reported by the provider */
   outputTokens?: number;
-  /** Partner service ID (e.g., "x_users_lookup") — only set for partner API calls */
+  /** Partner service ID (e.g., "image_generation") — only set for partner API calls */
   partnerId?: string;
-  /** Partner service name (e.g., "AttentionVC") — only set for partner API calls */
+  /** Partner service name (e.g., "BlockRun") — only set for partner API calls */
   service?: string;
 };
 

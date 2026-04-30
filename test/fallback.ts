@@ -67,7 +67,7 @@ async function startMockServer(): Promise<{ port: number; close: () => Promise<v
         res.end(
           JSON.stringify({
             error: {
-              message: `Unknown model: ${model}. Available models: moonshot/kimi-k2.5, nvidia/gpt-oss-120b`,
+              message: `Unknown model: ${model}. Available models: moonshot/kimi-k2.6, moonshot/kimi-k2.5, nvidia/gpt-oss-120b`,
               type: "provider_error",
             },
           }),

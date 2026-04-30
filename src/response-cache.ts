@@ -61,9 +61,14 @@ function canonicalize(obj: unknown): unknown {
 
 /**
  * Strip fields that shouldn't affect cache key:
- * - stream (we handle streaming separately)
  * - timestamps injected by OpenClaw
  * - request IDs
+ *
+ * `stream` IS part of the key because it changes the stored response shape
+ * (JSON body vs SSE text/event-stream). A stream:true and stream:false request
+ * with otherwise-identical bodies produce different responses and must live in
+ * separate cache slots — otherwise the first one's response is served to the
+ * second, which breaks the client.
  */
 const TIMESTAMP_PATTERN = /^\[\w{3}\s+\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s+\w+\]\s*/;
 
@@ -72,7 +77,7 @@ function normalizeForCache(obj: Record<string, unknown>): Record<string, unknown
 
   for (const [key, value] of Object.entries(obj)) {
     // Skip fields that don't affect response content
-    if (["stream", "user", "request_id", "x-request-id"].includes(key)) {
+    if (["user", "request_id", "x-request-id"].includes(key)) {
       continue;
     }
 

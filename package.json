@@ -1,12 +1,12 @@
 {
-  "name": "@blockrun/xclawrouter",
-  "version": "0.1.0",
-  "description": "Smart LLM router powered by OKX's agentic wallet. 55+ models, Base + Solana x402 micropayments, no seed phrases — fork of ClawRouter for OKX.",
+  "name": "@blockrun/clawrouter",
+  "version": "0.12.171",
+  "description": "Smart LLM router — save 85% on inference costs. 55+ models (11 free), one wallet, x402 micropayments.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "xclawrouter": "./dist/cli.js"
+    "clawrouter": "./dist/cli.js"
   },
   "openclaw": {
     "extensions": [
@@ -29,6 +29,7 @@
     "docs/*.png",
     "scripts",
     "skills",
+    "src/top-models.json",
     "openclaw.plugin.json"
   ],
   "scripts": {
@@ -66,16 +67,13 @@
     "gemini",
     "deepseek",
     "usdc-hackathon-winner",
-    "agentic-commerce",
-    "okx",
-    "onchainos",
-    "agentic-wallet"
+    "agentic-commerce"
   ],
   "author": "BlockRun <hello@blockrun.ai>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/blockrunai/XClawRouter.git"
+    "url": "git+https://github.com/BlockRunAI/ClawRouter.git"
   },
   "dependencies": {
     "@scure/bip32": "^2.0.1",
@@ -98,7 +96,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint": "^10.2.0",
-    "openclaw": "^2026.4.8",
+    "openclaw": "^2026.4.21",
     "prettier": "^3.8.1",
     "tsup": "^8.0.0",
     "tsx": "^4.21.0",

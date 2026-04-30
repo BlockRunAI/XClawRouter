@@ -1,25 +1,27 @@
 <div align="center">
 
-<h1>The LLM router built for autonomous agents</h1>
+<img src="assets/banner.png" alt="ClawRouter Banner" width="600">
 
-<h3><a href="https://www.okx.com/web3">OKX Agent Wallet</a> + <a href="https://github.com/BlockRunAI/ClawRouter">ClawRouter</a></h3>
+<h1>The LLM router built for autonomous agents</h1>
 
 <p>Agents can't sign up for accounts. Agents can't enter credit cards.<br>
 Agents can only sign transactions.<br><br>
-<strong>XClawRouter is the only LLM router that lets agents operate independently.</strong></p>
+<strong>ClawRouter is the only LLM router that lets agents operate independently.</strong><br><br>
+<em>10 models free, no crypto required. No signup. No API key. No credit card.</em></p>
 
 <br>
 
+<img src="https://img.shields.io/badge/🆓_10_Free_Models-success?style=for-the-badge" alt="10 free models">&nbsp;
 <img src="https://img.shields.io/badge/🤖_Agent--Native-black?style=for-the-badge" alt="Agent native">&nbsp;
 <img src="https://img.shields.io/badge/🔑_Zero_API_Keys-blue?style=for-the-badge" alt="No API keys">&nbsp;
 <img src="https://img.shields.io/badge/⚡_Local_Routing-yellow?style=for-the-badge" alt="Local routing">&nbsp;
 <img src="https://img.shields.io/badge/💰_x402_USDC-purple?style=for-the-badge" alt="x402 USDC">&nbsp;
 <img src="https://img.shields.io/badge/🔓_Open_Source-green?style=for-the-badge" alt="Open source">
 
-[![npm version](https://img.shields.io/npm/v/@blockrun/xclawrouter.svg?style=flat-square&color=cb3837)](https://npmjs.com/package/@blockrun/xclawrouter)
-[![npm downloads](https://img.shields.io/npm/dm/@blockrun/xclawrouter.svg?style=flat-square&color=blue)](https://npmjs.com/package/@blockrun/xclawrouter)
-[![GitHub stars](https://img.shields.io/github/stars/BlockRunAI/XClawRouter?style=flat-square)](https://github.com/BlockRunAI/XClawRouter)
-[![CI](https://img.shields.io/github/actions/workflow/status/BlockRunAI/XClawRouter/ci.yml?style=flat-square&label=CI)](https://github.com/BlockRunAI/XClawRouter/actions)
+[![npm version](https://img.shields.io/npm/v/@blockrun/clawrouter.svg?style=flat-square&color=cb3837)](https://npmjs.com/package/@blockrun/clawrouter)
+[![npm downloads](https://img.shields.io/npm/dm/@blockrun/clawrouter.svg?style=flat-square&color=blue)](https://npmjs.com/package/@blockrun/clawrouter)
+[![GitHub stars](https://img.shields.io/github/stars/BlockRunAI/ClawRouter?style=flat-square&label=GitHub%20stars)](https://github.com/BlockRunAI/ClawRouter)
+[![CI](https://img.shields.io/github/actions/workflow/status/BlockRunAI/ClawRouter/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/BlockRunAI/ClawRouter/actions)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://typescriptlang.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
@@ -32,18 +34,19 @@ Agents can only sign transactions.<br><br>
 
 </div>
 
-> **XClawRouter** is an open-source smart LLM router that reduces AI API costs by up to 92%. It analyzes each request across 15 dimensions and routes to the cheapest capable model in under 1ms, entirely locally. XClawRouter is the only LLM router built for autonomous AI agents — it uses wallet signatures for authentication (no API keys) and USDC micropayments via the x402 protocol (no credit cards). 55+ models from OpenAI, Anthropic, Google, xAI, DeepSeek, and more. MIT licensed.
+> **ClawRouter** is an open-source smart LLM router that reduces AI API costs by up to 92%. It analyzes each request across 15 dimensions and routes to the cheapest capable model in under 1ms, entirely locally. ClawRouter is the only LLM router built for autonomous AI agents — it uses wallet signatures for authentication (no API keys) and USDC micropayments via the x402 protocol (no credit cards). 55+ models from OpenAI, Anthropic, Google, xAI, DeepSeek, and more. MIT licensed.
 
 ---
 
-## Why XClawRouter exists
+## Why ClawRouter exists
 
 Every other LLM router was built for **human developers** — create an account, get an API key, pick a model from a dashboard, pay with a credit card.
 
 **Agents can't do any of that.**
 
-XClawRouter is built for the agent-first world:
+ClawRouter is built for the agent-first world:
 
+- **Starts at $0** — 10 NVIDIA models are free forever (incl. 1M-context DeepSeek V4 + a vision-capable Nemotron Omni)
 - **No accounts** — a wallet is generated locally, no signup
 - **No API keys** — your wallet signature IS authentication
 - **No model selection** — 15-dimension scoring picks the right model automatically
@@ -56,9 +59,10 @@ This is the stack that lets agents operate autonomously: **x402 + USDC + local r
 
 ## How it compares
 
-|                  | OpenRouter        | LiteLLM          | Martian           | Portkey           | **XClawRouter**         |
+|                  | OpenRouter        | LiteLLM          | Martian           | Portkey           | **ClawRouter**          |
 | ---------------- | ----------------- | ---------------- | ----------------- | ----------------- | ----------------------- |
 | **Models**       | 200+              | 100+             | Smart routing     | Gateway           | **55+**                 |
+| **Free tier**    | Rate-limited      | BYO keys         | No                | No                | **8 models, no signup** |
 | **Routing**      | Manual selection  | Manual selection | Smart (closed)    | Observability     | **Smart (open source)** |
 | **Auth**         | Account + API key | Your API keys    | Account + API key | Account + API key | **Wallet signature**    |
 | **Payment**      | Credit card       | BYO keys         | Credit card       | $49-499/mo        | **USDC per-request**    |
@@ -74,12 +78,14 @@ This is the stack that lets agents operate autonomously: **x402 + USDC + local r
 
 ## Quick Start
 
+> **No wallet? 10 models work free out of the box.** Install, run, and pin `nvidia/gpt-oss-120b` (or any of the 10) — no crypto, no signup, no balance required. Add USDC later when you want paid models.
+
 ### Option A — OpenClaw Agent
 
-[OpenClaw](https://openclaw.ai) is an AI coding agent. If you're using it, XClawRouter installs as a plugin:
+[OpenClaw](https://openclaw.ai) is an AI coding agent. If you're using it, ClawRouter installs as a plugin:
 
 ```bash
-curl -fsSL https://blockrun.ai/XClawRouter-update | bash
+curl -fsSL https://blockrun.ai/ClawRouter-update | bash
 openclaw gateway restart
 ```
 
@@ -89,16 +95,16 @@ Done. Smart routing (`blockrun/auto`) is now your default model.
 
 > **Using Claude Code?** Check out [BRCC](https://blockrun.ai/brcc.md) — it's purpose-built for Claude Code with the same smart routing and x402 payments.
 
-No OpenClaw required. XClawRouter runs as a local proxy on port 8402.
+No OpenClaw required. ClawRouter runs as a local proxy on port 8402.
 
 **1. Start the proxy**
 
 ```bash
-npx @blockrun/xclawrouter
+npx @blockrun/clawrouter
 ```
 
-**2. Fund your wallet**
-Your wallet address is printed on first run. Send a few USDC on Base or Solana — $5 covers thousands of requests.
+**2. Fund your wallet** — optional, skip for free tier
+Your wallet address is printed on first run. For paid models, send a few USDC on Base or Solana — $5 covers thousands of requests. To stay at $0, pin any of the 10 free models (e.g. `nvidia/gpt-oss-120b`) or use `/model free` inside OpenClaw.
 
 **3. Point your client at `http://localhost:8402`**
 
@@ -109,7 +115,7 @@ Your wallet address is printed on first run. Send a few USDC on Base or Solana �
 
 ```yaml
 models:
-  - name: XClawRouter Auto
+  - name: ClawRouter Auto
     provider: openai
     model: blockrun/auto
     apiBase: http://localhost:8402/v1/
@@ -131,7 +137,7 @@ Both `provider: openai` and `provider: clawrouter` work — just make sure `apiB
 {
   "models": [
     {
-      "title": "XClawRouter Auto",
+      "title": "ClawRouter Auto",
       "provider": "openai",
       "model": "blockrun/auto",
       "apiBase": "http://localhost:8402/v1/",
@@ -168,11 +174,12 @@ response = client.chat.completions.create(model="blockrun/auto", messages=[...])
 
 Choose your routing strategy with `/model <profile>`:
 
-| Profile          | Strategy           | Savings | Best For         |
-| ---------------- | ------------------ | ------- | ---------------- |
-| `/model auto`    | Balanced (default) | 74-100% | General use      |
-| `/model eco`     | Cheapest possible  | 95-100% | Maximum savings  |
-| `/model premium` | Best quality       | 0%      | Mission-critical |
+| Profile          | Strategy           | Savings  | Best For             |
+| ---------------- | ------------------ | -------- | -------------------- |
+| `/model free`    | Free NVIDIA models | **100%** | $0 balance, learning |
+| `/model auto`    | Balanced (default) | 74-100%  | General use          |
+| `/model eco`     | Cheapest possible  | 95-100%  | Maximum savings      |
+| `/model premium` | Best quality       | 0%       | Mission-critical     |
 
 **Shortcuts:** `/model grok`, `/model br-sonnet`, `/model gpt5`, `/model o3`
 
@@ -188,7 +195,7 @@ Request → Weighted Scorer (15 dimensions) → Tier → Best Model → Response
 
 | Tier      | ECO Model                           | AUTO Model                            | PREMIUM Model                |
 | --------- | ----------------------------------- | ------------------------------------- | ---------------------------- |
-| SIMPLE    | nvidia/gpt-oss-120b (**FREE**)      | gemini-2.5-flash ($0.30/$2.50)        | kimi-k2.5                    |
+| SIMPLE    | nvidia/gpt-oss-120b (**FREE**)      | gemini-2.5-flash ($0.30/$2.50)        | kimi-k2.6                    |
 | MEDIUM    | gemini-3.1-flash-lite ($0.25/$1.50) | kimi-k2.5 ($0.60/$3.00)               | gpt-5.3-codex ($1.75/$14.00) |
 | COMPLEX   | gemini-3.1-flash-lite ($0.25/$1.50) | gemini-3.1-pro ($2/$12)               | claude-opus-4.6 ($5/$25)     |
 | REASONING | grok-4-1-fast ($0.20/$0.50)         | grok-4-1-fast-reasoning ($0.20/$0.50) | claude-sonnet-4.6 ($3/$15)   |
@@ -220,7 +227,15 @@ Generate images directly from chat with `/imagegen`:
 
 ## Video Generation
 
-Generate short AI videos via `POST http://localhost:8402/v1/videos/generations`. ClawRouter proxies the BlockRun gateway, handles x402 payment, and downloads the returned MP4 to local disk — the response `url` points to `http://localhost:8402/videos/<file>.mp4` so the asset survives past the upstream's temporary bucket.
+Generate short AI videos directly from chat with `/videogen`:
+
+```
+/videogen a red apple slowly spinning
+/videogen --model seedance-2-fast --duration=5 a cat waving
+/videogen --model grok-video a neon city at night
+```
+
+Or drive it over HTTP — ClawRouter proxies the BlockRun gateway, handles x402 payment, and downloads the returned MP4 to local disk, rewriting `url` to `http://localhost:8402/videos/<file>.mp4` so the asset survives past the upstream's temporary bucket.
 
 ```bash
 curl -X POST http://localhost:8402/v1/videos/generations \
@@ -265,39 +280,38 @@ Edit existing images with `/img2img`:
 
 ### Budget Models (under $0.001/request)
 
-| Model                         | Input $/M | Output $/M | ~$/request | Context | Features                          |
-| ----------------------------- | --------: | ---------: | ---------: | ------- | --------------------------------- |
-| nvidia/gpt-oss-120b           |  **FREE** |   **FREE** |     **$0** | 128K    |                                   |
-| nvidia/gpt-oss-20b            |  **FREE** |   **FREE** |     **$0** | 128K    |                                   |
-| nvidia/nemotron-ultra-253b    |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                         |
-| nvidia/nemotron-3-super-120b  |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                         |
-| nvidia/nemotron-super-49b     |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                         |
-| nvidia/deepseek-v3.2          |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                         |
-| nvidia/mistral-large-3-675b   |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                         |
-| nvidia/qwen3-coder-480b       |  **FREE** |   **FREE** |     **$0** | 131K    |                                   |
-| nvidia/devstral-2-123b        |  **FREE** |   **FREE** |     **$0** | 131K    |                                   |
-| nvidia/glm-4.7                |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                         |
-| nvidia/llama-4-maverick       |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                         |
-| openai/gpt-5-nano             |     $0.05 |      $0.40 |    $0.0002 | 128K    | tools                             |
-| openai/gpt-4.1-nano           |     $0.10 |      $0.40 |    $0.0003 | 128K    | tools                             |
-| google/gemini-2.5-flash-lite  |     $0.10 |      $0.40 |    $0.0003 | 1M      | tools                             |
-| openai/gpt-4o-mini            |     $0.15 |      $0.60 |    $0.0004 | 128K    | tools                             |
-| xai/grok-4-fast               |     $0.20 |      $0.50 |    $0.0004 | 131K    | tools                             |
-| xai/grok-4-fast-reasoning     |     $0.20 |      $0.50 |    $0.0004 | 131K    | reasoning, tools                  |
-| xai/grok-4-1-fast             |     $0.20 |      $0.50 |    $0.0004 | 131K    | tools                             |
-| xai/grok-4-1-fast-reasoning   |     $0.20 |      $0.50 |    $0.0004 | 131K    | reasoning, tools                  |
-| xai/grok-4-0709               |     $0.20 |      $1.50 |    $0.0009 | 131K    | reasoning, tools                  |
-| openai/gpt-5-mini             |     $0.25 |      $2.00 |    $0.0011 | 200K    | tools                             |
-| deepseek/deepseek-chat        |     $0.28 |      $0.42 |    $0.0004 | 128K    | tools                             |
-| deepseek/deepseek-reasoner    |     $0.28 |      $0.42 |    $0.0004 | 128K    | reasoning, tools                  |
-| xai/grok-3-mini               |     $0.30 |      $0.50 |    $0.0004 | 131K    | tools                             |
-| minimax/minimax-m2.7          |     $0.30 |      $1.20 |    $0.0008 | 205K    | reasoning, agentic, tools         |
-| minimax/minimax-m2.5          |     $0.30 |      $1.20 |    $0.0008 | 205K    | reasoning, agentic, tools         |
-| google/gemini-2.5-flash       |     $0.30 |      $2.50 |    $0.0014 | 1M      | vision, tools                     |
-| openai/gpt-4.1-mini           |     $0.40 |      $1.60 |    $0.0010 | 128K    | tools                             |
-| google/gemini-3-flash-preview |     $0.50 |      $3.00 |    $0.0018 | 1M      | vision                            |
-| nvidia/kimi-k2.5              |     $0.55 |      $2.50 |    $0.0015 | 262K    | tools                             |
-| moonshot/kimi-k2.5            |     $0.60 |      $3.00 |    $0.0018 | 262K    | reasoning, vision, agentic, tools |
+| Model                                          | Input $/M | Output $/M | ~$/request | Context | Features                          |
+| ---------------------------------------------- | --------: | ---------: | ---------: | ------- | --------------------------------- |
+| nvidia/gpt-oss-120b                            |  **FREE** |   **FREE** |     **$0** | 128K    | default free model                |
+| nvidia/gpt-oss-20b                             |  **FREE** |   **FREE** |     **$0** | 128K    | smaller, faster                   |
+| nvidia/mistral-small-4-119b                    |  **FREE** |   **FREE** |     **$0** | 131K    | fastest free chat (114 tok/s)     |
+| nvidia/deepseek-v4-pro                         |  **FREE** |   **FREE** |     **$0** | 1M      | reasoning, MMLU-Pro 87.5          |
+| nvidia/deepseek-v4-flash                       |  **FREE** |   **FREE** |     **$0** | 1M      | reasoning, ~5x faster than v4-pro |
+| nvidia/qwen3-next-80b-a3b-thinking             |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                         |
+| nvidia/qwen3-coder-480b                        |  **FREE** |   **FREE** |     **$0** | 131K    | coding                            |
+| nvidia/glm-4.7                                 |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                         |
+| nvidia/llama-4-maverick                        |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                         |
+| nvidia/nemotron-3-nano-omni-30b-a3b-reasoning  |  **FREE** |   **FREE** |     **$0** | 256K    | reasoning, **vision** (text+img+video+audio) |
+| openai/gpt-5-nano                  |     $0.05 |      $0.40 |    $0.0002 | 128K    | tools                             |
+| openai/gpt-4.1-nano                |     $0.10 |      $0.40 |    $0.0003 | 128K    | tools                             |
+| google/gemini-2.5-flash-lite       |     $0.10 |      $0.40 |    $0.0003 | 1M      | tools                             |
+| openai/gpt-4o-mini                 |     $0.15 |      $0.60 |    $0.0004 | 128K    | tools                             |
+| xai/grok-4-fast                    |     $0.20 |      $0.50 |    $0.0004 | 131K    | tools                             |
+| xai/grok-4-fast-reasoning          |     $0.20 |      $0.50 |    $0.0004 | 131K    | reasoning, tools                  |
+| xai/grok-4-1-fast                  |     $0.20 |      $0.50 |    $0.0004 | 131K    | tools                             |
+| xai/grok-4-1-fast-reasoning        |     $0.20 |      $0.50 |    $0.0004 | 131K    | reasoning, tools                  |
+| xai/grok-4-0709                    |     $0.20 |      $1.50 |    $0.0009 | 131K    | reasoning, tools                  |
+| openai/gpt-5-mini                  |     $0.25 |      $2.00 |    $0.0011 | 200K    | tools                             |
+| deepseek/deepseek-chat             |     $0.28 |      $0.42 |    $0.0004 | 128K    | tools                             |
+| deepseek/deepseek-reasoner         |     $0.28 |      $0.42 |    $0.0004 | 128K    | reasoning, tools                  |
+| xai/grok-3-mini                    |     $0.30 |      $0.50 |    $0.0004 | 131K    | tools                             |
+| minimax/minimax-m2.7               |     $0.30 |      $1.20 |    $0.0008 | 205K    | reasoning, agentic, tools         |
+| minimax/minimax-m2.5               |     $0.30 |      $1.20 |    $0.0008 | 205K    | reasoning, agentic, tools         |
+| google/gemini-2.5-flash            |     $0.30 |      $2.50 |    $0.0014 | 1M      | vision, tools                     |
+| openai/gpt-4.1-mini                |     $0.40 |      $1.60 |    $0.0010 | 128K    | tools                             |
+| google/gemini-3-flash-preview      |     $0.50 |      $3.00 |    $0.0018 | 1M      | vision                            |
+| moonshot/kimi-k2.5                 |     $0.60 |      $3.00 |    $0.0018 | 262K    | reasoning, vision, agentic, tools |
+| moonshot/kimi-k2.6                 |     $0.95 |      $4.00 |    $0.0025 | 262K    | reasoning, vision, agentic, tools |
 
 ### Mid-Range Models ($0.001–$0.01/request)
 
@@ -328,11 +342,12 @@ Edit existing images with `/img2img`:
 | anthropic/claude-sonnet-4.6 |     $3.00 |     $15.00 |    $0.0090 | 200K    | reasoning, vision, agentic, tools |
 | xai/grok-3                  |     $3.00 |     $15.00 |    $0.0090 | 131K    | reasoning, tools                  |
 | anthropic/claude-opus-4.6   |     $5.00 |     $25.00 |    $0.0150 | 200K    | reasoning, vision, agentic, tools |
+| openai/gpt-5.5              |     $5.00 |     $30.00 |    $0.0175 | 1M      | reasoning, vision, agentic, tools |
 | openai/o1                   |    $15.00 |     $60.00 |    $0.0375 | 200K    | reasoning, tools                  |
 | openai/gpt-5.2-pro          |    $21.00 |    $168.00 |    $0.0945 | 400K    | reasoning, tools                  |
 | openai/gpt-5.4-pro          |    $30.00 |    $180.00 |    $0.1050 | 400K    | reasoning, tools                  |
 
-> **Free tier:** 11 models cost nothing — `/model free` points to nemotron-ultra-253b, or pick any free model directly (e.g., `/model nemotron`, `/model deepseek-free`, `/model devstral`).
+> **Free tier:** 10 models cost nothing — `/model free` points to gpt-oss-120b, or pick any free model directly (e.g., `/model deepseek-v4-pro` for reasoning, `/model nemotron-omni` for vision, `/model qwen-thinking`, `/model deepseek-v4-flash` for 1M context, `/model mistral-small`).
 > **Best value:** `gpt-5-nano` and `gemini-2.5-flash-lite` deliver strong results at ~$0.0003/request.
 
 ---
@@ -379,7 +394,7 @@ USDC stays in your wallet until spent — non-custodial. Price is visible in the
 <tr>
 <td width="50%" align="center">
 <strong>Smart Routing in Action</strong><br><br>
-<img src="docs/clawrouter-savings.png" alt="XClawRouter savings" width="400">
+<img src="docs/clawrouter-savings.png" alt="ClawRouter savings" width="400">
 </td>
 <td width="50%" align="center">
 <strong>Telegram Integration</strong><br><br>
@@ -408,7 +423,7 @@ For basic usage, no configuration needed. For advanced options:
 Block specific models from being routed to. Useful if a model doesn't follow your agent instructions or you want to control costs.
 
 ```bash
-/exclude add nvidia/gpt-oss-120b   # Block the free model
+/exclude add nvidia/gpt-oss-120b   # Block the default free model
 /exclude add grok-4                # Aliases work — blocks all grok-4 variants
 /exclude add gpt-5.4               # Skip expensive models
 /exclude                           # Show current exclusions
@@ -425,7 +440,7 @@ Exclusions persist across restarts (`~/.openclaw/blockrun/exclude-models.json`).
 **When things go wrong, run the doctor:**
 
 ```bash
-npx @blockrun/xclawrouter doctor
+npx @blockrun/clawrouter doctor
 ```
 
 This collects diagnostics and sends them to Claude Sonnet for AI-powered analysis:
@@ -454,14 +469,14 @@ The local proxy isn't running. Run `openclaw gateway restart` to fix.
 **Use Opus for complex issues:**
 
 ```bash
-npx @blockrun/xclawrouter doctor opus
+npx @blockrun/clawrouter doctor opus
 ```
 
 **Ask a specific question:**
 
 ```bash
-npx @blockrun/xclawrouter doctor "why is my request failing?"
-npx @blockrun/xclawrouter doctor opus "深度分析我的配置"
+npx @blockrun/clawrouter doctor "why is my request failing?"
+npx @blockrun/clawrouter doctor opus "深度分析我的配置"
 ```
 
 **Cost:** Sonnet ~$0.003 (default) | Opus ~$0.01
@@ -471,8 +486,8 @@ npx @blockrun/xclawrouter doctor opus "深度分析我的配置"
 ## Development
 
 ```bash
-git clone https://github.com/BlockRunAI/XClawRouter.git
-cd XClawRouter
+git clone https://github.com/BlockRunAI/ClawRouter.git
+cd ClawRouter
 npm install
 npm run build
 npm test
@@ -498,13 +513,13 @@ npm test
 <tr>
 <td width="50%">
 
-### ⚡ XClawRouter
+### ⚡ ClawRouter
 
 **The LLM router built for autonomous agents**
 
 You're here. 55+ models, local smart routing, x402 USDC payments — the only stack that lets agents operate independently.
 
-`curl -fsSL https://blockrun.ai/XClawRouter-update | bash`
+`curl -fsSL https://blockrun.ai/ClawRouter-update | bash`
 
 </td>
 <td width="50%">
@@ -540,8 +555,8 @@ Run Claude Code with 50+ models, no rate limits, no Anthropic account, no phone 
 | Article                                                                                            | Topic                                                   |
 | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | [11 Free AI Models, Zero Cost](docs/11-free-ai-models-zero-cost-blockrun.md)                       | How BlockRun gives developers top-tier LLMs for nothing |
-| [XClawRouter Cuts LLM API Costs 500×](docs/clawrouter-cuts-llm-api-costs-500x.md)                  | Deep dive into cost savings                             |
-| [XClawRouter vs OpenRouter](docs/clawrouter-vs-openrouter-llm-routing-comparison.md)               | Head-to-head comparison                                 |
+| [ClawRouter Cuts LLM API Costs 500×](docs/clawrouter-cuts-llm-api-costs-500x.md)                   | Deep dive into cost savings                             |
+| [ClawRouter vs OpenRouter](docs/clawrouter-vs-openrouter-llm-routing-comparison.md)                | Head-to-head comparison                                 |
 | [Smart LLM Router: 14-Dimension Classifier](docs/smart-llm-router-14-dimension-classifier.md)      | How the routing engine works                            |
 | [LLM Router Benchmark: 46 Models, Sub-1ms](docs/llm-router-benchmark-46-models-sub-1ms-routing.md) | Performance benchmarks                                  |
 | [Anthropic Cost Savings](docs/anthropic-cost-savings.md)                                           | Reducing Claude API spend                               |
@@ -550,29 +565,29 @@ Run Claude Code with 50+ models, no rate limits, no Anthropic account, no phone 
 
 ## Frequently Asked Questions
 
-### What is XClawRouter?
+### What is ClawRouter?
 
-XClawRouter is an open-source (MIT licensed) smart LLM router built for autonomous AI agents. It analyzes each request across 15 dimensions and routes to the cheapest capable model in under 1ms, entirely locally — no external API calls needed for routing decisions.
+ClawRouter is an open-source (MIT licensed) smart LLM router built for autonomous AI agents. It analyzes each request across 15 dimensions and routes to the cheapest capable model in under 1ms, entirely locally — no external API calls needed for routing decisions.
 
-### How much can XClawRouter save on LLM costs?
+### How much can ClawRouter save on LLM costs?
 
-XClawRouter's blended average cost is $2.05 per million tokens compared to $25/M for Claude Opus, representing 92% savings. Actual savings depend on your workload — simple queries are routed to free models ($0/request), while complex tasks get premium models.
+ClawRouter's blended average cost is $2.05 per million tokens compared to $25/M for Claude Opus, representing 92% savings. Actual savings depend on your workload — simple queries are routed to free models ($0/request), while complex tasks get premium models.
 
-### How does XClawRouter compare to OpenRouter?
+### How does ClawRouter compare to OpenRouter?
 
-XClawRouter is open source and runs locally. It uses wallet-based authentication (no API keys) and USDC per-request payments (no credit cards or subscriptions). OpenRouter requires an account, API key, and credit card. XClawRouter also features smart routing — it automatically picks the best model for each request, while OpenRouter requires manual model selection.
+ClawRouter is open source and runs locally. It uses wallet-based authentication (no API keys) and USDC per-request payments (no credit cards or subscriptions). OpenRouter requires an account, API key, and credit card. ClawRouter also features smart routing — it automatically picks the best model for each request, while OpenRouter requires manual model selection.
 
-### How does XClawRouter compare to LiteLLM?
+### How does ClawRouter compare to LiteLLM?
 
-Both are open source and run locally. But XClawRouter adds smart routing (automatic model selection), wallet-based auth, and USDC payments. LiteLLM requires you to bring your own API keys and manually choose models.
+Both are open source and run locally. But ClawRouter adds smart routing (automatic model selection), wallet-based auth, and USDC payments. LiteLLM requires you to bring your own API keys and manually choose models.
 
-### What agents does XClawRouter work with?
+### What agents does ClawRouter work with?
 
-XClawRouter works with any tool that makes OpenAI-compatible API calls — point it at `http://localhost:8402`. This includes continue.dev, Cursor, VS Code extensions, ElizaOS, and custom agents. It also integrates as a plugin with [OpenClaw](https://openclaw.ai) (an AI coding agent), which enables additional features like slash commands and usage reports.
+ClawRouter works with any tool that makes OpenAI-compatible API calls — point it at `http://localhost:8402`. This includes continue.dev, Cursor, VS Code extensions, ElizaOS, and custom agents. It also integrates as a plugin with [OpenClaw](https://openclaw.ai) (an AI coding agent), which enables additional features like slash commands and usage reports.
 
-### Is XClawRouter free?
+### Is ClawRouter free?
 
-XClawRouter itself is free and MIT licensed. You pay only for the LLM API calls routed through it — and 11 models (DeepSeek V3.2, Nemotron Ultra 253B, Mistral Large 675B, Llama 4 Maverick, and more) are completely free. Use `/model free` for Nemotron Ultra 253B, or pick any free model by name.
+ClawRouter itself is free and MIT licensed. You pay only for the LLM API calls routed through it — and 10 NVIDIA-hosted models (`gpt-oss-120b`, `gpt-oss-20b`, `mistral-small-4-119b`, `deepseek-v4-pro`, `deepseek-v4-flash`, `qwen3-next-80b-a3b-thinking`, `qwen3-coder-480b`, `glm-4.7`, `llama-4-maverick`, `nemotron-3-nano-omni-30b-a3b-reasoning`) are completely free. Use `/model free` to smart-route across them, or pick any by name.
 
 ---
 
@@ -580,6 +595,6 @@ XClawRouter itself is free and MIT licensed. You pay only for the LLM API calls 
 
 **MIT License** · [BlockRun](https://blockrun.ai) — Agent-native AI infrastructure
 
-⭐ If XClawRouter powers your agents, consider starring the repo!
+⭐ If ClawRouter powers your agents, consider starring the repo!
 
 </div>

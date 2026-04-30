@@ -74,8 +74,10 @@ import type { SolanaBalanceMonitor } from "./solana-balance.js";
 
 /** Union type for chain-agnostic balance monitoring */
 type AnyBalanceMonitor = BalanceMonitor | SolanaBalanceMonitor;
-import { resolvePaymentChain, resolveWalletAdapter } from "./auth.js";
-import type { WalletAdapter } from "./wallet-adapter.js";
+import { resolvePaymentChain } from "./auth.js";
+import type { WalletResolution } from "./auth.js";
+import { OnchainOsAdapter } from "./onchainos-adapter.js";
+import { createOnchainosPayFetch } from "./okx-x402-fetch.js";
 import { compressContext, shouldCompress, type NormalizedMessage } from "./compression/index.js";
 // Error classes available for programmatic use but not used in proxy
 // (universal free fallback means we don't throw balance errors anymore)
@@ -93,6 +95,7 @@ import { loadExcludeList } from "./exclude-models.js";
 import { PROXY_PORT } from "./config.js";
 import { SessionJournal } from "./journal.js";
 import { applyUpstreamProxy } from "./upstream-proxy.js";
+import { extractTextualToolCalls } from "./textual-tool-calls.js";
 
 const BLOCKRUN_API = "https://blockrun.ai/api";
 const BLOCKRUN_SOLANA_API = "https://sol.blockrun.ai/api";
@@ -110,18 +113,19 @@ const ROUTING_PROFILES = new Set([
   "blockrun/premium",
   "premium",
 ]);
+// Default free model first (auto-pick order). gpt-oss-120b is the historical
+// default — heavy users rely on it. New entries appended in chain order.
 const FREE_MODELS = new Set([
   "free/gpt-oss-120b",
   "free/gpt-oss-20b",
-  "free/nemotron-ultra-253b",
-  "free/nemotron-3-super-120b",
-  "free/nemotron-super-49b",
-  "free/deepseek-v3.2",
-  "free/mistral-large-3-675b",
+  "free/mistral-small-4-119b", // 114 tok/s — fastest free chat
+  "free/deepseek-v4-pro", // 1M ctx, MMLU-Pro 87.5 — strongest free reasoning
+  "free/deepseek-v4-flash", // 1M ctx, ~5x faster than v4-pro
+  "free/qwen3-next-80b-a3b-thinking", // 116 tok/s reasoning
   "free/qwen3-coder-480b",
-  "free/devstral-2-123b",
   "free/glm-4.7",
   "free/llama-4-maverick",
+  "free/nemotron-3-nano-omni-30b-a3b-reasoning", // first vision-capable free
 ]);
 /** Pick the best available free model that isn't excluded. */
 function pickFreeModel(excludeList?: Set<string>): string | undefined {
@@ -1153,7 +1157,17 @@ export type InsufficientFundsInfo = {
  * Solana keys. Using the full object prevents callers from accidentally
  * forgetting to forward Solana key bytes.
  */
-export type WalletConfig = string | { key: string; solanaPrivateKeyBytes?: Uint8Array };
+/**
+ * Wallet config accepts:
+ *   - string: legacy plain EVM private key
+ *   - { key, ... }: legacy resolution with optional Solana keys
+ *   - { source: "okx", address, onchainos }: OKX onchainos wallet — no
+ *     local key, signing delegated to the onchainos CLI.
+ */
+export type WalletConfig =
+  | string
+  | { key: string; solanaPrivateKeyBytes?: Uint8Array }
+  | WalletResolution;
 
 export type PaymentChain = "base" | "solana";
 
@@ -1497,7 +1511,7 @@ function estimateImageCost(model: string, size?: string, n: number = 1): number 
 /**
  * Proxy a paid BlockRun data request through x402 payment flow.
  *
- * Used for partner endpoints (/v1/x/*, /v1/partner/*, /v1/pm/*), market data
+ * Used for partner endpoints (/v1/partner/*, /v1/pm/*), market data
  * (/v1/stocks/*, /v1/usstock/*, /v1/crypto/*, /v1/fx/*, /v1/commodity/*),
  * and wallet-backed data tools such as BlockRun Exa (/v1/exa/*). No smart routing,
  * SSE, compression, or sessions — just collect body, forward via payFetch
@@ -1665,10 +1679,28 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
     console.log(`[XClawRouter] Upstream proxy: ${upstreamProxy}`);
   }
 
-  // Normalize wallet config: string = EVM-only, object = full resolution
-  const walletKey = typeof options.wallet === "string" ? options.wallet : options.wallet.key;
-  const solanaPrivateKeyBytes =
-    typeof options.wallet === "string" ? undefined : options.wallet.solanaPrivateKeyBytes;
+  // Normalize wallet config. Three shapes:
+  //   1. Plain string private key (legacy CLI/test path)
+  //   2. Full resolution object with `key` (legacy local-key path)
+  //   3. OKX resolution with `source: "okx"` and an `onchainos` adapter — no
+  //      local key, signing happens via the onchainos CLI.
+  const walletObj = typeof options.wallet === "string" ? undefined : options.wallet;
+  const isOkxWallet =
+    walletObj !== undefined &&
+    "source" in walletObj &&
+    walletObj.source === "okx" &&
+    walletObj.onchainos !== undefined;
+  const walletKey = typeof options.wallet === "string" ? options.wallet : walletObj?.key;
+  const solanaPrivateKeyBytes = walletObj?.solanaPrivateKeyBytes;
+  const okxAdapter: OnchainOsAdapter | undefined = isOkxWallet ? walletObj?.onchainos : undefined;
+  const okxAddress: `0x${string}` | undefined = isOkxWallet
+    ? (walletObj!.address as `0x${string}`)
+    : undefined;
+  if (!walletKey && !okxAdapter) {
+    throw new Error(
+      "Wallet config has no signing backend: provide a private key or an OKX onchainos wallet.",
+    );
+  }
 
   // Payment chain: options > env var > persisted file > default "base".
   // No dynamic switching — user selects chain via /wallet solana or /wallet base.
@@ -1695,13 +1727,14 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
   const existingProxy = await checkExistingProxy(listenPort);
   if (existingProxy) {
     // Proxy already running — reuse it instead of failing with EADDRINUSE
-    const account = privateKeyToAccount(walletKey as `0x${string}`);
+    const expectedAddress: `0x${string}` =
+      okxAddress ?? privateKeyToAccount(walletKey as `0x${string}`).address;
     const baseUrl = `http://127.0.0.1:${listenPort}`;
 
     // Verify the existing proxy is using the same wallet (or warn if different)
-    if (existingProxy.wallet !== account.address) {
+    if (existingProxy.wallet !== expectedAddress) {
       console.warn(
-        `[XClawRouter] Existing proxy on port ${listenPort} uses wallet ${existingProxy.wallet}, but current config uses ${account.address}. Reusing existing proxy.`,
+        `[XClawRouter] Existing proxy on port ${listenPort} uses wallet ${existingProxy.wallet}, but current config uses ${expectedAddress}. Reusing existing proxy.`,
       );
     }
 
@@ -1738,7 +1771,7 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
       const { SolanaBalanceMonitor } = await import("./solana-balance.js");
       balanceMonitor = new SolanaBalanceMonitor(reuseSolanaAddress);
     } else {
-      balanceMonitor = new BalanceMonitor(account.address);
+      balanceMonitor = new BalanceMonitor(expectedAddress);
     }
 
     options.onReady?.(listenPort);
@@ -1755,24 +1788,18 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
     };
   }
 
-  // Create x402 payment client. Signing backend is selected via XCLAWROUTER_USE_ONCHAINOS:
-  //   - "1" → delegate to OKX's agentic wallet CLI (no private keys in this process)
-  //   - default → legacy viem account from BIP-39-derived private key
-  const useOnchainos = process.env.XCLAWROUTER_USE_ONCHAINOS === "1";
+  // Create x402 payment client. Two signing backends:
+  //   - OKX onchainos (when wallet source is "okx") — payments signed via the
+  //     `onchainos payment x402-pay` CLI, no private keys in this process.
+  //   - Local viem account (default) — derived from BIP-39 / env private key.
+  const useOnchainos = !!okxAdapter;
   const evmPublicClient = createPublicClient({ chain: base, transport: http() });
   const x402 = new x402Client();
 
   let account: { address: `0x${string}` };
-  let walletAdapter: WalletAdapter | undefined;
   if (useOnchainos) {
-    walletAdapter = resolveWalletAdapter({
-      enableSolana: !!solanaPrivateKeyBytes || paymentChain === "solana",
-    });
-    const evmAddress = await walletAdapter.evm.getAddress();
-    account = { address: evmAddress };
-    const evmSigner = await walletAdapter.evm.toX402Signer(evmPublicClient);
-    registerExactEvmScheme(x402, { signer: evmSigner });
-    console.log(`[XClawRouter] Agentic wallet (onchainos) — EVM ${evmAddress}`);
+    account = { address: okxAddress! };
+    console.log(`[XClawRouter] OKX onchainos wallet — EVM ${okxAddress}`);
   } else {
     const acct = privateKeyToAccount(walletKey as `0x${string}`);
     account = { address: acct.address };
@@ -1780,12 +1807,8 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
     registerExactEvmScheme(x402, { signer: evmSigner });
   }
 
-  // Register Solana scheme if key is available (legacy path only — onchainos Solana
-  // support is TODO; see OnchainOsSvmAdapter in src/onchainos-adapter.ts).
-  //
-  // Uses registerExactSvmScheme helper which registers:
-  //   - solana:* wildcard (catches any CAIP-2 Solana network)
-  //   - V1 compat names: "solana", "solana-devnet", "solana-testnet"
+  // Register Solana scheme if key is available. OKX onchainos focuses on Base
+  // (EVM); Solana support stays on the legacy local-mnemonic path.
   let solanaAddress: string | undefined;
   if (!useOnchainos && solanaPrivateKeyBytes) {
     const { registerExactSvmScheme } = await import("@x402/svm/exact/client");
@@ -1818,9 +1841,14 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
     console.log(`[XClawRouter] Payment signed on ${chain} (${network}) — $${amountUsd.toFixed(6)}`);
   });
 
-  const payFetch = createPayFetchWithPreAuth(fetch, x402, undefined, {
-    skipPreAuth: paymentChain === "solana",
-  });
+  // OKX mode: bypass @x402/fetch — onchainos exposes only the high-level
+  // `payment x402-pay` command, not raw typed-data signing, so we hand-roll
+  // 402-handling in createOnchainosPayFetch.
+  const payFetch = useOnchainos
+    ? createOnchainosPayFetch(fetch, okxAdapter!)
+    : createPayFetchWithPreAuth(fetch, x402, undefined, {
+        skipPreAuth: paymentChain === "solana",
+      });
 
   // Create balance monitor for pre-request checks (lazy import to avoid loading @solana/kit on Base chain)
   let balanceMonitor: AnyBalanceMonitor;
@@ -2418,8 +2446,13 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
         return;
       }
 
-      // --- Handle /v1/videos/generations: proxy with x402 + save MP4 locally ---
-      // Upstream (xAI) polls async; this handler may take 30-120s.
+      // --- Handle /v1/videos/generations: async submit + poll ---
+      // Server protocol (BlockRun 2026-04-23+):
+      //   POST /v1/videos/generations        → 202 { id, poll_url }  (payment verified, not settled)
+      //   GET  /v1/videos/generations/{id}   → 202 while queued/in_progress, 200 on completed
+      //                                        (settles on the first completed poll)
+      // We collapse this back into a single blocking POST for the client — upstream
+      // polling happens server-side and the client sees one HTTP round-trip.
       if (req.url === "/v1/videos/generations" && req.method === "POST") {
         const videoStartTime = Date.now();
         const chunks: Buffer[] = [];
@@ -2438,34 +2471,115 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
           /* use defaults */
         }
         try {
-          const upstream = await payFetch(`${apiBase}/v1/videos/generations`, {
+          // Step 1: submit job. Server returns 202 with poll_url.
+          const submitResp = await payFetch(`${apiBase}/v1/videos/generations`, {
             method: "POST",
             headers: { "content-type": "application/json", "user-agent": USER_AGENT },
             body: reqBody,
           });
-          const text = await upstream.text();
-          if (!upstream.ok) {
-            res.writeHead(upstream.status, { "Content-Type": "application/json" });
-            res.end(text);
+          const submitText = await submitResp.text();
+          if (!submitResp.ok && submitResp.status !== 202) {
+            res.writeHead(submitResp.status, { "Content-Type": "application/json" });
+            res.end(submitText);
             return;
           }
-          let result: {
+          let submitResult: {
+            id?: string;
+            poll_url?: string;
+            status?: string;
+            // Legacy (pre-2026-04-23) servers still return the final result directly.
             created?: number;
             model?: string;
             data?: Array<{ url?: string; duration_seconds?: number; backed_up?: boolean }>;
           };
           try {
-            result = JSON.parse(text);
+            submitResult = JSON.parse(submitText);
           } catch {
             res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(text);
+            res.end(submitText);
             return;
           }
-          // Download video from remote URL and save locally
-          if (result.data?.length) {
+
+          // Step 2: if no poll_url, upstream responded with the final result (legacy server) —
+          // drop through to the same local-caching path as before.
+          let finalResult: typeof submitResult = submitResult;
+          if (submitResult.poll_url && submitResult.id) {
+            const apiOrigin = new URL(apiBase).origin;
+            const pollUrl = submitResult.poll_url.startsWith("http")
+              ? submitResult.poll_url
+              : `${apiOrigin}${submitResult.poll_url}`;
+            console.log(
+              `[XClawRouter] Video job submitted (id=${submitResult.id}), polling upstream — typical 60–180s...`,
+            );
+
+            // Upstream typically 60-180s. Poll every 5s, bail after ~5min total.
+            // Auth is 10min per server config; we stop before that.
+            const pollDeadline = Date.now() + 300_000;
+            const pollInterval = 5_000;
+            // Small initial delay so the upstream has a chance to start.
+            await new Promise((r) => setTimeout(r, 3_000));
+            let pollError: string | undefined;
+            while (Date.now() < pollDeadline) {
+              const pollResp = await payFetch(pollUrl, {
+                method: "GET",
+                headers: { "user-agent": USER_AGENT },
+              });
+              const pollText = await pollResp.text();
+              let pollBody: typeof submitResult & { error?: string } = {};
+              try {
+                pollBody = JSON.parse(pollText);
+              } catch {
+                pollError = `Non-JSON poll response (${pollResp.status}): ${pollText.slice(0, 200)}`;
+                break;
+              }
+              if (
+                pollResp.status === 202 ||
+                pollBody.status === "queued" ||
+                pollBody.status === "in_progress"
+              ) {
+                await new Promise((r) => setTimeout(r, pollInterval));
+                continue;
+              }
+              if (pollBody.status === "failed") {
+                pollError = pollBody.error ?? "Upstream video generation failed";
+                break;
+              }
+              if (pollResp.ok && pollBody.status === "completed") {
+                finalResult = pollBody;
+                break;
+              }
+              // Any other non-OK: surface it.
+              if (!pollResp.ok) {
+                res.writeHead(pollResp.status, { "Content-Type": "application/json" });
+                res.end(pollText);
+                return;
+              }
+              // OK but no known status — treat as final and hand through.
+              finalResult = pollBody;
+              break;
+            }
+            if (pollError) {
+              res.writeHead(502, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ error: "Video generation failed", details: pollError }));
+              return;
+            }
+            if (!finalResult.data) {
+              res.writeHead(504, { "Content-Type": "application/json" });
+              res.end(
+                JSON.stringify({
+                  error: "Video generation timed out",
+                  details: `Upstream did not complete within 5 minutes (job id=${submitResult.id}). No payment has been settled.`,
+                }),
+              );
+              return;
+            }
+          }
+
+          // Step 3: download any hosted URLs to local disk + rewrite to localhost.
+          if (finalResult.data?.length) {
             await mkdir(VIDEO_DIR, { recursive: true });
             const port = (server.address() as AddressInfo | null)?.port ?? 8402;
-            for (const clip of result.data) {
+            for (const clip of finalResult.data) {
               if (clip.url?.startsWith("https://") || clip.url?.startsWith("http://")) {
                 try {
                   const videoResp = await fetch(clip.url);
@@ -2480,11 +2594,11 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
                     const buf = Buffer.from(await videoResp.arrayBuffer());
                     await writeFile(join(VIDEO_DIR, filename), buf);
                     clip.url = `http://localhost:${port}/videos/${filename}`;
-                    console.log(`[ClawRouter] Video saved → ${clip.url}`);
+                    console.log(`[XClawRouter] Video saved → ${clip.url}`);
                   }
                 } catch (downloadErr) {
                   console.warn(
-                    `[ClawRouter] Failed to download video, using original URL: ${downloadErr instanceof Error ? downloadErr.message : String(downloadErr)}`,
+                    `[XClawRouter] Failed to download video, using original URL: ${downloadErr instanceof Error ? downloadErr.message : String(downloadErr)}`,
                   );
                 }
               }
@@ -2502,10 +2616,10 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
             latencyMs: Date.now() - videoStartTime,
           }).catch(() => {});
           res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify(result));
+          res.end(JSON.stringify(finalResult));
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          console.error(`[ClawRouter] Video generation error: ${msg}`);
+          console.error(`[XClawRouter] Video generation error: ${msg}`);
           if (!res.headersSent) {
             res.writeHead(502, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ error: "Video generation failed", details: msg }));
@@ -2514,11 +2628,9 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
         return;
       }
 
-      // --- Handle paid API paths (/v1/x/*, /v1/partner/*, /v1/pm/*, /v1/exa/*, /v1/modal/*,
+      // --- Handle paid API paths (/v1/partner/*, /v1/pm/*, /v1/exa/*, /v1/modal/*,
       // /v1/stocks/*, /v1/usstock/*, /v1/crypto/*, /v1/fx/*, /v1/commodity/*) ---
-      if (
-        req.url?.match(/^\/v1\/(?:x|partner|pm|exa|modal|stocks|usstock|crypto|fx|commodity)\//)
-      ) {
+      if (req.url?.match(/^\/v1\/(?:partner|pm|exa|modal|stocks|usstock|crypto|fx|commodity)\//)) {
         try {
           await proxyPaidApiRequest(
             req,
@@ -3973,7 +4085,11 @@ async function proxyRequest(
   }
 
   // --- Response cache check (long-term, 10min TTL) ---
-  const cacheKey = ResponseCache.generateKey(body);
+  // Prefix with the client's original stream intent. The body was already
+  // rewritten to stream:false for the upstream call (same reason as dedupKey
+  // below), so SSE and JSON responses would otherwise share a cache slot and
+  // the first caller's response shape would be served to the second.
+  const cacheKey = `${isStreaming ? "sse" : "json"}:${ResponseCache.generateKey(body)}`;
   const reqHeaders: Record<string, string> = {};
   for (const [key, value] of Object.entries(req.headers)) {
     if (typeof value === "string") reqHeaders[key] = value;
@@ -3989,7 +4105,12 @@ async function proxyRequest(
   }
 
   // --- Dedup check (short-term, 30s TTL for retries) ---
-  const dedupKey = RequestDeduplicator.hash(body);
+  // Prefix with the client's original stream intent. The upstream `stream` flag
+  // is rewritten to false before this point (BlockRun API is non-streaming), so
+  // a streaming and non-streaming request with otherwise-identical bodies would
+  // otherwise collide and serve each other's responses (JSON body to an SSE
+  // caller, or vice versa).
+  const dedupKey = `${isStreaming ? "sse" : "json"}:${RequestDeduplicator.hash(body)}`;
 
   // Check dedup cache (catches retries within 30s)
   const cached = deduplicator.getCached(dedupKey);
@@ -4561,7 +4682,7 @@ async function proxyRequest(
 
         if (isDegenerateCompletion(bodyBuf) && !isLastAttempt) {
           console.warn(
-            `[ClawRouter] ⚠️  Degenerate output from ${tryModel} (finish_reason=length + repetition loop) — retrying with next fallback`,
+            `[XClawRouter] ⚠️  Degenerate output from ${tryModel} (finish_reason=length + repetition loop) — retrying with next fallback`,
           );
           recordProviderError(tryModel, "server_error");
           failedAttempts.push({
@@ -5016,9 +5137,34 @@ async function proxyRequest(
           // Process each choice (usually just one)
           if (rsp.choices && Array.isArray(rsp.choices)) {
             for (const choice of rsp.choices) {
-              // Strip thinking tokens (Kimi <｜...｜> and standard <think> tags)
+              const endsWithToolCalls = choice.finish_reason === "tool_calls";
+              // Some OpenAI-compatible providers include planning prose in content
+              // alongside tool_calls, or mark the turn as a tool-call turn via
+              // finish_reason before exposing the tool_calls array at the same
+              // object shape. Tool execution only needs tool_calls, so do not
+              // forward that prose to chat channels.
+              let toolCalls = choice.message?.tool_calls ?? choice.delta?.tool_calls;
               const rawContent = choice.message?.content ?? choice.delta?.content ?? "";
-              const content = stripThinkingTokens(rawContent);
+
+              // When upstream returns no structured tool_calls but the model emitted
+              // tool calls as XML/text in `content` (e.g. OpenClaw-instructed
+              // `<tool_call><arg_key>...` or Anthropic-style `<function_calls>
+              // <invoke>...`), synthesize the structured form so downstream tool
+              // executors can dispatch them. The agent loops we saw in the wild
+              // (six retries then a hallucinated "API key missing") came from
+              // this gap.
+              if (!endsWithToolCalls && (!toolCalls || toolCalls.length === 0) && rawContent) {
+                const extracted = extractTextualToolCalls(rawContent);
+                if (extracted.toolCalls.length > 0) {
+                  toolCalls = extracted.toolCalls;
+                }
+              }
+
+              // Strip thinking tokens (Kimi <｜...｜> and standard <think> tags)
+              const content =
+                endsWithToolCalls || (toolCalls && toolCalls.length > 0)
+                  ? ""
+                  : stripThinkingTokens(rawContent);
               const role = choice.message?.role ?? choice.delta?.role ?? "assistant";
               const index = choice.index ?? 0;
 
@@ -5086,7 +5232,6 @@ async function proxyRequest(
               }
 
               // Chunk 2b: tool_calls (forward tool calls from upstream)
-              const toolCalls = choice.message?.tool_calls ?? choice.delta?.tool_calls;
               if (toolCalls && toolCalls.length > 0) {
                 const toolCallChunk = {
                   ...baseChunk,
@@ -5113,7 +5258,7 @@ async function proxyRequest(
                     delta: {},
                     logprobs: null,
                     finish_reason:
-                      toolCalls && toolCalls.length > 0
+                      endsWithToolCalls || (toolCalls && toolCalls.length > 0)
                         ? "tool_calls"
                         : (choice.finish_reason ?? "stop"),
                   },
@@ -5242,15 +5387,50 @@ async function proxyRequest(
       if (responseBody.length > 0) {
         try {
           const parsed = JSON.parse(responseBody.toString()) as {
-            choices?: Array<{ message?: { content?: string } }>;
+            choices?: Array<{
+              finish_reason?: string | null;
+              message?: {
+                content?: string;
+                tool_calls?: unknown[];
+              };
+            }>;
           };
-          if (parsed.choices?.[0]?.message?.content) {
-            const stripped = stripThinkingTokens(parsed.choices[0].message.content);
-            if (stripped !== parsed.choices[0].message.content) {
-              parsed.choices[0].message.content = stripped;
-              responseBody = Buffer.from(JSON.stringify(parsed));
+          let changed = false;
+          for (const choice of parsed.choices ?? []) {
+            const message = choice.message;
+            if (!message || typeof message.content !== "string") continue;
+
+            if (
+              choice.finish_reason === "tool_calls" ||
+              (Array.isArray(message.tool_calls) && message.tool_calls.length > 0)
+            ) {
+              if (message.content !== "") {
+                message.content = "";
+                changed = true;
+              }
+              continue;
+            }
+
+            // Synthesize tool_calls from XML/text formats some models emit in
+            // `content` (OpenClaw `<tool_call><arg_key>...`, Anthropic-style
+            // `<function_calls><invoke>...`). Without this, tool calls land as
+            // plain text and downstream executors can't dispatch them.
+            const extracted = extractTextualToolCalls(message.content);
+            if (extracted.toolCalls.length > 0) {
+              message.tool_calls = extracted.toolCalls;
+              message.content = "";
+              choice.finish_reason = "tool_calls";
+              changed = true;
+              continue;
+            }
+
+            const stripped = stripThinkingTokens(message.content);
+            if (stripped !== message.content) {
+              message.content = stripped;
+              changed = true;
             }
           }
+          if (changed) responseBody = Buffer.from(JSON.stringify(parsed));
         } catch {
           /* not JSON, skip */
         }
@@ -5390,7 +5570,7 @@ async function proxyRequest(
       const sameCount = tailChars.filter((c) => c === firstChar).length;
       if (isPunct && sameCount >= 60) {
         console.warn(
-          `[ClawRouter] ⚠️  Degenerate output detected — model=${actualModelUsed || "unknown"} len=${accumulatedContent.length} head=${JSON.stringify(accumulatedContent.slice(0, 40))} tail_repeats_${JSON.stringify(firstChar)}=${sameCount}/80`,
+          `[XClawRouter] ⚠️  Degenerate output detected — model=${actualModelUsed || "unknown"} len=${accumulatedContent.length} head=${JSON.stringify(accumulatedContent.slice(0, 40))} tail_repeats_${JSON.stringify(firstChar)}=${sameCount}/80`,
         );
       }
     }

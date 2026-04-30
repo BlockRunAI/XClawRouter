@@ -6523,7 +6523,7 @@ function weierstrass(curveDef) {
   function prepSig(msgHash, privateKey, opts = defaultSigOpts) {
     if (["recovered", "canonical"].some((k) => k in opts))
       throw new Error("sign() legacy options not supported");
-    const { hash: hash3, randomBytes: randomBytes3 } = CURVE;
+    const { hash: hash3, randomBytes: randomBytes4 } = CURVE;
     let { lowS, prehash, extraEntropy: ent } = opts;
     if (lowS == null)
       lowS = true;
@@ -6535,7 +6535,7 @@ function weierstrass(curveDef) {
     const d = normPrivateKeyToScalar(privateKey);
     const seedArgs = [int2octets(d), int2octets(h1int)];
     if (ent != null && ent !== false) {
-      const e7 = ent === true ? randomBytes3(Fp.BYTES) : ent;
+      const e7 = ent === true ? randomBytes4(Fp.BYTES) : ent;
       seedArgs.push(ensureBytes("extraEntropy", e7));
     }
     const seed = concatBytes3(...seedArgs);
@@ -15724,7 +15724,7 @@ function ecdsa(Point3, hash3, ecdsaOpts = {}) {
     bits2int_modN: "function"
   });
   ecdsaOpts = Object.assign({}, ecdsaOpts);
-  const randomBytes3 = ecdsaOpts.randomBytes || randomBytes2;
+  const randomBytes4 = ecdsaOpts.randomBytes || randomBytes2;
   const hmac4 = ecdsaOpts.hmac || ((key, msg) => hmac2(hash3, key, msg));
   const { Fp, Fn: Fn2 } = Point3;
   const { ORDER: CURVE_ORDER, BITS: fnBits } = Fn2;
@@ -15866,7 +15866,7 @@ function ecdsa(Point3, hash3, ecdsaOpts = {}) {
       throw new Error("invalid private key");
     const seedArgs = [int2octets(d), int2octets(h1int)];
     if (extraEntropy2 != null && extraEntropy2 !== false) {
-      const e7 = extraEntropy2 === true ? randomBytes3(lengths.secretKey) : extraEntropy2;
+      const e7 = extraEntropy2 === true ? randomBytes4(lengths.secretKey) : extraEntropy2;
       seedArgs.push(abytes4(e7, void 0, "extraEntropy"));
     }
     const seed = concatBytes5(...seedArgs);
@@ -21938,10 +21938,10 @@ async function createKeyPairFromBytes(bytes, extractable = false) {
     ),
     createPrivateKeyFromBytes(bytes.slice(0, 32), extractable)
   ]);
-  const randomBytes3 = new Uint8Array(32);
-  crypto.getRandomValues(randomBytes3);
-  const signedData = await signBytes(privateKey, randomBytes3);
-  const isValid2 = await verifySignature(publicKey, signedData, randomBytes3);
+  const randomBytes4 = new Uint8Array(32);
+  crypto.getRandomValues(randomBytes4);
+  const signedData = await signBytes(privateKey, randomBytes4);
+  const isValid2 = await verifySignature(publicKey, signedData, randomBytes4);
   if (!isValid2) {
     throw new SolanaError(SOLANA_ERROR__KEYS__PUBLIC_KEY_MUST_MATCH_PRIVATE_KEY);
   }
@@ -28012,7 +28012,7 @@ var require_websocket = __commonJS({
     var http2 = __require("http");
     var net = __require("net");
     var tls = __require("tls");
-    var { randomBytes: randomBytes3, createHash: createHash4 } = __require("crypto");
+    var { randomBytes: randomBytes4, createHash: createHash4 } = __require("crypto");
     var { Duplex, Readable } = __require("stream");
     var { URL: URL2 } = __require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -28542,7 +28542,7 @@ var require_websocket = __commonJS({
         }
       }
       const defaultPort = isSecure ? 443 : 80;
-      const key = randomBytes3(16).toString("base64");
+      const key = randomBytes4(16).toString("base64");
       const request = isSecure ? https.request : http2.request;
       const protocolSet = /* @__PURE__ */ new Set();
       let perMessageDeflate;
@@ -31680,12 +31680,18 @@ var init_wallet = __esm({
 });
 
 // src/onchainos-adapter.ts
-import { execFile, spawn } from "child_process";
+import { execFile, execFileSync } from "child_process";
+import { existsSync } from "fs";
+import { homedir as homedir3 } from "os";
 import { promisify } from "util";
+function resolveOnchainosBin(override) {
+  if (override) return override;
+  const env = process.env.XCLAWROUTER_ONCHAINOS_BIN ?? process.env.ONCHAINOS_BIN;
+  if (env) return env;
+  const fallback = FALLBACK_CANDIDATES.find((candidate) => existsSync(candidate));
+  return fallback ?? DEFAULT_BIN;
+}
 async function runCli(bin, args, opts) {
-  if (opts.input !== void 0) {
-    return runWithStdin(bin, args, opts.input, opts.timeoutMs);
-  }
   try {
     const { stdout } = await execFileAsync(bin, args, {
       timeout: opts.timeoutMs,
@@ -31696,53 +31702,11 @@ async function runCli(bin, args, opts) {
     throw wrapCliError(err, bin, args);
   }
 }
-function runWithStdin(bin, args, input, timeoutMs) {
-  return new Promise((resolve, reject) => {
-    let child;
-    try {
-      child = spawn(bin, args, { stdio: ["pipe", "pipe", "pipe"] });
-    } catch (err) {
-      reject(wrapCliError(err, bin, args));
-      return;
-    }
-    let stdout = "";
-    let stderr = "";
-    const timer = setTimeout(() => {
-      child.kill("SIGKILL");
-      reject(
-        new OnchainOsCliError(`onchainos ${args.join(" ")} timed out after ${timeoutMs}ms`, stderr)
-      );
-    }, timeoutMs);
-    child.stdout.on("data", (chunk) => {
-      stdout += chunk.toString();
-    });
-    child.stderr.on("data", (chunk) => {
-      stderr += chunk.toString();
-    });
-    child.on("error", (err) => {
-      clearTimeout(timer);
-      reject(wrapCliError(err, bin, args));
-    });
-    child.on("close", (code) => {
-      clearTimeout(timer);
-      if (code === 0) resolve(stdout);
-      else
-        reject(
-          new OnchainOsCliError(
-            `onchainos ${args.join(" ")} exited with code ${code}`,
-            stderr,
-            code
-          )
-        );
-    });
-    child.stdin.end(input);
-  });
-}
 function wrapCliError(err, bin, args) {
   const e7 = err;
   if (e7.code === "ENOENT") {
     return new OnchainOsCliError(
-      `onchainos CLI not found at "${bin}". Install OKX's agentic wallet CLI and ensure it is on PATH, or set XCLAWROUTER_ONCHAINOS_BIN to the binary location.`
+      `onchainos CLI not found at "${bin}". Install OKX's agentic wallet CLI (https://web3.okx.com/onchainos) and ensure it is on PATH, or set XCLAWROUTER_ONCHAINOS_BIN to the binary location.`
     );
   }
   return new OnchainOsCliError(
@@ -31765,13 +31729,26 @@ ${trimmed.slice(0, 500)}`
     );
   }
 }
-var execFileAsync, DEFAULT_BIN, DEFAULT_TIMEOUT_MS, OnchainOsCliError, OnchainOsAdapter, OnchainOsEvmAdapter, OnchainOsSvmAdapter;
+function unwrapData(parsed) {
+  if (parsed && typeof parsed === "object" && "data" in parsed) {
+    const inner = parsed.data;
+    if (inner !== void 0 && inner !== null) return inner;
+  }
+  return parsed;
+}
+var execFileAsync, DEFAULT_BIN, DEFAULT_TIMEOUT_MS, PAYMENT_TIMEOUT_MS, FALLBACK_CANDIDATES, OnchainOsCliError, OnchainOsAdapter;
 var init_onchainos_adapter = __esm({
   "src/onchainos-adapter.ts"() {
     "use strict";
     execFileAsync = promisify(execFile);
     DEFAULT_BIN = "onchainos";
     DEFAULT_TIMEOUT_MS = 3e4;
+    PAYMENT_TIMEOUT_MS = 3e4;
+    FALLBACK_CANDIDATES = [
+      `${homedir3()}/.local/bin/onchainos`,
+      "/opt/homebrew/bin/onchainos",
+      "/usr/local/bin/onchainos"
+    ];
     OnchainOsCliError = class extends Error {
       constructor(message, stderr, exitCode) {
         super(message);
@@ -31781,121 +31758,75 @@ var init_onchainos_adapter = __esm({
       }
     };
     OnchainOsAdapter = class {
-      evm;
-      svm;
       bin;
       timeoutMs;
       constructor(opts = {}) {
-        this.bin = opts.bin ?? process.env.XCLAWROUTER_ONCHAINOS_BIN ?? DEFAULT_BIN;
+        this.bin = resolveOnchainosBin(opts.bin);
         this.timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-        this.evm = new OnchainOsEvmAdapter(this);
-        if (opts.enableSolana) {
-          this.svm = new OnchainOsSvmAdapter(this);
+      }
+      /** Quick, synchronous probe — does the binary exist and respond to --version? */
+      isInstalled() {
+        try {
+          execFileSync(this.bin, ["--version"], {
+            encoding: "utf-8",
+            stdio: "pipe",
+            timeout: 5e3
+          });
+          return true;
+        } catch {
+          return false;
         }
       }
       async status() {
-        const stdout = await runCli(this.bin, ["wallet", "status", "--json"], {
+        const stdout = await runCli(this.bin, ["wallet", "status"], {
           timeoutMs: this.timeoutMs
         });
-        const raw = parseJson(stdout, "wallet status");
+        const raw = unwrapData(parseJson(stdout, "wallet status"));
+        const loggedIn = Boolean(raw.loggedIn ?? raw.connected);
+        const evmAddress = raw.evmAddress ?? raw.evm;
+        const solanaAddress = raw.solanaAddress ?? raw.solana;
         return {
-          connected: Boolean(raw.connected),
+          loggedIn,
           email: raw.email,
-          evmAddress: raw.evm,
-          solanaAddress: raw.solana
+          evmAddress: evmAddress?.startsWith("0x") ? evmAddress : void 0,
+          solanaAddress
         };
       }
       async login(email) {
         if (!email.includes("@")) {
           throw new Error(`Invalid email address: ${email}`);
         }
-        await runCli(this.bin, ["wallet", "login", email], {
-          // Login involves a confirmation step; allow more time than a signing op.
-          timeoutMs: 5 * 6e4
-        });
+        await runCli(this.bin, ["wallet", "login", email], { timeoutMs: 5 * 6e4 });
       }
       async logout() {
         await runCli(this.bin, ["wallet", "logout"], { timeoutMs: this.timeoutMs });
       }
-      /** Internal: sign EIP-712 typed data via the CLI. */
-      async signTypedDataEvm(args) {
-        const payload = JSON.stringify({
-          domain: args.domain,
-          types: args.types,
-          primaryType: args.primaryType,
-          message: args.message
+      /**
+       * Sign an x402 payment via onchainos. Pass through the full `accepts` array
+       * from the 402 response — onchainos picks the chain/scheme it can satisfy.
+       */
+      async signX402Payment(accepts) {
+        const acceptsJson = JSON.stringify(accepts);
+        const stdout = await runCli(this.bin, ["payment", "x402-pay", "--accepts", acceptsJson], {
+          timeoutMs: PAYMENT_TIMEOUT_MS
         });
-        const stdout = await runCli(
-          this.bin,
-          ["sign", "typed-data", "--chain", args.chain, "--data", "-"],
-          { input: payload, timeoutMs: this.timeoutMs }
-        );
-        const parsed = parseJson(stdout, "sign typed-data");
-        if (!parsed.signature?.startsWith("0x")) {
-          throw new OnchainOsCliError(`onchainos returned an invalid signature: ${parsed.signature}`);
-        }
-        return parsed.signature;
-      }
-      /** Internal: sign a partially-signed Solana transaction via the CLI. */
-      async signSolanaTransaction(transactionBase64) {
-        const stdout = await runCli(this.bin, ["sign", "solana-transaction", "--transaction", "-"], {
-          input: transactionBase64,
-          timeoutMs: this.timeoutMs
-        });
-        const parsed = parseJson(stdout, "sign solana-transaction");
-        if (!parsed.signedTransaction) {
-          throw new OnchainOsCliError("onchainos returned no signedTransaction for Solana signing.");
-        }
-        return parsed.signedTransaction;
-      }
-    };
-    OnchainOsEvmAdapter = class {
-      constructor(parent) {
-        this.parent = parent;
-      }
-      async getAddress() {
-        const s3 = await this.parent.status();
-        if (!s3.evmAddress) {
-          throw new Error("onchainos reports no EVM address. Run `/wallet login <email>` to connect.");
-        }
-        return s3.evmAddress;
-      }
-      async toX402Signer(publicClient) {
-        const address2 = await this.getAddress();
-        const parent = this.parent;
-        const signer = {
-          address: address2,
-          async signTypedData(message) {
-            return parent.signTypedDataEvm({
-              chain: "base",
-              domain: message.domain,
-              types: message.types,
-              primaryType: message.primaryType,
-              message: message.message
-            });
-          },
-          readContract: publicClient?.readContract.bind(publicClient)
-        };
-        return signer;
-      }
-    };
-    OnchainOsSvmAdapter = class {
-      constructor(parent) {
-        this.parent = parent;
-      }
-      async getAddress() {
-        const s3 = await this.parent.status();
-        if (!s3.solanaAddress) {
-          throw new Error(
-            "onchainos reports no Solana address. Either Solana support is not available in this onchainos release, or the wallet is not connected."
+        const parsed = parseJson(stdout, "payment x402-pay");
+        const result = unwrapData(parsed);
+        if (!result.signature || typeof result.signature !== "string") {
+          throw new OnchainOsCliError(
+            `onchainos payment x402-pay returned no signature: ${JSON.stringify(parsed).slice(0, 500)}`
           );
         }
-        return s3.solanaAddress;
-      }
-      async toX402Signer() {
-        throw new Error(
-          "Solana signing via onchainos is not yet implemented. Use Base chain for now, or disable Solana support via CLI (`/chain base`)."
-        );
+        if (!result.authorization || typeof result.authorization !== "object") {
+          throw new OnchainOsCliError(
+            `onchainos payment x402-pay returned no authorization: ${JSON.stringify(parsed).slice(0, 500)}`
+          );
+        }
+        return {
+          signature: result.signature,
+          authorization: result.authorization,
+          sessionCert: typeof result.sessionCert === "string" ? result.sessionCert : void 0
+        };
       }
     };
   }
@@ -31908,25 +31839,29 @@ __export(auth_exports, {
   MNEMONIC_FILE: () => MNEMONIC_FILE,
   WALLET_DIR: () => WALLET_DIR,
   WALLET_FILE: () => WALLET_FILE,
+  detectOnchainosWallet: () => detectOnchainosWallet,
   envKeyAuth: () => envKeyAuth,
   loadPaymentChain: () => loadPaymentChain,
   recoverWalletFromMnemonic: () => recoverWalletFromMnemonic,
   resolveOrGenerateWalletKey: () => resolveOrGenerateWalletKey,
   resolvePaymentChain: () => resolvePaymentChain,
-  resolveWalletAdapter: () => resolveWalletAdapter,
   savePaymentChain: () => savePaymentChain,
   setupSolana: () => setupSolana,
   walletKeyAuth: () => walletKeyAuth
 });
 import { writeFile, mkdir as mkdir2 } from "fs/promises";
 import { join as join6 } from "path";
-import { homedir as homedir3 } from "os";
-function resolveWalletAdapter(opts) {
-  const enableSolana = opts?.enableSolana ?? process.env.XCLAWROUTER_ENABLE_SOLANA === "1";
-  return new OnchainOsAdapter({
-    bin: opts?.bin,
-    enableSolana
-  });
+import { homedir as homedir4 } from "os";
+async function detectOnchainosWallet() {
+  const adapter = new OnchainOsAdapter();
+  if (!adapter.isInstalled()) return void 0;
+  try {
+    const status = await adapter.status();
+    if (!status.loggedIn || !status.evmAddress) return void 0;
+    return { address: status.evmAddress, email: status.email, adapter };
+  } catch {
+    return void 0;
+  }
 }
 async function savePaymentChain(chain3) {
   await mkdir2(WALLET_DIR, { recursive: true });
@@ -32015,6 +31950,15 @@ Refusing to generate a new wallet to protect existing funds.`
   };
 }
 async function resolveOrGenerateWalletKey() {
+  const onchainos = await detectOnchainosWallet();
+  if (onchainos) {
+    return {
+      address: onchainos.address,
+      source: "okx",
+      onchainos: onchainos.adapter,
+      email: onchainos.email
+    };
+  }
   const saved = await loadSavedWallet();
   if (saved) {
     const account = privateKeyToAccount(saved);
@@ -32098,7 +32042,7 @@ var init_auth = __esm({
     init_accounts();
     init_wallet();
     init_onchainos_adapter();
-    WALLET_DIR = join6(homedir3(), ".openclaw", "blockrun");
+    WALLET_DIR = join6(homedir4(), ".openclaw", "blockrun");
     WALLET_FILE = join6(WALLET_DIR, "wallet.key");
     MNEMONIC_FILE = join6(WALLET_DIR, "mnemonic");
     CHAIN_FILE = join6(WALLET_DIR, "payment-chain");
@@ -33145,7 +33089,6 @@ var require_util = __commonJS({
     var { InvalidArgumentError, ConnectTimeoutError } = require_errors();
     var { headerNameLowerCasedRecord } = require_constants2();
     var { tree } = require_tree();
-    var [nodeMajor, nodeMinor] = process.versions.node.split(".", 2).map((v) => Number(v));
     var BodyAsyncIterable = class {
       constructor(body) {
         this[kBody] = body;
@@ -33294,7 +33237,7 @@ var require_util = __commonJS({
     }
     function hasSafeIterator(obj) {
       const prototype = Object.getPrototypeOf(obj);
-      const ownIterator = Object.prototype.hasOwnProperty.call(obj, Symbol.iterator);
+      const ownIterator = Object.hasOwn(obj, Symbol.iterator);
       return ownIterator || prototype != null && prototype !== Object.prototype && typeof obj[Symbol.iterator] === "function";
     }
     function bodyLength(body) {
@@ -33946,8 +33889,6 @@ var require_util = __commonJS({
       normalizedMethodRecords,
       isValidPort,
       isHttpOrHttpsPrefixed,
-      nodeMajor,
-      nodeMinor,
       safeHTTPMethods: Object.freeze(["GET", "HEAD", "OPTIONS", "TRACE"]),
       wrapRequestBody,
       setupConnectTimeout,
@@ -34681,6 +34622,7 @@ var require_dispatcher_base = __commonJS({
     var { kDestroy, kClose, kClosed, kDestroyed, kDispatch } = require_symbols();
     var kOnDestroyed = /* @__PURE__ */ Symbol("onDestroyed");
     var kOnClosed = /* @__PURE__ */ Symbol("onClosed");
+    var kWebSocketOptions = /* @__PURE__ */ Symbol("webSocketOptions");
     var DispatcherBase = class extends Dispatcher {
       /** @type {boolean} */
       [kDestroyed] = false;
@@ -34690,6 +34632,22 @@ var require_dispatcher_base = __commonJS({
       [kClosed] = false;
       /** @type {Array<Function>|null} */
       [kOnClosed] = null;
+      /**
+       * @param {import('../../types/dispatcher').DispatcherOptions} [opts]
+       */
+      constructor(opts) {
+        super();
+        this[kWebSocketOptions] = opts?.webSocket ?? {};
+      }
+      /**
+       * @returns {import('../../types/dispatcher').WebSocketOptions}
+       */
+      get webSocketOptions() {
+        return {
+          maxPayloadSize: this[kWebSocketOptions].maxPayloadSize ?? 128 * 1024 * 1024
+          // 128 MB default
+        };
+      }
       /** @returns {boolean} */
       get destroyed() {
         return this[kDestroyed];
@@ -34779,6 +34737,9 @@ var require_dispatcher_base = __commonJS({
         try {
           if (!opts || typeof opts !== "object") {
             throw new InvalidArgumentError("opts must be an object.");
+          }
+          if (opts.dispatcher) {
+            throw new InvalidArgumentError("opts.dispatcher is not supported by instance methods. Pass opts.dispatcher to the top-level undici functions or call the dispatcher instance method directly.");
           }
           if (this[kDestroyed] || this[kOnDestroyed]) {
             throw new ClientDestroyedError();
@@ -36254,115 +36215,13 @@ var require_data_url = __commonJS({
   }
 });
 
-// node_modules/undici/lib/util/runtime-features.js
-var require_runtime_features = __commonJS({
-  "node_modules/undici/lib/util/runtime-features.js"(exports, module) {
-    "use strict";
-    var lazyLoaders = {
-      __proto__: null,
-      "node:crypto": () => __require("crypto"),
-      "node:sqlite": () => __require("sqlite"),
-      "node:worker_threads": () => __require("worker_threads"),
-      "node:zlib": () => __require("zlib")
-    };
-    function detectRuntimeFeatureByNodeModule(moduleName) {
-      try {
-        lazyLoaders[moduleName]();
-        return true;
-      } catch (err) {
-        if (err.code !== "ERR_UNKNOWN_BUILTIN_MODULE" && err.code !== "ERR_NO_CRYPTO") {
-          throw err;
-        }
-        return false;
-      }
-    }
-    function detectRuntimeFeatureByExportedProperty(moduleName, property) {
-      const module2 = lazyLoaders[moduleName]();
-      return typeof module2[property] !== "undefined";
-    }
-    var runtimeFeaturesByExportedProperty = (
-      /** @type {const} */
-      ["markAsUncloneable", "zstd"]
-    );
-    var exportedPropertyLookup = {
-      markAsUncloneable: ["node:worker_threads", "markAsUncloneable"],
-      zstd: ["node:zlib", "createZstdDecompress"]
-    };
-    var runtimeFeaturesAsNodeModule = (
-      /** @type {const} */
-      ["crypto", "sqlite"]
-    );
-    var features = (
-      /** @type {const} */
-      [
-        ...runtimeFeaturesAsNodeModule,
-        ...runtimeFeaturesByExportedProperty
-      ]
-    );
-    function detectRuntimeFeature(feature) {
-      if (runtimeFeaturesAsNodeModule.includes(
-        /** @type {RuntimeFeatureByNodeModule} */
-        feature
-      )) {
-        return detectRuntimeFeatureByNodeModule(`node:${feature}`);
-      } else if (runtimeFeaturesByExportedProperty.includes(
-        /** @type {RuntimeFeatureByExportedProperty} */
-        feature
-      )) {
-        const [moduleName, property] = exportedPropertyLookup[feature];
-        return detectRuntimeFeatureByExportedProperty(moduleName, property);
-      }
-      throw new TypeError(`unknown feature: ${feature}`);
-    }
-    var RuntimeFeatures = class {
-      /** @type {Map<Feature, boolean>} */
-      #map = /* @__PURE__ */ new Map();
-      /**
-       * Clears all cached feature detections.
-       */
-      clear() {
-        this.#map.clear();
-      }
-      /**
-       * @param {Feature} feature
-       * @returns {boolean}
-       */
-      has(feature) {
-        return this.#map.get(feature) ?? this.#detectRuntimeFeature(feature);
-      }
-      /**
-       * @param {Feature} feature
-       * @param {boolean} value
-       */
-      set(feature, value) {
-        if (features.includes(feature) === false) {
-          throw new TypeError(`unknown feature: ${feature}`);
-        }
-        this.#map.set(feature, value);
-      }
-      /**
-       * @param {Feature} feature
-       * @returns {boolean}
-       */
-      #detectRuntimeFeature(feature) {
-        const result = detectRuntimeFeature(feature);
-        this.#map.set(feature, result);
-        return result;
-      }
-    };
-    var instance = new RuntimeFeatures();
-    module.exports.runtimeFeatures = instance;
-    module.exports.default = instance;
-  }
-});
-
 // node_modules/undici/lib/web/webidl/index.js
 var require_webidl = __commonJS({
   "node_modules/undici/lib/web/webidl/index.js"(exports, module) {
     "use strict";
     var assert8 = __require("assert");
     var { types, inspect } = __require("util");
-    var { runtimeFeatures } = require_runtime_features();
+    var { markAsUncloneable } = __require("worker_threads");
     var UNDEFINED = 1;
     var BOOLEAN = 2;
     var STRING = 3;
@@ -36482,8 +36341,7 @@ var require_webidl = __commonJS({
           return "Object";
       }
     };
-    webidl.util.markAsUncloneable = runtimeFeatures.has("markAsUncloneable") ? __require("worker_threads").markAsUncloneable : () => {
-    };
+    webidl.util.markAsUncloneable = markAsUncloneable;
     webidl.util.ConvertToInt = function(V, bitLength, signedness, flags) {
       let upperBound;
       let lowerBound;
@@ -37658,7 +37516,7 @@ var require_util2 = __commonJS({
       return !!(url.username || url.password);
     }
     function isTraversableNavigable(navigable) {
-      return true;
+      return navigable != null && navigable !== "client" && navigable !== "no-traversable";
     }
     var EnvironmentSettingsObjectBase = class {
       get baseUrl() {
@@ -38211,22 +38069,78 @@ var require_formdata_parser = __commonJS({
   }
 });
 
-// node_modules/undici/lib/util/promise.js
-var require_promise = __commonJS({
-  "node_modules/undici/lib/util/promise.js"(exports, module) {
+// node_modules/undici/lib/util/runtime-features.js
+var require_runtime_features = __commonJS({
+  "node_modules/undici/lib/util/runtime-features.js"(exports, module) {
     "use strict";
-    function createDeferredPromise() {
-      let res;
-      let rej;
-      const promise = new Promise((resolve, reject) => {
-        res = resolve;
-        rej = reject;
-      });
-      return { promise, resolve: res, reject: rej };
-    }
-    module.exports = {
-      createDeferredPromise
+    var lazyLoaders = {
+      __proto__: null,
+      "node:crypto": () => __require("crypto"),
+      "node:sqlite": () => __require("sqlite")
     };
+    function detectRuntimeFeatureByNodeModule(moduleName) {
+      try {
+        lazyLoaders[moduleName]();
+        return true;
+      } catch (err) {
+        if (err.code !== "ERR_UNKNOWN_BUILTIN_MODULE" && err.code !== "ERR_NO_CRYPTO") {
+          throw err;
+        }
+        return false;
+      }
+    }
+    var runtimeFeaturesAsNodeModule = (
+      /** @type {const} */
+      ["crypto", "sqlite"]
+    );
+    function detectRuntimeFeature(feature) {
+      if (runtimeFeaturesAsNodeModule.includes(
+        /** @type {RuntimeFeatureByNodeModule} */
+        feature
+      )) {
+        return detectRuntimeFeatureByNodeModule(`node:${feature}`);
+      }
+      throw new TypeError(`unknown feature: ${feature}`);
+    }
+    var RuntimeFeatures = class {
+      /** @type {Map<Feature, boolean>} */
+      #map = /* @__PURE__ */ new Map();
+      /**
+       * Clears all cached feature detections.
+       */
+      clear() {
+        this.#map.clear();
+      }
+      /**
+       * @param {Feature} feature
+       * @returns {boolean}
+       */
+      has(feature) {
+        return this.#map.get(feature) ?? this.#detectRuntimeFeature(feature);
+      }
+      /**
+       * @param {Feature} feature
+       * @param {boolean} value
+       */
+      set(feature, value) {
+        if (runtimeFeaturesAsNodeModule.includes(feature) === false) {
+          throw new TypeError(`unknown feature: ${feature}`);
+        }
+        this.#map.set(feature, value);
+      }
+      /**
+       * @param {Feature} feature
+       * @returns {boolean}
+       */
+      #detectRuntimeFeature(feature) {
+        const result = detectRuntimeFeature(feature);
+        this.#map.set(feature, result);
+        return result;
+      }
+    };
+    var instance = new RuntimeFeatures();
+    module.exports.runtimeFeatures = instance;
+    module.exports.default = instance;
   }
 });
 
@@ -38248,7 +38162,6 @@ var require_body = __commonJS({
     var { isUint8Array } = __require("util/types");
     var { serializeAMimeType } = require_data_url();
     var { multipartFormDataParser } = require_formdata_parser();
-    var { createDeferredPromise } = require_promise();
     var { parseJSONFromBytes } = require_infra();
     var { utf8DecodeBytes } = require_encoding();
     var { runtimeFeatures } = require_runtime_features();
@@ -38474,7 +38387,7 @@ Content-Type: ${value.type || "application/octet-stream"}\r
       if (bodyUnusable(object)) {
         return Promise.reject(new TypeError("Body is unusable: Body has already been read"));
       }
-      const promise = createDeferredPromise();
+      const promise = Promise.withResolvers();
       const errorSteps = promise.reject;
       const successSteps = (data) => {
         try {
@@ -40513,7 +40426,8 @@ var require_client = __commonJS({
         useH2c,
         initialWindowSize,
         connectionWindowSize,
-        pingInterval
+        pingInterval,
+        webSocket
       } = {}) {
         if (keepAlive !== void 0) {
           throw new InvalidArgumentError("unsupported keepAlive, use pipelining=0 instead");
@@ -40591,7 +40505,7 @@ var require_client = __commonJS({
         if (pingInterval != null && (typeof pingInterval !== "number" || !Number.isInteger(pingInterval) || pingInterval < 0)) {
           throw new InvalidArgumentError("pingInterval must be a positive integer, greater or equal to 0");
         }
-        super();
+        super({ webSocket });
         if (typeof connect2 !== "function") {
           connect2 = buildConnector({
             ...tls,
@@ -41238,11 +41152,10 @@ var require_pool = __commonJS({
             ...connect
           });
         }
-        super();
+        super(options);
         this[kConnections] = connections || null;
         this[kUrl] = util2.parseOrigin(origin);
         this[kOptions] = { ...util2.deepClone(options), connect, allowH2, clientTtl, socketPath };
-        this[kOptions].interceptors = options.interceptors ? { ...options.interceptors } : void 0;
         this[kFactory] = factory;
         this.on("connect", (origin2, targets) => {
           if (clientTtl != null && clientTtl > 0) {
@@ -41326,7 +41239,6 @@ var require_balanced_pool = __commonJS({
         }
         super();
         this[kOptions] = { ...util2.deepClone(opts) };
-        this[kOptions].interceptors = opts.interceptors ? { ...opts.interceptors } : void 0;
         this[kIndex] = -1;
         this[kCurrentWeight] = 0;
         this[kMaxWeightPerServer] = this[kOptions].maxWeightPerServer || 100;
@@ -41493,7 +41405,6 @@ var require_round_robin_pool = __commonJS({
         this[kConnections] = connections || null;
         this[kUrl] = util2.parseOrigin(origin);
         this[kOptions] = { ...util2.deepClone(options), connect, allowH2, clientTtl, socketPath };
-        this[kOptions].interceptors = options.interceptors ? { ...options.interceptors } : void 0;
         this[kFactory] = factory;
         this[kIndex] = -1;
         this.on("connect", (origin2, targets) => {
@@ -41576,7 +41487,7 @@ var require_agent = __commonJS({
         if (typeof maxOrigins !== "number" || Number.isNaN(maxOrigins) || maxOrigins <= 0) {
           throw new InvalidArgumentError("maxOrigins must be a number greater than 0");
         }
-        super();
+        super(options);
         if (connect && typeof connect !== "function") {
           connect = { ...connect };
         }
@@ -41758,6 +41669,9 @@ var require_dispatcher1_wrapper = __commonJS({
         return new LegacyHandlerWrapper(handler);
       }
       dispatch(opts, handler) {
+        if (opts.allowH2 !== false) {
+          opts = { ...opts, allowH2: false };
+        }
         return this.#dispatcher.dispatch(opts, _Dispatcher1Wrapper.wrapHandler(handler));
       }
       close(...args) {
@@ -42300,69 +42214,69 @@ var require_socks5_proxy_agent = __commonJS({
         const proxyHost = this[kProxyUrl].hostname;
         const proxyPort = parseInt(this[kProxyUrl].port) || 1080;
         debug("creating SOCKS5 connection to", proxyHost, proxyPort);
-        const socket = await new Promise((resolve, reject) => {
-          const onConnect = () => {
-            socket2.removeListener("error", onError);
-            resolve(socket2);
-          };
-          const onError = (err) => {
-            socket2.removeListener("connect", onConnect);
-            reject(err);
-          };
-          const socket2 = net.connect({
-            host: proxyHost,
-            port: proxyPort
-          });
-          socket2.once("connect", onConnect);
-          socket2.once("error", onError);
+        const socketReady = Promise.withResolvers();
+        const onSocketConnect = () => {
+          socket.removeListener("error", onSocketError);
+          socketReady.resolve(socket);
+        };
+        const onSocketError = (err) => {
+          socket.removeListener("connect", onSocketConnect);
+          socketReady.reject(err);
+        };
+        const socket = net.connect({
+          host: proxyHost,
+          port: proxyPort
         });
+        socket.once("connect", onSocketConnect);
+        socket.once("error", onSocketError);
+        await socketReady.promise;
         const socks5Client = new Socks5Client(socket, this[kProxyAuth]);
         socks5Client.on("error", (err) => {
           debug("SOCKS5 error:", err);
           socket.destroy();
         });
         await socks5Client.handshake();
-        await new Promise((resolve, reject) => {
-          const timeout = setTimeout(() => {
-            reject(new Error("SOCKS5 authentication timeout"));
-          }, 5e3);
-          const onAuthenticated = () => {
-            clearTimeout(timeout);
-            socks5Client.removeListener("error", onError);
-            resolve();
-          };
-          const onError = (err) => {
-            clearTimeout(timeout);
-            socks5Client.removeListener("authenticated", onAuthenticated);
-            reject(err);
-          };
-          if (socks5Client.state === "authenticated") {
-            clearTimeout(timeout);
-            resolve();
-          } else {
-            socks5Client.once("authenticated", onAuthenticated);
-            socks5Client.once("error", onError);
-          }
-        });
+        const authenticationReady = Promise.withResolvers();
+        const authenticationTimeout = setTimeout(() => {
+          authenticationReady.reject(new Error("SOCKS5 authentication timeout"));
+        }, 5e3);
+        const onAuthenticated = () => {
+          clearTimeout(authenticationTimeout);
+          socks5Client.removeListener("error", onAuthenticationError);
+          authenticationReady.resolve();
+        };
+        const onAuthenticationError = (err) => {
+          clearTimeout(authenticationTimeout);
+          socks5Client.removeListener("authenticated", onAuthenticated);
+          authenticationReady.reject(err);
+        };
+        if (socks5Client.state === "authenticated") {
+          clearTimeout(authenticationTimeout);
+          authenticationReady.resolve();
+        } else {
+          socks5Client.once("authenticated", onAuthenticated);
+          socks5Client.once("error", onAuthenticationError);
+        }
+        await authenticationReady.promise;
         await socks5Client.connect(targetHost, targetPort);
-        await new Promise((resolve, reject) => {
-          const timeout = setTimeout(() => {
-            reject(new Error("SOCKS5 connection timeout"));
-          }, 5e3);
-          const onConnected = (info) => {
-            debug("SOCKS5 tunnel established to", targetHost, targetPort, "via", info);
-            clearTimeout(timeout);
-            socks5Client.removeListener("error", onError);
-            resolve();
-          };
-          const onError = (err) => {
-            clearTimeout(timeout);
-            socks5Client.removeListener("connected", onConnected);
-            reject(err);
-          };
-          socks5Client.once("connected", onConnected);
-          socks5Client.once("error", onError);
-        });
+        const connectionReady = Promise.withResolvers();
+        const connectionTimeout = setTimeout(() => {
+          connectionReady.reject(new Error("SOCKS5 connection timeout"));
+        }, 5e3);
+        const onConnected = (info) => {
+          debug("SOCKS5 tunnel established to", targetHost, targetPort, "via", info);
+          clearTimeout(connectionTimeout);
+          socks5Client.removeListener("error", onConnectionError);
+          connectionReady.resolve();
+        };
+        const onConnectionError = (err) => {
+          clearTimeout(connectionTimeout);
+          socks5Client.removeListener("connected", onConnected);
+          connectionReady.reject(err);
+        };
+        socks5Client.once("connected", onConnected);
+        socks5Client.once("error", onConnectionError);
+        await connectionReady.promise;
         return socket;
       }
       /**
@@ -42394,10 +42308,10 @@ var require_socks5_proxy_agent = __commonJS({
                       servername: targetHost,
                       ...connectOpts.tls || {}
                     });
-                    await new Promise((resolve, reject) => {
-                      finalSocket.once("secureConnect", resolve);
-                      finalSocket.once("error", reject);
-                    });
+                    const tlsReady = Promise.withResolvers();
+                    finalSocket.once("secureConnect", tlsReady.resolve);
+                    finalSocket.once("error", tlsReady.reject);
+                    await tlsReady.promise;
                   }
                   callback(null, finalSocket);
                 } catch (err) {
@@ -42521,7 +42435,7 @@ var require_proxy_agent = __commonJS({
         if (typeof clientFactory !== "function") {
           throw new InvalidArgumentError("Proxy opts.clientFactory must be a function.");
         }
-        const { proxyTunnel = true } = opts;
+        const { proxyTunnel = true, connectTimeout } = opts;
         super();
         const url = this.#getUrl(opts);
         const { href, origin, port, protocol, username, password, hostname: proxyHostname } = url;
@@ -42539,9 +42453,9 @@ var require_proxy_agent = __commonJS({
         } else if (username && password) {
           this[kProxyHeaders]["proxy-authorization"] = `Basic ${Buffer.from(`${decodeURIComponent(username)}:${decodeURIComponent(password)}`).toString("base64")}`;
         }
-        const connect = buildConnector({ ...opts.proxyTls });
-        this[kConnectEndpoint] = buildConnector({ ...opts.requestTls });
-        this[kConnectEndpointHTTP1] = buildConnector({ ...opts.requestTls, allowH2: false });
+        const connect = buildConnector({ timeout: connectTimeout, ...opts.proxyTls });
+        this[kConnectEndpoint] = buildConnector({ timeout: connectTimeout, ...opts.requestTls });
+        this[kConnectEndpointHTTP1] = buildConnector({ timeout: connectTimeout, ...opts.requestTls, allowH2: false });
         const agentFactory = opts.factory || defaultAgentFactory;
         const factory = (origin2, options) => {
           const { protocol: protocol2 } = new URL(origin2);
@@ -43173,7 +43087,7 @@ var require_h2c_client = __commonJS({
             "h2c-client: Only h2c protocol is supported"
           );
         }
-        const { connect, maxConcurrentStreams, pipelining, ...opts } = clientOpts ?? {};
+        const { maxConcurrentStreams, pipelining, ...opts } = clientOpts ?? {};
         let defaultMaxConcurrentStreams = 100;
         let defaultPipelining = 100;
         if (maxConcurrentStreams != null && Number.isInteger(maxConcurrentStreams) && maxConcurrentStreams > 0) {
@@ -46463,24 +46377,10 @@ var require_redirect_handler = __commonJS({
   "node_modules/undici/lib/handler/redirect-handler.js"(exports, module) {
     "use strict";
     var util2 = require_util();
-    var { kBodyUsed } = require_symbols();
     var assert8 = __require("assert");
     var { InvalidArgumentError } = require_errors();
-    var EE = __require("events");
     var redirectableStatusCodes = [300, 301, 302, 303, 307, 308];
-    var kBody = /* @__PURE__ */ Symbol("body");
     var noop = () => {
-    };
-    var BodyAsyncIterable = class {
-      constructor(body) {
-        this[kBody] = body;
-        this[kBodyUsed] = false;
-      }
-      async *[Symbol.asyncIterator]() {
-        assert8(!this[kBodyUsed], "disturbed");
-        this[kBodyUsed] = true;
-        yield* this[kBody];
-      }
     };
     var RedirectHandler = class _RedirectHandler {
       static buildDispatch(dispatcher, maxRedirections) {
@@ -46498,26 +46398,10 @@ var require_redirect_handler = __commonJS({
         this.location = null;
         const { maxRedirections: _, ...cleanOpts } = opts;
         this.opts = cleanOpts;
+        this.opts.body = util2.wrapRequestBody(this.opts.body);
         this.maxRedirections = maxRedirections;
         this.handler = handler;
         this.history = [];
-        if (util2.isStream(this.opts.body)) {
-          if (util2.bodyLength(this.opts.body) === 0) {
-            this.opts.body.on("data", function() {
-              assert8(false);
-            });
-          }
-          if (typeof this.opts.body.readableDidRead !== "boolean") {
-            this.opts.body[kBodyUsed] = false;
-            EE.prototype.on.call(this.opts.body, "data", function() {
-              this[kBodyUsed] = true;
-            });
-          }
-        } else if (this.opts.body && typeof this.opts.body.pipeTo === "function") {
-          this.opts.body = new BodyAsyncIterable(this.opts.body);
-        } else if (this.opts.body && typeof this.opts.body !== "string" && !ArrayBuffer.isView(this.opts.body) && util2.isIterable(this.opts.body) && !util2.isFormDataLike(this.opts.body)) {
-          this.opts.body = new BodyAsyncIterable(this.opts.body);
-        }
       }
       onRequestStart(controller, context) {
         this.handler.onRequestStart?.(controller, { ...context, history: this.history });
@@ -46843,7 +46727,7 @@ var require_dns = __commonJS({
     var maxInt = Math.pow(2, 31) - 1;
     function hasSafeIterator(headers) {
       const prototype = Object.getPrototypeOf(headers);
-      const ownIterator = Object.prototype.hasOwnProperty.call(headers, Symbol.iterator);
+      const ownIterator = Object.hasOwn(headers, Symbol.iterator);
       return ownIterator || prototype != null && prototype !== Object.prototype && typeof headers[Symbol.iterator] === "function";
     }
     function isHostHeader(key) {
@@ -47513,18 +47397,17 @@ var require_cache = __commonJS({
       }
     }
     function makeDeduplicationKey(cacheKey2, excludeHeaders) {
-      let key = `${cacheKey2.origin}:${cacheKey2.method}:${cacheKey2.path}`;
+      const headers = {};
       if (cacheKey2.headers) {
         const sortedHeaders = Object.keys(cacheKey2.headers).sort();
         for (const header of sortedHeaders) {
           if (excludeHeaders?.has(header.toLowerCase())) {
             continue;
           }
-          const value = cacheKey2.headers[header];
-          key += `:${header}=${Array.isArray(value) ? value.join(",") : value}`;
+          headers[header] = cacheKey2.headers[header];
         }
       }
-      return key;
+      return JSON.stringify([cacheKey2.origin, cacheKey2.method, cacheKey2.path, headers]);
     }
     module.exports = {
       makeCacheKey,
@@ -49035,7 +48918,6 @@ var require_decompress = __commonJS({
     var { createInflate, createGunzip, createBrotliDecompress, createZstdDecompress } = __require("zlib");
     var { pipeline } = __require("stream");
     var DecoratorHandler = require_decorator_handler();
-    var { runtimeFeatures } = require_runtime_features();
     var supportedEncodings = {
       gzip: createGunzip,
       "x-gzip": createGunzip,
@@ -49043,7 +48925,7 @@ var require_decompress = __commonJS({
       deflate: createInflate,
       compress: createInflate,
       "x-compress": createInflate,
-      ...runtimeFeatures.has("zstd") ? { zstd: createZstdDecompress } : {}
+      zstd: createZstdDecompress
     };
     var defaultSkipStatusCodes = (
       /** @type {const} */
@@ -50333,7 +50215,7 @@ var require_headers = __commonJS({
         }
       }
     };
-    var Headers = class _Headers {
+    var Headers2 = class _Headers {
       #guard;
       /**
        * @type {HeadersList}
@@ -50474,13 +50356,13 @@ var require_headers = __commonJS({
         target.#headersList = list;
       }
     };
-    var { getHeadersGuard, setHeadersGuard, getHeadersList, setHeadersList } = Headers;
-    Reflect.deleteProperty(Headers, "getHeadersGuard");
-    Reflect.deleteProperty(Headers, "setHeadersGuard");
-    Reflect.deleteProperty(Headers, "getHeadersList");
-    Reflect.deleteProperty(Headers, "setHeadersList");
-    iteratorMixin("Headers", Headers, headersListSortAndCombine, 0, 1);
-    Object.defineProperties(Headers.prototype, {
+    var { getHeadersGuard, setHeadersGuard, getHeadersList, setHeadersList } = Headers2;
+    Reflect.deleteProperty(Headers2, "getHeadersGuard");
+    Reflect.deleteProperty(Headers2, "setHeadersGuard");
+    Reflect.deleteProperty(Headers2, "getHeadersList");
+    Reflect.deleteProperty(Headers2, "setHeadersList");
+    iteratorMixin("Headers", Headers2, headersListSortAndCombine, 0, 1);
+    Object.defineProperties(Headers2.prototype, {
       append: kEnumerableProperty,
       delete: kEnumerableProperty,
       get: kEnumerableProperty,
@@ -50498,7 +50380,7 @@ var require_headers = __commonJS({
     webidl.converters.HeadersInit = function(V, prefix, argument) {
       if (webidl.util.Type(V) === webidl.util.Types.OBJECT) {
         const iterator = Reflect.get(V, Symbol.iterator);
-        if (!util2.types.isProxy(V) && iterator === Headers.prototype.entries) {
+        if (!util2.types.isProxy(V) && iterator === Headers2.prototype.entries) {
           try {
             return getHeadersList(V).entriesList;
           } catch {
@@ -50519,7 +50401,7 @@ var require_headers = __commonJS({
       fill,
       // for test.
       compareHeaderName,
-      Headers,
+      Headers: Headers2,
       HeadersList,
       getHeadersGuard,
       setHeadersGuard,
@@ -50533,7 +50415,7 @@ var require_headers = __commonJS({
 var require_response = __commonJS({
   "node_modules/undici/lib/web/fetch/response.js"(exports, module) {
     "use strict";
-    var { Headers, HeadersList, fill, getHeadersGuard, setHeadersGuard, setHeadersList } = require_headers();
+    var { Headers: Headers2, HeadersList, fill, getHeadersGuard, setHeadersGuard, setHeadersList } = require_headers();
     var { extractBody, cloneBody, mixinBody, streamRegistry, bodyUnusable } = require_body();
     var util2 = require_util();
     var nodeUtil = __require("util");
@@ -50609,7 +50491,7 @@ var require_response = __commonJS({
         }
         init = webidl.converters.ResponseInit(init);
         this.#state = makeResponse({});
-        this.#headers = new Headers(kConstruct);
+        this.#headers = new Headers2(kConstruct);
         setHeadersGuard(this.#headers, "response");
         setHeadersList(this.#headers, this.#state.headersList);
         let bodyWithType = null;
@@ -50884,7 +50766,7 @@ var require_response = __commonJS({
     function fromInnerResponse(innerResponse, guard) {
       const response = new Response2(kConstruct);
       setResponseState(response, innerResponse);
-      const headers = new Headers(kConstruct);
+      const headers = new Headers2(kConstruct);
       setResponseHeaders(response, headers);
       setHeadersList(headers, innerResponse.headersList);
       setHeadersGuard(headers, guard);
@@ -50956,7 +50838,7 @@ var require_request2 = __commonJS({
   "node_modules/undici/lib/web/fetch/request.js"(exports, module) {
     "use strict";
     var { extractBody, mixinBody, cloneBody, bodyUnusable } = require_body();
-    var { Headers, fill: fillHeaders, HeadersList, setHeadersGuard, getHeadersGuard, setHeadersList, getHeadersList } = require_headers();
+    var { Headers: Headers2, fill: fillHeaders, HeadersList, setHeadersGuard, getHeadersGuard, setHeadersList, getHeadersList } = require_headers();
     var util2 = require_util();
     var nodeUtil = __require("util");
     var {
@@ -51225,7 +51107,7 @@ var require_request2 = __commonJS({
             requestFinalizer.register(ac, { signal, abort }, abort);
           }
         }
-        this.#headers = new Headers(kConstruct);
+        this.#headers = new Headers2(kConstruct);
         setHeadersList(this.#headers, request.headersList);
         setHeadersGuard(this.#headers, "request");
         if (mode === "no-cors") {
@@ -51566,7 +51448,7 @@ var require_request2 = __commonJS({
       setRequestState(request, innerRequest);
       setRequestDispatcher(request, dispatcher);
       setRequestSignal(request, signal);
-      const headers = new Headers(kConstruct);
+      const headers = new Headers2(kConstruct);
       setRequestHeaders(request, headers);
       setHeadersList(headers, innerRequest.headersList);
       setHeadersGuard(headers, guard);
@@ -51912,10 +51794,7 @@ var require_fetch = __commonJS({
     var { webidl } = require_webidl();
     var { STATUS_CODES } = __require("http");
     var { bytesMatch } = require_subresource_integrity();
-    var { createDeferredPromise } = require_promise();
     var { isomorphicEncode } = require_infra();
-    var { runtimeFeatures } = require_runtime_features();
-    var hasZstd = runtimeFeatures.has("zstd");
     var GET_OR_HEAD = ["GET", "HEAD"];
     var defaultUserAgent = typeof __UNDICI_IS_NODE__ !== "undefined" || typeof esbuildDetection !== "undefined" ? "node" : "undici";
     var resolveObjectURL;
@@ -51954,7 +51833,7 @@ var require_fetch = __commonJS({
     }
     function fetch2(input, init = void 0) {
       webidl.argumentLengthCheck(arguments, 1, "globalThis.fetch");
-      let p = createDeferredPromise();
+      let p = Promise.withResolvers();
       let requestObject;
       try {
         requestObject = new Request2(input, init);
@@ -52592,10 +52471,10 @@ var require_fetch = __commonJS({
         response.rangeRequested = true;
       }
       response.requestIncludesCredentials = includeCredentials;
-      if (response.status === 401 && httpRequest.responseTainting !== "cors" && includeCredentials && isTraversableNavigable(request.traversableForUserPrompts)) {
+      if (response.status === 401 && httpRequest.responseTainting !== "cors" && includeCredentials && (request.useURLCredentials !== void 0 || isTraversableNavigable(request.traversableForUserPrompts))) {
         if (request.body != null) {
           if (request.body.source == null) {
-            return makeNetworkError("expected non-null body source");
+            return response;
           }
           request.body = safelyExtractBody(request.body.source)[0];
         }
@@ -52885,7 +52764,7 @@ var require_fetch = __commonJS({
                         flush: zlib.constants.BROTLI_OPERATION_FLUSH,
                         finishFlush: zlib.constants.BROTLI_OPERATION_FLUSH
                       }));
-                    } else if (coding === "zstd" && hasZstd) {
+                    } else if (coding === "zstd") {
                       decoders.push(zlib.createZstdDecompress({
                         flush: zlib.constants.ZSTD_e_continue,
                         finishFlush: zlib.constants.ZSTD_e_end
@@ -53019,7 +52898,6 @@ var require_cache3 = __commonJS({
     var { Request: Request2, fromInnerRequest, getRequestState } = require_request2();
     var { fetching } = require_fetch();
     var { urlIsHttpHttpsScheme, readAllBytes } = require_util2();
-    var { createDeferredPromise } = require_promise();
     var Cache = class _Cache {
       /**
        * @see https://w3c.github.io/ServiceWorker/#dfn-relevant-request-response-list
@@ -53099,7 +52977,7 @@ var require_cache3 = __commonJS({
           r.initiator = "fetch";
           r.destination = "subresource";
           requestList.push(r);
-          const responsePromise = createDeferredPromise();
+          const responsePromise = Promise.withResolvers();
           fetchControllers.push(fetching({
             request: r,
             processResponse(response) {
@@ -53150,7 +53028,7 @@ var require_cache3 = __commonJS({
           operations.push(operation);
           index2++;
         }
-        const cacheJobPromise = createDeferredPromise();
+        const cacheJobPromise = Promise.withResolvers();
         let errorData = null;
         try {
           this.#batchCacheOperations(operations);
@@ -53209,7 +53087,7 @@ var require_cache3 = __commonJS({
           });
         }
         const clonedResponse = cloneResponse(innerResponse);
-        const bodyReadPromise = createDeferredPromise();
+        const bodyReadPromise = Promise.withResolvers();
         if (innerResponse.body != null) {
           const stream = innerResponse.body.stream;
           const reader = stream.getReader();
@@ -53231,7 +53109,7 @@ var require_cache3 = __commonJS({
         if (clonedResponse.body != null) {
           clonedResponse.body.source = bytes;
         }
-        const cacheJobPromise = createDeferredPromise();
+        const cacheJobPromise = Promise.withResolvers();
         let errorData = null;
         try {
           this.#batchCacheOperations(operations);
@@ -53270,7 +53148,7 @@ var require_cache3 = __commonJS({
           options
         };
         operations.push(operation);
-        const cacheJobPromise = createDeferredPromise();
+        const cacheJobPromise = Promise.withResolvers();
         let errorData = null;
         let requestResponses;
         try {
@@ -53309,7 +53187,7 @@ var require_cache3 = __commonJS({
             r = getRequestState(new Request2(request));
           }
         }
-        const promise = createDeferredPromise();
+        const promise = Promise.withResolvers();
         const requests = [];
         if (request === void 0) {
           for (const requestResponse of this.#relevantRequestResponseList) {
@@ -53996,8 +53874,8 @@ var require_cookies = __commonJS({
     var { parseSetCookie } = require_parse();
     var { stringify: stringify4 } = require_util4();
     var { webidl } = require_webidl();
-    var { Headers } = require_headers();
-    var brandChecks = webidl.brandCheckMultiple([Headers, globalThis.Headers].filter(Boolean));
+    var { Headers: Headers2 } = require_headers();
+    var brandChecks = webidl.brandCheckMultiple([Headers2, globalThis.Headers].filter(Boolean));
     function getCookies(headers) {
       webidl.argumentLengthCheck(arguments, 1, "getCookies");
       brandChecks(headers);
@@ -54738,7 +54616,7 @@ var require_connection = __commonJS({
     var { parseExtensions, isClosed, isClosing, isEstablished, isConnecting, validateCloseCodeAndReason } = require_util5();
     var { makeRequest } = require_request2();
     var { fetching } = require_fetch();
-    var { Headers, getHeadersList } = require_headers();
+    var { Headers: Headers2, getHeadersList } = require_headers();
     var { getDecodeSplit } = require_util2();
     var { WebsocketFrameSend } = require_frame();
     var assert8 = __require("assert");
@@ -54760,7 +54638,7 @@ var require_connection = __commonJS({
         useURLCredentials: true
       });
       if (options.headers) {
-        const headersList = getHeadersList(new Headers(options.headers));
+        const headersList = getHeadersList(new Headers2(options.headers));
         request.headersList = headersList;
       }
       const keyValue = crypto4.randomBytes(16).toString("base64");
@@ -54896,27 +54774,26 @@ var require_permessage_deflate2 = __commonJS({
     var tail = Buffer.from([0, 0, 255, 255]);
     var kBuffer = /* @__PURE__ */ Symbol("kBuffer");
     var kLength = /* @__PURE__ */ Symbol("kLength");
-    var kDefaultMaxDecompressedSize = 4 * 1024 * 1024;
     var PerMessageDeflate2 = class {
       /** @type {import('node:zlib').InflateRaw} */
       #inflate;
       #options = {};
-      /** @type {boolean} */
-      #aborted = false;
-      /** @type {Function|null} */
-      #currentCallback = null;
+      #maxPayloadSize = 0;
       /**
        * @param {Map<string, string>} extensions
        */
-      constructor(extensions) {
+      constructor(extensions, options) {
         this.#options.serverNoContextTakeover = extensions.has("server_no_context_takeover");
         this.#options.serverMaxWindowBits = extensions.get("server_max_window_bits");
+        this.#maxPayloadSize = options.maxPayloadSize;
       }
+      /**
+       * Decompress a compressed payload.
+       * @param {Buffer} chunk Compressed data
+       * @param {boolean} fin Final fragment flag
+       * @param {Function} callback Callback function
+       */
       decompress(chunk, fin, callback) {
-        if (this.#aborted) {
-          callback(new MessageSizeExceededError());
-          return;
-        }
         if (!this.#inflate) {
           let windowBits = Z_DEFAULT_WINDOWBITS;
           if (this.#options.serverMaxWindowBits) {
@@ -54935,20 +54812,11 @@ var require_permessage_deflate2 = __commonJS({
           this.#inflate[kBuffer] = [];
           this.#inflate[kLength] = 0;
           this.#inflate.on("data", (data) => {
-            if (this.#aborted) {
-              return;
-            }
             this.#inflate[kLength] += data.length;
-            if (this.#inflate[kLength] > kDefaultMaxDecompressedSize) {
-              this.#aborted = true;
+            if (this.#maxPayloadSize > 0 && this.#inflate[kLength] > this.#maxPayloadSize) {
+              callback(new MessageSizeExceededError());
               this.#inflate.removeAllListeners();
-              this.#inflate.destroy();
               this.#inflate = null;
-              if (this.#currentCallback) {
-                const cb = this.#currentCallback;
-                this.#currentCallback = null;
-                cb(new MessageSizeExceededError());
-              }
               return;
             }
             this.#inflate[kBuffer].push(data);
@@ -54958,19 +54826,17 @@ var require_permessage_deflate2 = __commonJS({
             callback(err);
           });
         }
-        this.#currentCallback = callback;
         this.#inflate.write(chunk);
         if (fin) {
           this.#inflate.write(tail);
         }
         this.#inflate.flush(() => {
-          if (this.#aborted || !this.#inflate) {
+          if (!this.#inflate) {
             return;
           }
           const full = Buffer.concat(this.#inflate[kBuffer], this.#inflate[kLength]);
           this.#inflate[kBuffer].length = 0;
           this.#inflate[kLength] = 0;
-          this.#currentCallback = null;
           callback(null, full);
         });
       }
@@ -55011,16 +54877,20 @@ var require_receiver2 = __commonJS({
       #extensions;
       /** @type {import('./websocket').Handler} */
       #handler;
+      /** @type {number} */
+      #maxPayloadSize;
       /**
        * @param {import('./websocket').Handler} handler
        * @param {Map<string, string>|null} extensions
+       * @param {{ maxPayloadSize?: number }} [options]
        */
-      constructor(handler, extensions) {
+      constructor(handler, extensions, options = {}) {
         super();
         this.#handler = handler;
         this.#extensions = extensions == null ? /* @__PURE__ */ new Map() : extensions;
+        this.#maxPayloadSize = options.maxPayloadSize ?? 0;
         if (this.#extensions.has("permessage-deflate")) {
-          this.#extensions.set("permessage-deflate", new PerMessageDeflate2(extensions));
+          this.#extensions.set("permessage-deflate", new PerMessageDeflate2(extensions, options));
         }
       }
       /**
@@ -55032,6 +54902,13 @@ var require_receiver2 = __commonJS({
         this.#byteOffset += chunk.length;
         this.#loop = true;
         this.run(callback);
+      }
+      #validatePayloadLength() {
+        if (this.#maxPayloadSize > 0 && !isControlFrame(this.#info.opcode) && this.#info.payloadLength > this.#maxPayloadSize) {
+          failWebsocketConnection(this.#handler, 1009, "Payload size exceeds maximum allowed size");
+          return false;
+        }
+        return true;
       }
       /**
        * Runs whenever a new chunk is received.
@@ -55092,6 +54969,9 @@ var require_receiver2 = __commonJS({
             if (payloadLength <= 125) {
               this.#info.payloadLength = payloadLength;
               this.#state = parserStates.READ_DATA;
+              if (!this.#validatePayloadLength()) {
+                return;
+              }
             } else if (payloadLength === 126) {
               this.#state = parserStates.PAYLOADLENGTH_16;
             } else if (payloadLength === 127) {
@@ -55112,6 +54992,9 @@ var require_receiver2 = __commonJS({
             const buffer2 = this.consume(2);
             this.#info.payloadLength = buffer2.readUInt16BE(0);
             this.#state = parserStates.READ_DATA;
+            if (!this.#validatePayloadLength()) {
+              return;
+            }
           } else if (this.#state === parserStates.PAYLOADLENGTH_64) {
             if (this.#byteOffset < 8) {
               return callback();
@@ -55125,6 +55008,9 @@ var require_receiver2 = __commonJS({
             }
             this.#info.payloadLength = lower;
             this.#state = parserStates.READ_DATA;
+            if (!this.#validatePayloadLength()) {
+              return;
+            }
           } else if (this.#state === parserStates.READ_DATA) {
             if (this.#byteOffset < this.#info.payloadLength) {
               return callback();
@@ -55141,24 +55027,33 @@ var require_receiver2 = __commonJS({
                 }
                 this.#state = parserStates.INFO;
               } else {
-                this.#extensions.get("permessage-deflate").decompress(body, this.#info.fin, (error, data) => {
-                  if (error) {
-                    const code = error instanceof MessageSizeExceededError ? 1009 : 1007;
-                    failWebsocketConnection(this.#handler, code, error.message);
-                    return;
-                  }
-                  this.writeFragments(data);
-                  if (!this.#info.fin) {
-                    this.#state = parserStates.INFO;
+                this.#extensions.get("permessage-deflate").decompress(
+                  body,
+                  this.#info.fin,
+                  (error, data) => {
+                    if (error) {
+                      const code = error instanceof MessageSizeExceededError ? 1009 : 1007;
+                      failWebsocketConnection(this.#handler, code, error.message);
+                      return;
+                    }
+                    this.writeFragments(data);
+                    if (this.#maxPayloadSize > 0 && this.#fragmentsBytes > this.#maxPayloadSize) {
+                      failWebsocketConnection(this.#handler, 1009, new MessageSizeExceededError().message);
+                      return;
+                    }
+                    if (!this.#info.fin) {
+                      this.#state = parserStates.INFO;
+                      this.#loop = true;
+                      this.run(callback);
+                      return;
+                    }
+                    websocketMessageReceived(this.#handler, this.#info.binaryType, this.consumeFragments());
                     this.#loop = true;
+                    this.#state = parserStates.INFO;
                     this.run(callback);
-                    return;
-                  }
-                  websocketMessageReceived(this.#handler, this.#info.binaryType, this.consumeFragments());
-                  this.#loop = true;
-                  this.#state = parserStates.INFO;
-                  this.run(callback);
-                });
+                  },
+                  this.#fragmentsBytes
+                );
                 this.#loop = false;
                 break;
               }
@@ -55674,7 +55569,10 @@ var require_websocket2 = __commonJS({
        */
       #onConnectionEstablished(response, parsedExtensions) {
         this.#handler.socket = response.socket;
-        const parser = new ByteParser(this.#handler, parsedExtensions);
+        const maxPayloadSize = this.#handler.controller.dispatcher?.webSocketOptions?.maxPayloadSize;
+        const parser = new ByteParser(this.#handler, parsedExtensions, {
+          maxPayloadSize
+        });
         parser.on("drain", () => this.#handler.onParserDrain());
         parser.on("error", (err) => this.#handler.onParserError(err));
         this.#parser = parser;
@@ -55952,7 +55850,6 @@ var require_websocketerror = __commonJS({
 var require_websocketstream = __commonJS({
   "node_modules/undici/lib/web/websocket/stream/websocketstream.js"(exports, module) {
     "use strict";
-    var { createDeferredPromise } = require_promise();
     var { environmentSettingsObject } = require_util2();
     var { states, opcodes, sentCloseFrameState } = require_constants6();
     var { webidl } = require_webidl();
@@ -55970,10 +55867,10 @@ var require_websocketstream = __commonJS({
       /** @type {URL} */
       #url;
       // Each WebSocketStream object has an associated opened promise , which is a promise.
-      /** @type {import('../../../util/promise').DeferredPromise} */
+      /** @type {ReturnType<typeof Promise.withResolvers>} */
       #openedPromise;
       // Each WebSocketStream object has an associated closed promise , which is a promise.
-      /** @type {import('../../../util/promise').DeferredPromise} */
+      /** @type {ReturnType<typeof Promise.withResolvers>} */
       #closedPromise;
       // Each WebSocketStream object has an associated readable stream , which is a ReadableStream .
       /** @type {ReadableStream} */
@@ -56039,8 +55936,8 @@ var require_websocketstream = __commonJS({
           throw new DOMException("Invalid Sec-WebSocket-Protocol value", "SyntaxError");
         }
         this.#url = urlRecord.toString();
-        this.#openedPromise = createDeferredPromise();
-        this.#closedPromise = createDeferredPromise();
+        this.#openedPromise = Promise.withResolvers();
+        this.#closedPromise = Promise.withResolvers();
         if (options.signal != null) {
           const signal = options.signal;
           if (signal.aborted) {
@@ -56090,7 +55987,7 @@ var require_websocketstream = __commonJS({
       }
       #write(chunk) {
         chunk = webidl.converters.WebSocketStreamWrite(chunk);
-        const promise = createDeferredPromise();
+        const promise = Promise.withResolvers();
         let data = null;
         let opcode = null;
         if (webidl.is.BufferSource(chunk)) {
@@ -56918,12 +56815,12 @@ var require_undici = __commonJS({
           }
           url = util2.parseURL(url);
         }
-        const { agent, dispatcher = getGlobalDispatcher() } = opts;
+        const { agent, dispatcher = getGlobalDispatcher(), ...restOpts } = opts;
         if (agent) {
           throw new InvalidArgumentError("unsupported opts.agent. Did you mean opts.client?");
         }
         return fn.call(dispatcher, {
-          ...opts,
+          ...restOpts,
           origin: url.origin,
           path: url.search ? `${url.pathname}${url.search}` : url.pathname,
           method: opts.method || (opts.body ? "PUT" : "GET")
@@ -58223,10 +58120,10 @@ var init_client = __esm({
 import { AsyncLocalStorage } from "async_hooks";
 import { createServer } from "http";
 import { finished } from "stream";
-import { homedir as homedir5 } from "os";
+import { homedir as homedir6 } from "os";
 import { join as join8 } from "path";
 import { mkdir as mkdir3, writeFile as writeFile2, readFile, stat as fsStat } from "fs/promises";
-import { readFileSync as readFileSync2, existsSync } from "fs";
+import { readFileSync as readFileSync2, existsSync as existsSync2 } from "fs";
 
 // node_modules/viem/_esm/utils/getAction.js
 function getAction(client, actionFn, name) {
@@ -63927,7 +63824,7 @@ function weierstrass2(curveDef) {
   function prepSig(msgHash, privateKey, opts = defaultSigOpts) {
     if (["recovered", "canonical"].some((k) => k in opts))
       throw new Error("sign() legacy options not supported");
-    const { hash: hash3, randomBytes: randomBytes3 } = CURVE;
+    const { hash: hash3, randomBytes: randomBytes4 } = CURVE;
     let { lowS, prehash, extraEntropy: ent } = opts;
     if (lowS == null)
       lowS = true;
@@ -63939,7 +63836,7 @@ function weierstrass2(curveDef) {
     const d = normPrivateKeyToScalar(privateKey);
     const seedArgs = [int2octets(d), int2octets(h1int)];
     if (ent != null && ent !== false) {
-      const e7 = ent === true ? randomBytes3(Fp.BYTES) : ent;
+      const e7 = ent === true ? randomBytes4(Fp.BYTES) : ent;
       seedArgs.push(ensureBytes2("extraEntropy", e7));
     }
     const seed = concatBytes4(...seedArgs);
@@ -71522,8 +71419,8 @@ function createNonce() {
   return toHex(getCrypto().getRandomValues(new Uint8Array(32)));
 }
 function createPermit2Nonce() {
-  const randomBytes3 = getCrypto().getRandomValues(new Uint8Array(32));
-  return BigInt(toHex(randomBytes3)).toString();
+  const randomBytes4 = getCrypto().getRandomValues(new Uint8Array(32));
+  return BigInt(toHex(randomBytes4)).toString();
 }
 
 // node_modules/@x402/evm/dist/esm/chunk-YUJQ7TLD.mjs
@@ -73629,8 +73526,10 @@ var DEFAULT_ROUTING_CONFIG = {
         // 1,431ms, IQ 32
         "google/gemini-2.5-flash",
         // 1,238ms, IQ 20 — cheap last resort
+        "openai/gpt-5.5",
+        // Newest OpenAI flagship — 1M+ ctx, native agent + computer use; benchmark TBD
         "openai/gpt-5.4"
-        // 6,213ms, IQ 57 — slowest but highest quality
+        // 6,213ms, IQ 57 — previous flagship, benchmarked
       ]
     },
     REASONING: {
@@ -73652,10 +73551,16 @@ var DEFAULT_ROUTING_CONFIG = {
   ecoTiers: {
     SIMPLE: {
       primary: "free/gpt-oss-120b",
-      // FREE! $0.00/$0.00
+      // FREE! $0.00/$0.00 — heavy user default
       fallback: [
         "free/gpt-oss-20b",
         // FREE — smaller, faster
+        "free/mistral-small-4-119b",
+        // FREE — 114 tok/s, fastest free chat
+        "free/deepseek-v4-flash",
+        // FREE — 1M context, ~5x faster than v4-pro
+        "free/qwen3-next-80b-a3b-thinking",
+        // FREE — 116 tok/s reasoning
         "google/gemini-3.1-flash-lite",
         // $0.25/$1.50 — newest flash-lite
         "openai/gpt-5.4-nano",
@@ -73698,9 +73603,11 @@ var DEFAULT_ROUTING_CONFIG = {
   // codex=complex coding, kimi=simple coding, sonnet=reasoning/instructions, opus=architecture/PM/audits
   premiumTiers: {
     SIMPLE: {
-      primary: "moonshot/kimi-k2.5",
-      // $0.60/$3.00 - good for simple coding
+      primary: "moonshot/kimi-k2.6",
+      // $0.95/$4.00 - Moonshot flagship (256K ctx, vision + reasoning)
       fallback: [
+        "moonshot/kimi-k2.5",
+        // $0.60/$3.00 - proven reliable NVIDIA fallback when Moonshot direct API falters
         "google/gemini-2.5-flash",
         // 60% retention, fast growth
         "anthropic/claude-haiku-4.5",
@@ -73712,6 +73619,8 @@ var DEFAULT_ROUTING_CONFIG = {
       primary: "openai/gpt-5.3-codex",
       // $1.75/$14 - 400K context, 128K output, replaces 5.2
       fallback: [
+        "moonshot/kimi-k2.6",
+        // Moonshot flagship
         "moonshot/kimi-k2.5",
         "google/gemini-2.5-flash",
         // 60% retention, good coding capability
@@ -73736,8 +73645,10 @@ var DEFAULT_ROUTING_CONFIG = {
         "moonshot/kimi-k2.6",
         // Moonshot flagship, independent infra
         "moonshot/kimi-k2.5",
+        "openai/gpt-5.5",
+        // Newest OpenAI flagship — 1M+ ctx, native agent + computer use
         "openai/gpt-5.4",
-        // Newest OpenAI flagship (slow but stable)
+        // Previous flagship (slow but stable, benchmarked at 6,213ms)
         "openai/gpt-5.3-codex",
         "deepseek/deepseek-chat",
         // Cheap, reliable
@@ -73805,8 +73716,10 @@ var DEFAULT_ROUTING_CONFIG = {
         // 1,348ms — strong tool use, independent infra
         "moonshot/kimi-k2.5",
         // strong tool use, independent infra
+        "openai/gpt-5.5",
+        // Newest flagship — native agent + computer use (exactly the agentic-tier use case)
         "openai/gpt-5.4",
-        // 6,213ms — slow but reliable flagship
+        // Previous flagship — 6,213ms, reliable
         "deepseek/deepseek-chat",
         // 1,431ms — cheap, reliable
         "free/qwen3-coder-480b"
@@ -73860,6 +73773,7 @@ function route(prompt, systemPrompt, maxOutputTokens, options) {
 var MODEL_ALIASES = {
   // Claude - flagship opus is 4.7; sonnet stays at 4.6
   claude: "anthropic/claude-sonnet-4.6",
+  "br-sonnet": "anthropic/claude-sonnet-4.6",
   sonnet: "anthropic/claude-sonnet-4.6",
   "sonnet-4": "anthropic/claude-sonnet-4.6",
   "sonnet-4.6": "anthropic/claude-sonnet-4.6",
@@ -73883,13 +73797,14 @@ var MODEL_ALIASES = {
   "anthropic/claude-opus-4": "anthropic/claude-opus-4.7",
   "anthropic/claude-opus-4-7": "anthropic/claude-opus-4.7",
   "anthropic/claude-opus-4-6": "anthropic/claude-opus-4.6",
-  "anthropic/claude-opus-4.5": "anthropic/claude-opus-4.7",
+  "anthropic/claude-opus-4-5": "anthropic/claude-opus-4.5",
   "anthropic/claude-haiku-4": "anthropic/claude-haiku-4.5",
   "anthropic/claude-haiku-4-5": "anthropic/claude-haiku-4.5",
   // OpenAI
   gpt: "openai/gpt-4o",
   gpt4: "openai/gpt-4o",
-  gpt5: "openai/gpt-5.4",
+  gpt5: "openai/gpt-5.5",
+  "gpt-5.5": "openai/gpt-5.5",
   "gpt-5.4": "openai/gpt-5.4",
   "gpt-5.4-pro": "openai/gpt-5.4-pro",
   "gpt-5.4-nano": "openai/gpt-5.4-nano",
@@ -73906,12 +73821,15 @@ var MODEL_ALIASES = {
   deepseek: "deepseek/deepseek-chat",
   "deepseek-chat": "deepseek/deepseek-chat",
   reasoner: "deepseek/deepseek-reasoner",
-  // Kimi / Moonshot — nvidia/kimi-k2.5 was retired 2026-04-21 (slow hosting).
-  // Backend aliases nvidia/kimi-k2.5 -> moonshot/kimi-k2.5 (same model, Moonshot SLA).
-  kimi: "moonshot/kimi-k2.5",
-  moonshot: "moonshot/kimi-k2.5",
-  "kimi-k2.5": "moonshot/kimi-k2.5",
+  // Kimi / Moonshot — K2.6 is the featured flagship on BlockRun (K2.5 hidden in
+  // BlockRun's UI 2026-04-28). Bare aliases now resolve to K2.6. Users who
+  // explicitly pinned "kimi-k2.5" continue to get K2.5 (cost-stability opt-in:
+  // $0.60/$3.00 vs K2.6's $0.95/$4.00). NVIDIA-hosted K2.5 was retired 2026-04-21.
+  kimi: "moonshot/kimi-k2.6",
+  moonshot: "moonshot/kimi-k2.6",
+  "kimi-k2": "moonshot/kimi-k2.6",
   "kimi-k2.6": "moonshot/kimi-k2.6",
+  "kimi-k2.5": "moonshot/kimi-k2.5",
   "nvidia/kimi-k2.5": "moonshot/kimi-k2.5",
   // Google
   gemini: "google/gemini-2.5-pro",
@@ -73933,52 +73851,69 @@ var MODEL_ALIASES = {
   "xai/grok-3-fast": "xai/grok-4-fast-reasoning",
   // delisted (too expensive)
   // NVIDIA — backward compat aliases (nvidia/xxx → free/xxx)
+  // Default free model is gpt-oss-120b (heavy user demand). New free models
+  // added 2026-04-29 — deepseek-v4-pro/flash, nemotron-omni — are additions,
+  // not replacements. Retired-with-redirect entries below mirror BlockRun
+  // server-side decommissioning of slow models (nemotron family, etc.).
   nvidia: "free/gpt-oss-120b",
   "gpt-120b": "free/gpt-oss-120b",
   "gpt-20b": "free/gpt-oss-20b",
   "nvidia/gpt-oss-120b": "free/gpt-oss-120b",
   "nvidia/gpt-oss-20b": "free/gpt-oss-20b",
-  "nvidia/nemotron-ultra-253b": "free/qwen3-next-80b-a3b-thinking",
-  // retired 2026-04-21
-  "nvidia/nemotron-3-super-120b": "free/qwen3-next-80b-a3b-thinking",
-  // retired 2026-04-21
-  "nvidia/nemotron-super-49b": "free/qwen3-next-80b-a3b-thinking",
-  // retired 2026-04-21
-  "nvidia/deepseek-v3.2": "free/deepseek-v3.2",
-  "nvidia/mistral-large-3-675b": "free/mistral-small-4-119b",
-  // retired 2026-04-21
+  "nvidia/deepseek-v3.2": "free/deepseek-v4-pro",
+  // v3.2 phased out 2026-04-29 → v4-pro
+  "free/deepseek-v3.2": "free/deepseek-v4-pro",
+  // local pin redirect
+  "nvidia/deepseek-v4-pro": "free/deepseek-v4-pro",
+  "nvidia/deepseek-v4-flash": "free/deepseek-v4-flash",
+  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning": "free/nemotron-3-nano-omni-30b-a3b-reasoning",
   "nvidia/qwen3-coder-480b": "free/qwen3-coder-480b",
-  "nvidia/devstral-2-123b": "free/qwen3-coder-480b",
-  // retired 2026-04-21
   "qwen/qwen3-coder-480b-a35b-instruct": "free/qwen3-coder-480b",
   "nvidia/glm-4.7": "free/glm-4.7",
   "nvidia/llama-4-maverick": "free/llama-4-maverick",
   "nvidia/qwen3-next-80b-a3b-thinking": "free/qwen3-next-80b-a3b-thinking",
   "nvidia/mistral-small-4-119b": "free/mistral-small-4-119b",
+  // Retired free IDs → successors (mirror server-side redirects)
+  "nvidia/nemotron-ultra-253b": "free/qwen3-next-80b-a3b-thinking",
+  "nvidia/nemotron-3-super-120b": "free/qwen3-next-80b-a3b-thinking",
+  "nvidia/nemotron-super-49b": "free/qwen3-next-80b-a3b-thinking",
+  "nvidia/mistral-large-3-675b": "free/mistral-small-4-119b",
+  "nvidia/devstral-2-123b": "free/qwen3-coder-480b",
+  "free/nemotron-ultra-253b": "free/qwen3-next-80b-a3b-thinking",
+  "free/nemotron-3-super-120b": "free/qwen3-next-80b-a3b-thinking",
+  "free/nemotron-super-49b": "free/qwen3-next-80b-a3b-thinking",
+  "free/mistral-large-3-675b": "free/mistral-small-4-119b",
+  "free/devstral-2-123b": "free/qwen3-coder-480b",
   // Free model shorthand aliases
-  "deepseek-free": "free/deepseek-v3.2",
+  "deepseek-free": "free/deepseek-v4-pro",
+  // upgraded from v3.2 (2026-04-29)
+  "deepseek-v4-pro": "free/deepseek-v4-pro",
+  "deepseek-v4-flash": "free/deepseek-v4-flash",
+  "v4-pro": "free/deepseek-v4-pro",
+  "v4-flash": "free/deepseek-v4-flash",
   "mistral-free": "free/mistral-small-4-119b",
-  // was mistral-large-3-675b (retired)
   "glm-free": "free/glm-4.7",
   "llama-free": "free/llama-4-maverick",
+  "qwen-coder": "free/qwen3-coder-480b",
+  "qwen-coder-free": "free/qwen3-coder-480b",
+  "qwen-thinking": "free/qwen3-next-80b-a3b-thinking",
+  "qwen3-next": "free/qwen3-next-80b-a3b-thinking",
+  "mistral-small": "free/mistral-small-4-119b",
+  // Vision-capable free model — BlockRun's first
+  "nemotron-omni": "free/nemotron-3-nano-omni-30b-a3b-reasoning",
+  "nano-omni": "free/nemotron-3-nano-omni-30b-a3b-reasoning",
+  "vision-free": "free/nemotron-3-nano-omni-30b-a3b-reasoning",
+  // Retired shorthand aliases redirect to successors
   nemotron: "free/qwen3-next-80b-a3b-thinking",
-  // nemotron family retired; qwen3-next is the successor flagship
   "nemotron-ultra": "free/qwen3-next-80b-a3b-thinking",
   "nemotron-253b": "free/qwen3-next-80b-a3b-thinking",
   "nemotron-super": "free/qwen3-next-80b-a3b-thinking",
   "nemotron-49b": "free/qwen3-next-80b-a3b-thinking",
   "nemotron-120b": "free/qwen3-next-80b-a3b-thinking",
   devstral: "free/qwen3-coder-480b",
-  // devstral-2 retired; qwen3-coder is the coding successor
   "devstral-2": "free/qwen3-coder-480b",
-  "qwen-coder": "free/qwen3-coder-480b",
-  "qwen-coder-free": "free/qwen3-coder-480b",
-  "qwen-next": "free/qwen3-next-80b-a3b-thinking",
-  "qwen3-next": "free/qwen3-next-80b-a3b-thinking",
-  "mistral-small-free": "free/mistral-small-4-119b",
   maverick: "free/llama-4-maverick",
-  free: "free/qwen3-next-80b-a3b-thinking",
-  // was nemotron-ultra-253b (retired)
+  free: "free/gpt-oss-120b",
   // MiniMax
   minimax: "minimax/minimax-m2.7",
   "minimax-m2.7": "minimax/minimax-m2.7",
@@ -73990,9 +73925,28 @@ var MODEL_ALIASES = {
   "glm-5-turbo": "zai/glm-5-turbo",
   // Routing profile aliases (common variations)
   "auto-router": "auto",
-  router: "auto"
+  router: "auto",
   // Note: auto, eco, premium are virtual routing profiles registered in BLOCKRUN_MODELS
   // They don't need aliases since they're already top-level model IDs
+  // Image generation
+  dalle: "openai/dall-e-3",
+  "dall-e": "openai/dall-e-3",
+  "gpt-image": "openai/gpt-image-1",
+  "nano-banana": "google/nano-banana",
+  banana: "google/nano-banana",
+  "banana-pro": "google/nano-banana-pro",
+  "nano-banana-pro": "google/nano-banana-pro",
+  flux: "black-forest/flux-1.1-pro",
+  "flux-pro": "black-forest/flux-1.1-pro",
+  "grok-imagine": "xai/grok-imagine-image",
+  "grok-imagine-pro": "xai/grok-imagine-image-pro",
+  cogview: "zai/cogview-4",
+  // Video generation
+  "grok-video": "xai/grok-imagine-video",
+  seedance: "bytedance/seedance-1.5-pro",
+  "seedance-1.5": "bytedance/seedance-1.5-pro",
+  "seedance-2-fast": "bytedance/seedance-2.0-fast",
+  "seedance-2": "bytedance/seedance-2.0"
 };
 function resolveModelAlias(model) {
   const normalized = model.trim().toLowerCase();
@@ -74033,7 +73987,7 @@ var BLOCKRUN_MODELS = [
   },
   {
     id: "free",
-    name: "Free \u2192 Qwen3-Next 80B Thinking",
+    name: "Free \u2192 Nemotron Ultra 253B",
     inputPrice: 0,
     outputPrice: 0,
     contextWindow: 131072,
@@ -74103,7 +74057,23 @@ var BLOCKRUN_MODELS = [
     reasoning: true,
     toolCalling: true
   },
-  // GPT-5.4 — newest flagship, same input price as 4o but much more capable
+  // GPT-5.5 — newest visible flagship in blockrun. First fully retrained base since
+  // GPT-4.5; 1M+ context, native agent + computer use. Costs 2x gpt-5.4 — routing
+  // tiers still default to gpt-5.4 because it's benchmarked; users can pin 5.5.
+  {
+    id: "openai/gpt-5.5",
+    name: "GPT-5.5",
+    version: "5.5",
+    inputPrice: 5,
+    outputPrice: 30,
+    contextWindow: 105e4,
+    maxOutput: 128e3,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true
+  },
+  // GPT-5.4 — flagship benchmarked into routing tiers
   {
     id: "openai/gpt-5.4",
     name: "GPT-5.4",
@@ -74314,6 +74284,19 @@ var BLOCKRUN_MODELS = [
     toolCalling: true
   },
   {
+    id: "anthropic/claude-opus-4.5",
+    name: "Claude Opus 4.5",
+    version: "4.5",
+    inputPrice: 5,
+    outputPrice: 25,
+    contextWindow: 2e5,
+    maxOutput: 32e3,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true
+  },
+  {
     id: "anthropic/claude-opus-4.6",
     name: "Claude Opus 4.6",
     version: "4.6",
@@ -74439,9 +74422,24 @@ var BLOCKRUN_MODELS = [
     reasoning: true,
     toolCalling: true
   },
-  // Kimi K2.5 — prefer nvidia-hosted (more reliable); moonshot direct API is unreliable
+  // Kimi K2.6 — Moonshot's current flagship (256K context, vision + reasoning). Only served via Moonshot direct API.
   {
-    id: "nvidia/kimi-k2.5",
+    id: "moonshot/kimi-k2.6",
+    name: "Kimi K2.6",
+    version: "k2.6",
+    inputPrice: 0.95,
+    outputPrice: 4,
+    contextWindow: 262144,
+    maxOutput: 65536,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true
+  },
+  // Kimi K2.5 — Moonshot direct is primary (better SLA). NVIDIA-hosted variant
+  // retired 2026-04-21 (slow throughput) and now redirects to moonshot.
+  {
+    id: "moonshot/kimi-k2.5",
     name: "Kimi K2.5",
     version: "k2.5",
     inputPrice: 0.6,
@@ -74454,8 +74452,8 @@ var BLOCKRUN_MODELS = [
     toolCalling: true
   },
   {
-    id: "moonshot/kimi-k2.5",
-    name: "Kimi K2.5 (Moonshot)",
+    id: "nvidia/kimi-k2.5",
+    name: "Kimi K2.5 (NVIDIA, retired)",
     version: "k2.5",
     inputPrice: 0.6,
     outputPrice: 3,
@@ -74466,7 +74464,7 @@ var BLOCKRUN_MODELS = [
     agentic: true,
     toolCalling: true,
     deprecated: true,
-    fallbackModel: "nvidia/kimi-k2.5"
+    fallbackModel: "moonshot/kimi-k2.5"
   },
   // xAI / Grok
   {
@@ -74614,12 +74612,24 @@ var BLOCKRUN_MODELS = [
     maxOutput: 16384,
     reasoning: true,
     agentic: true,
-    toolCalling: true
+    toolCalling: true,
+    deprecated: true,
+    fallbackModel: "minimax/minimax-m2.7"
   },
   // Free models (hosted by NVIDIA, billingMode: "free" on server)
   // IDs use "free/" prefix so users see them as free in the /model picker.
-  // XClawRouter maps free/xxx → nvidia/xxx before sending to BlockRun upstream.
+  // ClawRouter maps free/xxx → nvidia/xxx before sending to BlockRun upstream
+  // (see toUpstreamModelId in src/proxy.ts). BlockRun's NVIDIA_MODEL_MAP in
+  // src/lib/ai-providers.ts maps known IDs to upstream NIM names; for IDs not
+  // in the map, BlockRun falls through to the bare name (modelMap[k] || k),
+  // so new entries here only need to match BlockRun's catalog ID — NVIDIA NIM
+  // accepts the bare name directly.
   // toolCalling intentionally omitted: structured function calling unverified.
+  // 2026-04-29: kept gpt-oss-120b/20b as defaults (heavy user demand); added
+  //   v4-pro / v4-flash (1M context, ~5x speed split) and nemotron-3-nano-omni
+  //   (first vision-capable free model, 256K context, accepts text/image/video/audio).
+  // 2026-04-21: slimmed to 8 models, retired nemotron family + mistral-large-3-675b
+  //   + devstral-2-123b with successor redirects.
   {
     id: "free/gpt-oss-120b",
     name: "[Free] GPT-OSS 120B",
@@ -74639,62 +74649,30 @@ var BLOCKRUN_MODELS = [
     maxOutput: 16384
   },
   {
-    id: "free/nemotron-ultra-253b",
-    name: "[Free] Nemotron Ultra 253B (retired)",
-    version: "253b",
+    // V4 Pro: 1.6T MoE / 49B active, 1M context. MMLU-Pro 87.5, GPQA 90.1,
+    // SWE-bench 80.6, LiveCodeBench 93.5. NIM ~150 tok/s on Blackwell.
+    // Strongest free reasoning model — phases out free/deepseek-v3.2.
+    id: "free/deepseek-v4-pro",
+    name: "[Free] DeepSeek V4 Pro",
+    version: "v4-pro",
     inputPrice: 0,
     outputPrice: 0,
-    contextWindow: 131072,
-    maxOutput: 16384,
-    reasoning: true,
-    deprecated: true,
-    fallbackModel: "free/qwen3-next-80b-a3b-thinking"
-  },
-  {
-    id: "free/nemotron-3-super-120b",
-    name: "[Free] Nemotron 3 Super 120B (retired)",
-    version: "3-super-120b",
-    inputPrice: 0,
-    outputPrice: 0,
-    contextWindow: 131072,
-    maxOutput: 16384,
-    reasoning: true,
-    deprecated: true,
-    fallbackModel: "free/qwen3-next-80b-a3b-thinking"
-  },
-  {
-    id: "free/nemotron-super-49b",
-    name: "[Free] Nemotron Super 49B (retired)",
-    version: "super-49b",
-    inputPrice: 0,
-    outputPrice: 0,
-    contextWindow: 131072,
-    maxOutput: 16384,
-    reasoning: true,
-    deprecated: true,
-    fallbackModel: "free/qwen3-next-80b-a3b-thinking"
-  },
-  {
-    id: "free/deepseek-v3.2",
-    name: "[Free] DeepSeek V3.2",
-    version: "v3.2",
-    inputPrice: 0,
-    outputPrice: 0,
-    contextWindow: 131072,
+    contextWindow: 1e6,
     maxOutput: 16384,
     reasoning: true
   },
   {
-    id: "free/mistral-large-3-675b",
-    name: "[Free] Mistral Large 675B (retired)",
-    version: "3-675b",
+    // V4 Flash: 284B / 13B active MoE, 1M context. ~5x faster than V4 Pro.
+    // Strong on chat/summarization (MMLU-Pro 86.2). Caveat: weaker factual
+    // recall (SimpleQA 34% vs Pro's 58%) — pick V4 Pro for fact-heavy loops.
+    id: "free/deepseek-v4-flash",
+    name: "[Free] DeepSeek V4 Flash",
+    version: "v4-flash",
     inputPrice: 0,
     outputPrice: 0,
-    contextWindow: 131072,
+    contextWindow: 1e6,
     maxOutput: 16384,
-    reasoning: true,
-    deprecated: true,
-    fallbackModel: "free/mistral-small-4-119b"
+    reasoning: true
   },
   {
     id: "free/qwen3-coder-480b",
@@ -74704,17 +74682,6 @@ var BLOCKRUN_MODELS = [
     outputPrice: 0,
     contextWindow: 131072,
     maxOutput: 16384
-  },
-  {
-    id: "free/devstral-2-123b",
-    name: "[Free] Devstral 2 123B (retired)",
-    version: "2-123b",
-    inputPrice: 0,
-    outputPrice: 0,
-    contextWindow: 131072,
-    maxOutput: 16384,
-    deprecated: true,
-    fallbackModel: "free/qwen3-coder-480b"
   },
   {
     id: "free/glm-4.7",
@@ -74739,7 +74706,7 @@ var BLOCKRUN_MODELS = [
   {
     id: "free/qwen3-next-80b-a3b-thinking",
     name: "[Free] Qwen3-Next 80B Thinking",
-    version: "80b-a3b",
+    version: "80b-a3b-thinking",
     inputPrice: 0,
     outputPrice: 0,
     contextWindow: 131072,
@@ -74749,11 +74716,25 @@ var BLOCKRUN_MODELS = [
   {
     id: "free/mistral-small-4-119b",
     name: "[Free] Mistral Small 4 119B",
-    version: "4-119b",
+    version: "small-4-119b",
     inputPrice: 0,
     outputPrice: 0,
     contextWindow: 131072,
     maxOutput: 16384
+  },
+  {
+    // Nemotron 3 Nano Omni: first vision-capable free model. 31B / 3.2B active
+    // MoE, 256K context. ChartQA 90.3, DocVQA 95.6, MMMU 70.8. Accepts text,
+    // images, video (up to 2min), audio (up to 1hr). Released 2026-04-27.
+    id: "free/nemotron-3-nano-omni-30b-a3b-reasoning",
+    name: "[Free] Nemotron 3 Nano Omni",
+    version: "30b-a3b-omni-reasoning",
+    inputPrice: 0,
+    outputPrice: 0,
+    contextWindow: 256e3,
+    maxOutput: 16384,
+    reasoning: true,
+    vision: true
   },
   // Z.AI GLM-5 Models
   {
@@ -75221,7 +75202,7 @@ var TIMESTAMP_PATTERN2 = /^\[\w{3}\s+\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s+\w+\]\s*/
 function normalizeForCache(obj) {
   const result = {};
   for (const [key, value] of Object.entries(obj)) {
-    if (["stream", "user", "request_id", "x-request-id"].includes(key)) {
+    if (["user", "request_id", "x-request-id"].includes(key)) {
       continue;
     }
     if (key === "messages" && Array.isArray(value)) {
@@ -75529,6 +75510,90 @@ var BalanceMonitor = class {
 
 // src/proxy.ts
 init_auth();
+
+// src/okx-x402-fetch.ts
+function createOnchainosPayFetch(baseFetch, onchainos) {
+  return async (input, init) => {
+    const original = new Request(input, init);
+    const bodyBuf = await original.clone().arrayBuffer();
+    const headersSnapshot = new Headers(original.headers);
+    const firstResponse = await baseFetch(original);
+    if (firstResponse.status !== 402) return firstResponse;
+    const paymentRequiredHeader = firstResponse.headers.get("PAYMENT-REQUIRED");
+    let requirement;
+    let isV2 = false;
+    let accepts;
+    if (paymentRequiredHeader) {
+      isV2 = true;
+      requirement = JSON.parse(
+        Buffer.from(paymentRequiredHeader, "base64").toString()
+      );
+      accepts = requirement.accepted ? [requirement.accepted] : requirement.accepts ?? [];
+    } else {
+      const text = await firstResponse.text();
+      try {
+        requirement = JSON.parse(text);
+      } catch {
+        return new Response(text, {
+          status: 402,
+          headers: firstResponse.headers
+        });
+      }
+      accepts = requirement.accepts ?? [];
+    }
+    if (accepts.length === 0) {
+      throw new Error(
+        `x402 402 response had no payment options to satisfy (onchainos cannot sign without an 'accepts' array)`
+      );
+    }
+    const payment = await onchainos.signX402Payment(accepts);
+    const accepted = accepts[0] ?? {};
+    const payload = {
+      signature: payment.signature,
+      authorization: payment.authorization
+    };
+    let headerName;
+    let headerValue;
+    if (isV2) {
+      const acceptedWithCert = { ...accepted };
+      if (accepted.scheme === "aggr_deferred" && payment.sessionCert) {
+        acceptedWithCert.extra = {
+          ...accepted.extra ?? {},
+          sessionCert: payment.sessionCert
+        };
+      }
+      headerName = "PAYMENT-SIGNATURE";
+      headerValue = Buffer.from(
+        JSON.stringify({
+          x402Version: requirement.x402Version ?? 2,
+          resource: requirement.resource ?? { url: original.url },
+          accepted: acceptedWithCert,
+          payload
+        })
+      ).toString("base64");
+    } else {
+      headerName = "X-PAYMENT";
+      headerValue = Buffer.from(
+        JSON.stringify({
+          x402Version: 1,
+          scheme: accepted.scheme,
+          network: accepted.network,
+          payload
+        })
+      ).toString("base64");
+    }
+    const replayHeaders = new Headers(headersSnapshot);
+    replayHeaders.set(headerName, headerValue);
+    const replayInit = {
+      method: original.method,
+      headers: replayHeaders,
+      body: original.method === "GET" || original.method === "HEAD" ? void 0 : bodyBuf,
+      redirect: original.redirect,
+      credentials: original.credentials
+    };
+    return baseFetch(original.url, replayInit);
+  };
+}
 
 // src/compression/types.ts
 var DEFAULT_COMPRESSION_CONFIG = {
@@ -76502,7 +76567,7 @@ function hashRequestContent(lastUserContent, toolCallNames) {
 }
 
 // src/updater.ts
-var NPM_REGISTRY = "https://registry.npmjs.org/@blockrun/xclawrouter/latest";
+var NPM_REGISTRY = "https://registry.npmjs.org/@blockrun/clawrouter/latest";
 var CHECK_TIMEOUT_MS = 5e3;
 function compareSemver(a, b) {
   const pa = a.split(".").map(Number);
@@ -76528,8 +76593,9 @@ async function checkForUpdates() {
     if (!latest) return;
     if (compareSemver(latest, VERSION) > 0) {
       console.log("");
-      console.log(`\x1B[33m\u2B06\uFE0F  XClawRouter ${latest} available (you have ${VERSION})\x1B[0m`);
-      console.log(`   Run: \x1B[36mnpx @blockrun/xclawrouter@latest\x1B[0m`);
+      console.log(`\x1B[33m\u2B06\uFE0F  ClawRouter ${latest} available (you have ${VERSION})\x1B[0m`);
+      console.log(`   Run: \x1B[36mnpx @blockrun/clawrouter@latest\x1B[0m`);
+      console.log(`   Docs: \x1B[36mhttps://blockrun.ai/clawrouter.md\x1B[0m`);
       console.log("");
     }
   } catch {
@@ -76539,8 +76605,8 @@ async function checkForUpdates() {
 // src/exclude-models.ts
 import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { join as join7, dirname as dirname2 } from "path";
-import { homedir as homedir4 } from "os";
-var DEFAULT_FILE_PATH = join7(homedir4(), ".openclaw", "blockrun", "exclude-models.json");
+import { homedir as homedir5 } from "os";
+var DEFAULT_FILE_PATH = join7(homedir5(), ".openclaw", "blockrun", "exclude-models.json");
 function loadExcludeList(filePath = DEFAULT_FILE_PATH) {
   try {
     const raw = readFileSync(filePath, "utf-8");
@@ -76771,13 +76837,125 @@ async function applyUpstreamProxy(proxyUrl) {
   return url;
 }
 
+// src/textual-tool-calls.ts
+import { randomBytes as randomBytes3 } from "crypto";
+var OPENCLAW_TOOL_CALL_RE = /<tool_call>([^<]+?)((?:<arg_key>[\s\S]*?<\/arg_key>\s*<arg_value>[\s\S]*?<\/arg_value>\s*)+)<\/tool_call>/g;
+var OPENCLAW_ARG_RE = /<arg_key>([\s\S]*?)<\/arg_key>\s*<arg_value>([\s\S]*?)<\/arg_value>/g;
+var ANTHROPIC_BLOCK_RE = /<function_calls\b[^>]*>([\s\S]*?)<\/function_calls\s*>/g;
+var ANTHROPIC_INVOKE_RE = /<invoke\s+name=["']([^"']+)["'][^>]*>([\s\S]*?)<\/invoke\s*>/g;
+var ANTHROPIC_PARAM_RE = /<parameter\s+name=["']([^"']+)["'][^>]*>([\s\S]*?)<\/parameter\s*>/g;
+function generateId() {
+  return `call_${randomBytes3(12).toString("base64url")}`;
+}
+function coerceValue(raw) {
+  const trimmed = raw.trim();
+  if (trimmed === "") return raw;
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return raw;
+  }
+}
+function extractOpenClawCalls(content) {
+  const calls = [];
+  const matches = [];
+  OPENCLAW_TOOL_CALL_RE.lastIndex = 0;
+  let match;
+  while ((match = OPENCLAW_TOOL_CALL_RE.exec(content)) !== null) {
+    const name = match[1]?.trim();
+    if (!name) continue;
+    const argsBlock = match[2] ?? "";
+    const args = {};
+    OPENCLAW_ARG_RE.lastIndex = 0;
+    let argMatch;
+    while ((argMatch = OPENCLAW_ARG_RE.exec(argsBlock)) !== null) {
+      const key = argMatch[1]?.trim();
+      const valueRaw = argMatch[2] ?? "";
+      if (key) {
+        args[key] = coerceValue(valueRaw);
+      }
+    }
+    calls.push({
+      id: generateId(),
+      type: "function",
+      function: { name, arguments: JSON.stringify(args) }
+    });
+    matches.push({ start: match.index, end: match.index + match[0].length });
+  }
+  return { calls, matches };
+}
+function extractAnthropicCalls(content) {
+  const calls = [];
+  const matches = [];
+  ANTHROPIC_BLOCK_RE.lastIndex = 0;
+  let blockMatch;
+  while ((blockMatch = ANTHROPIC_BLOCK_RE.exec(content)) !== null) {
+    const inner = blockMatch[1] ?? "";
+    let invokeFound = false;
+    ANTHROPIC_INVOKE_RE.lastIndex = 0;
+    let invokeMatch;
+    while ((invokeMatch = ANTHROPIC_INVOKE_RE.exec(inner)) !== null) {
+      const name = invokeMatch[1];
+      if (!name) continue;
+      const invokeInner = invokeMatch[2] ?? "";
+      const args = {};
+      ANTHROPIC_PARAM_RE.lastIndex = 0;
+      let paramMatch;
+      while ((paramMatch = ANTHROPIC_PARAM_RE.exec(invokeInner)) !== null) {
+        const key = paramMatch[1];
+        const valueRaw = paramMatch[2] ?? "";
+        if (key) {
+          args[key] = coerceValue(valueRaw);
+        }
+      }
+      calls.push({
+        id: generateId(),
+        type: "function",
+        function: { name, arguments: JSON.stringify(args) }
+      });
+      invokeFound = true;
+    }
+    if (invokeFound) {
+      matches.push({ start: blockMatch.index, end: blockMatch.index + blockMatch[0].length });
+    }
+  }
+  return { calls, matches };
+}
+function stripRanges(content, ranges) {
+  if (ranges.length === 0) return content;
+  const sorted = [...ranges].sort((a, b) => a.start - b.start);
+  let cleaned = "";
+  let cursor = 0;
+  for (const r of sorted) {
+    if (r.start >= cursor) {
+      cleaned += content.slice(cursor, r.start);
+      cursor = r.end;
+    }
+  }
+  cleaned += content.slice(cursor);
+  return cleaned;
+}
+function extractTextualToolCalls(content) {
+  if (!content) {
+    return { toolCalls: [], cleanedContent: "" };
+  }
+  const openClaw = extractOpenClawCalls(content);
+  const anthropic = extractAnthropicCalls(content);
+  const toolCalls = [...openClaw.calls, ...anthropic.calls];
+  if (toolCalls.length === 0) {
+    return { toolCalls: [], cleanedContent: content };
+  }
+  const cleanedContent = stripRanges(content, [...openClaw.matches, ...anthropic.matches]);
+  return { toolCalls, cleanedContent };
+}
+
 // src/proxy.ts
 var paymentStore = new AsyncLocalStorage();
 var BLOCKRUN_API = "https://blockrun.ai/api";
 var BLOCKRUN_SOLANA_API = "https://sol.blockrun.ai/api";
-var IMAGE_DIR = join8(homedir5(), ".openclaw", "blockrun", "images");
-var AUDIO_DIR = join8(homedir5(), ".openclaw", "blockrun", "audio");
-var VIDEO_DIR = join8(homedir5(), ".openclaw", "blockrun", "videos");
+var IMAGE_DIR = join8(homedir6(), ".openclaw", "blockrun", "images");
+var AUDIO_DIR = join8(homedir6(), ".openclaw", "blockrun", "audio");
+var VIDEO_DIR = join8(homedir6(), ".openclaw", "blockrun", "videos");
 var AUTO_MODEL = "blockrun/auto";
 var ROUTING_PROFILES = /* @__PURE__ */ new Set([
   "blockrun/eco",
@@ -76790,15 +76968,19 @@ var ROUTING_PROFILES = /* @__PURE__ */ new Set([
 var FREE_MODELS = /* @__PURE__ */ new Set([
   "free/gpt-oss-120b",
   "free/gpt-oss-20b",
-  "free/nemotron-ultra-253b",
-  "free/nemotron-3-super-120b",
-  "free/nemotron-super-49b",
-  "free/deepseek-v3.2",
-  "free/mistral-large-3-675b",
+  "free/mistral-small-4-119b",
+  // 114 tok/s — fastest free chat
+  "free/deepseek-v4-pro",
+  // 1M ctx, MMLU-Pro 87.5 — strongest free reasoning
+  "free/deepseek-v4-flash",
+  // 1M ctx, ~5x faster than v4-pro
+  "free/qwen3-next-80b-a3b-thinking",
+  // 116 tok/s reasoning
   "free/qwen3-coder-480b",
-  "free/devstral-2-123b",
   "free/glm-4.7",
-  "free/llama-4-maverick"
+  "free/llama-4-maverick",
+  "free/nemotron-3-nano-omni-30b-a3b-reasoning"
+  // first vision-capable free
 ]);
 function pickFreeModel(excludeList) {
   for (const m of FREE_MODELS) {
@@ -77575,8 +77757,8 @@ async function proxyPaidApiRequest(req, res, apiBase, payFetch, getActualPayment
   });
 }
 function readImageFileAsDataUri(filePath) {
-  const resolved = filePath.startsWith("~/") ? join8(homedir5(), filePath.slice(2)) : filePath;
-  if (!existsSync(resolved)) {
+  const resolved = filePath.startsWith("~/") ? join8(homedir6(), filePath.slice(2)) : filePath;
+  if (!existsSync2(resolved)) {
     throw new Error(`Image file not found: ${resolved}`);
   }
   const ext = resolved.split(".").pop()?.toLowerCase() ?? "png";
@@ -77623,8 +77805,17 @@ async function startProxy(options) {
   if (upstreamProxy) {
     console.log(`[XClawRouter] Upstream proxy: ${upstreamProxy}`);
   }
-  const walletKey = typeof options.wallet === "string" ? options.wallet : options.wallet.key;
-  const solanaPrivateKeyBytes = typeof options.wallet === "string" ? void 0 : options.wallet.solanaPrivateKeyBytes;
+  const walletObj = typeof options.wallet === "string" ? void 0 : options.wallet;
+  const isOkxWallet = walletObj !== void 0 && "source" in walletObj && walletObj.source === "okx" && walletObj.onchainos !== void 0;
+  const walletKey = typeof options.wallet === "string" ? options.wallet : walletObj?.key;
+  const solanaPrivateKeyBytes = walletObj?.solanaPrivateKeyBytes;
+  const okxAdapter = isOkxWallet ? walletObj?.onchainos : void 0;
+  const okxAddress = isOkxWallet ? walletObj.address : void 0;
+  if (!walletKey && !okxAdapter) {
+    throw new Error(
+      "Wallet config has no signing backend: provide a private key or an OKX onchainos wallet."
+    );
+  }
   const paymentChain = options.paymentChain ?? await resolvePaymentChain();
   const apiBase = options.apiBase ?? (paymentChain === "solana" && solanaPrivateKeyBytes ? BLOCKRUN_SOLANA_API : BLOCKRUN_API);
   if (paymentChain === "solana" && !solanaPrivateKeyBytes) {
@@ -77641,11 +77832,11 @@ async function startProxy(options) {
   const listenPort = options.port ?? getProxyPort();
   const existingProxy = await checkExistingProxy(listenPort);
   if (existingProxy) {
-    const account2 = privateKeyToAccount(walletKey);
+    const expectedAddress = okxAddress ?? privateKeyToAccount(walletKey).address;
     const baseUrl2 = `http://127.0.0.1:${listenPort}`;
-    if (existingProxy.wallet !== account2.address) {
+    if (existingProxy.wallet !== expectedAddress) {
       console.warn(
-        `[XClawRouter] Existing proxy on port ${listenPort} uses wallet ${existingProxy.wallet}, but current config uses ${account2.address}. Reusing existing proxy.`
+        `[XClawRouter] Existing proxy on port ${listenPort} uses wallet ${existingProxy.wallet}, but current config uses ${expectedAddress}. Reusing existing proxy.`
       );
     }
     if (existingProxy.paymentChain) {
@@ -77673,7 +77864,7 @@ async function startProxy(options) {
       const { SolanaBalanceMonitor: SolanaBalanceMonitor2 } = await Promise.resolve().then(() => (init_solana_balance(), solana_balance_exports));
       balanceMonitor2 = new SolanaBalanceMonitor2(reuseSolanaAddress);
     } else {
-      balanceMonitor2 = new BalanceMonitor(account2.address);
+      balanceMonitor2 = new BalanceMonitor(expectedAddress);
     }
     options.onReady?.(listenPort);
     return {
@@ -77686,20 +77877,13 @@ async function startProxy(options) {
       }
     };
   }
-  const useOnchainos = process.env.XCLAWROUTER_USE_ONCHAINOS === "1";
+  const useOnchainos = !!okxAdapter;
   const evmPublicClient = createPublicClient({ chain: base, transport: http() });
   const x402 = new x402Client();
   let account;
-  let walletAdapter;
   if (useOnchainos) {
-    walletAdapter = resolveWalletAdapter({
-      enableSolana: !!solanaPrivateKeyBytes || paymentChain === "solana"
-    });
-    const evmAddress = await walletAdapter.evm.getAddress();
-    account = { address: evmAddress };
-    const evmSigner = await walletAdapter.evm.toX402Signer(evmPublicClient);
-    registerExactEvmScheme(x402, { signer: evmSigner });
-    console.log(`[XClawRouter] Agentic wallet (onchainos) \u2014 EVM ${evmAddress}`);
+    account = { address: okxAddress };
+    console.log(`[XClawRouter] OKX onchainos wallet \u2014 EVM ${okxAddress}`);
   } else {
     const acct = privateKeyToAccount(walletKey);
     account = { address: acct.address };
@@ -77728,7 +77912,7 @@ async function startProxy(options) {
     if (store) store.amountUsd = amountUsd;
     console.log(`[XClawRouter] Payment signed on ${chain3} (${network}) \u2014 $${amountUsd.toFixed(6)}`);
   });
-  const payFetch = createPayFetchWithPreAuth(fetch, x402, void 0, {
+  const payFetch = useOnchainos ? createOnchainosPayFetch(fetch, okxAdapter) : createPayFetchWithPreAuth(fetch, x402, void 0, {
     skipPreAuth: paymentChain === "solana"
   });
   let balanceMonitor;
@@ -78249,29 +78433,89 @@ async function startProxy(options) {
         } catch {
         }
         try {
-          const upstream = await payFetch(`${apiBase}/v1/videos/generations`, {
+          const submitResp = await payFetch(`${apiBase}/v1/videos/generations`, {
             method: "POST",
             headers: { "content-type": "application/json", "user-agent": USER_AGENT },
             body: reqBody
           });
-          const text = await upstream.text();
-          if (!upstream.ok) {
-            res.writeHead(upstream.status, { "Content-Type": "application/json" });
-            res.end(text);
+          const submitText = await submitResp.text();
+          if (!submitResp.ok && submitResp.status !== 202) {
+            res.writeHead(submitResp.status, { "Content-Type": "application/json" });
+            res.end(submitText);
             return;
           }
-          let result;
+          let submitResult;
           try {
-            result = JSON.parse(text);
+            submitResult = JSON.parse(submitText);
           } catch {
             res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(text);
+            res.end(submitText);
             return;
           }
-          if (result.data?.length) {
+          let finalResult = submitResult;
+          if (submitResult.poll_url && submitResult.id) {
+            const apiOrigin = new URL(apiBase).origin;
+            const pollUrl = submitResult.poll_url.startsWith("http") ? submitResult.poll_url : `${apiOrigin}${submitResult.poll_url}`;
+            console.log(
+              `[XClawRouter] Video job submitted (id=${submitResult.id}), polling upstream \u2014 typical 60\u2013180s...`
+            );
+            const pollDeadline = Date.now() + 3e5;
+            const pollInterval = 5e3;
+            await new Promise((r) => setTimeout(r, 3e3));
+            let pollError;
+            while (Date.now() < pollDeadline) {
+              const pollResp = await payFetch(pollUrl, {
+                method: "GET",
+                headers: { "user-agent": USER_AGENT }
+              });
+              const pollText = await pollResp.text();
+              let pollBody = {};
+              try {
+                pollBody = JSON.parse(pollText);
+              } catch {
+                pollError = `Non-JSON poll response (${pollResp.status}): ${pollText.slice(0, 200)}`;
+                break;
+              }
+              if (pollResp.status === 202 || pollBody.status === "queued" || pollBody.status === "in_progress") {
+                await new Promise((r) => setTimeout(r, pollInterval));
+                continue;
+              }
+              if (pollBody.status === "failed") {
+                pollError = pollBody.error ?? "Upstream video generation failed";
+                break;
+              }
+              if (pollResp.ok && pollBody.status === "completed") {
+                finalResult = pollBody;
+                break;
+              }
+              if (!pollResp.ok) {
+                res.writeHead(pollResp.status, { "Content-Type": "application/json" });
+                res.end(pollText);
+                return;
+              }
+              finalResult = pollBody;
+              break;
+            }
+            if (pollError) {
+              res.writeHead(502, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ error: "Video generation failed", details: pollError }));
+              return;
+            }
+            if (!finalResult.data) {
+              res.writeHead(504, { "Content-Type": "application/json" });
+              res.end(
+                JSON.stringify({
+                  error: "Video generation timed out",
+                  details: `Upstream did not complete within 5 minutes (job id=${submitResult.id}). No payment has been settled.`
+                })
+              );
+              return;
+            }
+          }
+          if (finalResult.data?.length) {
             await mkdir3(VIDEO_DIR, { recursive: true });
             const port2 = server.address()?.port ?? 8402;
-            for (const clip of result.data) {
+            for (const clip of finalResult.data) {
               if (clip.url?.startsWith("https://") || clip.url?.startsWith("http://")) {
                 try {
                   const videoResp = await fetch(clip.url);
@@ -78282,11 +78526,11 @@ async function startProxy(options) {
                     const buf = Buffer.from(await videoResp.arrayBuffer());
                     await writeFile2(join8(VIDEO_DIR, filename), buf);
                     clip.url = `http://localhost:${port2}/videos/${filename}`;
-                    console.log(`[ClawRouter] Video saved \u2192 ${clip.url}`);
+                    console.log(`[XClawRouter] Video saved \u2192 ${clip.url}`);
                   }
                 } catch (downloadErr) {
                   console.warn(
-                    `[ClawRouter] Failed to download video, using original URL: ${downloadErr instanceof Error ? downloadErr.message : String(downloadErr)}`
+                    `[XClawRouter] Failed to download video, using original URL: ${downloadErr instanceof Error ? downloadErr.message : String(downloadErr)}`
                   );
                 }
               }
@@ -78304,10 +78548,10 @@ async function startProxy(options) {
           }).catch(() => {
           });
           res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify(result));
+          res.end(JSON.stringify(finalResult));
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          console.error(`[ClawRouter] Video generation error: ${msg}`);
+          console.error(`[XClawRouter] Video generation error: ${msg}`);
           if (!res.headersSent) {
             res.writeHead(502, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ error: "Video generation failed", details: msg }));
@@ -78315,7 +78559,7 @@ async function startProxy(options) {
         }
         return;
       }
-      if (req.url?.match(/^\/v1\/(?:x|partner|pm|exa|modal|stocks|usstock|crypto|fx|commodity)\//)) {
+      if (req.url?.match(/^\/v1\/(?:partner|pm|exa|modal|stocks|usstock|crypto|fx|commodity)\//)) {
         try {
           await proxyPaidApiRequest(
             req,
@@ -79393,7 +79637,7 @@ async function proxyRequest(req, res, apiBase, payFetch, options, routerOpts, de
       );
     }
   }
-  const cacheKey2 = ResponseCache.generateKey(body);
+  const cacheKey2 = `${isStreaming ? "sse" : "json"}:${ResponseCache.generateKey(body)}`;
   const reqHeaders = {};
   for (const [key, value] of Object.entries(req.headers)) {
     if (typeof value === "string") reqHeaders[key] = value;
@@ -79407,7 +79651,7 @@ async function proxyRequest(req, res, apiBase, payFetch, options, routerOpts, de
       return;
     }
   }
-  const dedupKey = RequestDeduplicator.hash(body);
+  const dedupKey = `${isStreaming ? "sse" : "json"}:${RequestDeduplicator.hash(body)}`;
   const cached = deduplicator.getCached(dedupKey);
   if (cached) {
     res.writeHead(cached.status, cached.headers);
@@ -79796,7 +80040,7 @@ data: [DONE]
         const bodyBuf = Buffer.concat(bodyChunks2);
         if (isDegenerateCompletion(bodyBuf) && !isLastAttempt) {
           console.warn(
-            `[ClawRouter] \u26A0\uFE0F  Degenerate output from ${tryModel} (finish_reason=length + repetition loop) \u2014 retrying with next fallback`
+            `[XClawRouter] \u26A0\uFE0F  Degenerate output from ${tryModel} (finish_reason=length + repetition loop) \u2014 retrying with next fallback`
           );
           recordProviderError(tryModel, "server_error");
           failedAttempts.push({
@@ -80124,8 +80368,16 @@ data: [DONE]
           };
           if (rsp.choices && Array.isArray(rsp.choices)) {
             for (const choice of rsp.choices) {
+              const endsWithToolCalls = choice.finish_reason === "tool_calls";
+              let toolCalls = choice.message?.tool_calls ?? choice.delta?.tool_calls;
               const rawContent = choice.message?.content ?? choice.delta?.content ?? "";
-              const content = stripThinkingTokens(rawContent);
+              if (!endsWithToolCalls && (!toolCalls || toolCalls.length === 0) && rawContent) {
+                const extracted = extractTextualToolCalls(rawContent);
+                if (extracted.toolCalls.length > 0) {
+                  toolCalls = extracted.toolCalls;
+                }
+              }
+              const content = endsWithToolCalls || toolCalls && toolCalls.length > 0 ? "" : stripThinkingTokens(rawContent);
               const role = choice.message?.role ?? choice.delta?.role ?? "assistant";
               const index2 = choice.index ?? 0;
               if (content) {
@@ -80189,7 +80441,6 @@ data: [DONE]
                 safeWrite(res, contentData);
                 responseChunks.push(Buffer.from(contentData));
               }
-              const toolCalls = choice.message?.tool_calls ?? choice.delta?.tool_calls;
               if (toolCalls && toolCalls.length > 0) {
                 const toolCallChunk = {
                   ...baseChunk,
@@ -80215,7 +80466,7 @@ data: [DONE]
                     index: index2,
                     delta: {},
                     logprobs: null,
-                    finish_reason: toolCalls && toolCalls.length > 0 ? "tool_calls" : choice.finish_reason ?? "stop"
+                    finish_reason: endsWithToolCalls || toolCalls && toolCalls.length > 0 ? "tool_calls" : choice.finish_reason ?? "stop"
                   }
                 ]
               };
@@ -80323,13 +80574,32 @@ data: [DONE]
       if (responseBody.length > 0) {
         try {
           const parsed = JSON.parse(responseBody.toString());
-          if (parsed.choices?.[0]?.message?.content) {
-            const stripped = stripThinkingTokens(parsed.choices[0].message.content);
-            if (stripped !== parsed.choices[0].message.content) {
-              parsed.choices[0].message.content = stripped;
-              responseBody = Buffer.from(JSON.stringify(parsed));
+          let changed = false;
+          for (const choice of parsed.choices ?? []) {
+            const message = choice.message;
+            if (!message || typeof message.content !== "string") continue;
+            if (choice.finish_reason === "tool_calls" || Array.isArray(message.tool_calls) && message.tool_calls.length > 0) {
+              if (message.content !== "") {
+                message.content = "";
+                changed = true;
+              }
+              continue;
+            }
+            const extracted = extractTextualToolCalls(message.content);
+            if (extracted.toolCalls.length > 0) {
+              message.tool_calls = extracted.toolCalls;
+              message.content = "";
+              choice.finish_reason = "tool_calls";
+              changed = true;
+              continue;
+            }
+            const stripped = stripThinkingTokens(message.content);
+            if (stripped !== message.content) {
+              message.content = stripped;
+              changed = true;
             }
           }
+          if (changed) responseBody = Buffer.from(JSON.stringify(parsed));
         } catch {
         }
       }
@@ -80427,7 +80697,7 @@ data: [DONE]
       const sameCount = tailChars.filter((c) => c === firstChar).length;
       if (isPunct && sameCount >= 60) {
         console.warn(
-          `[ClawRouter] \u26A0\uFE0F  Degenerate output detected \u2014 model=${actualModelUsed || "unknown"} len=${accumulatedContent.length} head=${JSON.stringify(accumulatedContent.slice(0, 40))} tail_repeats_${JSON.stringify(firstChar)}=${sameCount}/80`
+          `[XClawRouter] \u26A0\uFE0F  Degenerate output detected \u2014 model=${actualModelUsed || "unknown"} len=${accumulatedContent.length} head=${JSON.stringify(accumulatedContent.slice(0, 40))} tail_repeats_${JSON.stringify(firstChar)}=${sameCount}/80`
         );
       }
     }
@@ -80555,7 +80825,7 @@ function capitalize(str) {
 import { platform, arch, freemem, totalmem } from "os";
 init_accounts();
 init_auth();
-import { existsSync as existsSync2, readFileSync as readFileSync3 } from "fs";
+import { existsSync as existsSync3, readFileSync as readFileSync3 } from "fs";
 init_wallet();
 function formatBytes(bytes) {
   const gb = bytes / (1024 * 1024 * 1024);
@@ -80845,7 +81115,7 @@ async function analyzeWithAI(diagnostics, userQuestion, model = "sonnet") {
     const paymentChain = diagnostics.wallet.paymentChain;
     if (paymentChain === "solana") {
       try {
-        if (!existsSync2(MNEMONIC_FILE)) {
+        if (!existsSync3(MNEMONIC_FILE)) {
           throw new Error(`mnemonic file missing at ${MNEMONIC_FILE}`);
         }
         const mnemonic = readFileSync3(MNEMONIC_FILE, "utf8").trim();
@@ -80947,32 +81217,6 @@ async function runDoctor(userQuestion, model = "sonnet") {
 
 // src/partners/registry.ts
 var PARTNER_SERVICES = [
-  {
-    id: "x_users_lookup",
-    name: "Twitter/X User Lookup",
-    partner: "AttentionVC",
-    description: "Look up real-time Twitter/X user profiles by username. Call this ONLY when the user explicitly asks to look up, check, or get information about a specific Twitter/X user's profile (follower count, bio, verification status, etc.). Do NOT call this for messages that merely contain x.com or twitter.com URLs \u2014 only invoke when the user is asking for profile information about a specific account. Returns: follower count, verification badge, bio, location, join date. Accepts up to 100 usernames per request (without @ prefix).",
-    proxyPath: "/x/users/lookup",
-    method: "POST",
-    params: [
-      {
-        name: "usernames",
-        type: "string[]",
-        description: 'Array of Twitter/X usernames to look up (without @ prefix). Example: ["elonmusk", "naval"]',
-        required: true
-      }
-    ],
-    pricing: {
-      perUnit: "$0.001",
-      unit: "user",
-      minimum: "$0.01 (10 users)",
-      maximum: "$0.10 (100 users)"
-    },
-    example: {
-      input: { usernames: ["elonmusk", "naval", "balaboris"] },
-      description: "Look up 3 Twitter/X user profiles"
-    }
-  },
   // ---------------------------------------------------------------------------
   // Predexon — Prediction Market Data
   // ---------------------------------------------------------------------------
@@ -80980,6 +81224,8 @@ var PARTNER_SERVICES = [
     id: "predexon_events",
     name: "Polymarket Events",
     partner: "Predexon",
+    category: "Prediction markets",
+    shortDescription: "Live Polymarket events",
     description: "Get live Polymarket prediction market events with current odds, volume, and liquidity. Call this for ANY request about prediction markets, Polymarket markets, current odds, what people are betting on, or market sentiment. Do NOT use browser or web scraping \u2014 this returns structured real-time data directly. Returns: event title, YES/NO prices (implied probability), volume, liquidity, end date.",
     proxyPath: "/pm/polymarket/events",
     method: "GET",
@@ -81007,6 +81253,8 @@ var PARTNER_SERVICES = [
     id: "predexon_leaderboard",
     name: "Polymarket Leaderboard",
     partner: "Predexon",
+    category: "Prediction markets",
+    shortDescription: "Top traders ranked by profit",
     description: "Get the Polymarket leaderboard of top traders ranked by profit. Call this for ANY request about top Polymarket traders, whale wallets, best performers, richest traders, or who is making the most money on Polymarket. Do NOT use browser or web scraping \u2014 this returns structured data directly. Returns: wallet address/username, total profit, total volume, win rate.",
     proxyPath: "/pm/polymarket/leaderboard",
     method: "GET",
@@ -81028,6 +81276,8 @@ var PARTNER_SERVICES = [
     id: "predexon_markets",
     name: "Polymarket Markets Search",
     partner: "Predexon",
+    category: "Prediction markets",
+    shortDescription: "Market search by keyword",
     description: "Search and filter Polymarket markets. Use this to find a market by keyword and get its conditionId for follow-up calls (smart money, top holders, etc.). Returns: question, conditionId, YES/NO prices, volume.",
     proxyPath: "/pm/polymarket/markets",
     method: "GET",
@@ -81055,6 +81305,8 @@ var PARTNER_SERVICES = [
     id: "predexon_smart_money",
     name: "Polymarket Smart Money",
     partner: "Predexon",
+    category: "Prediction markets",
+    shortDescription: "Smart-money positions on a market",
     description: "See how high-performing wallets are positioned on a specific Polymarket market. Use this after finding a market's conditionId via predexon_markets or predexon_events. Returns: wallet addresses, their YES/NO positions, size, P&L, win rate.",
     proxyPath: "/pm/polymarket/market/:condition_id/smart-money",
     method: "GET",
@@ -81082,6 +81334,8 @@ var PARTNER_SERVICES = [
     id: "predexon_smart_activity",
     name: "Polymarket Smart Activity",
     partner: "Predexon",
+    category: "Prediction markets",
+    shortDescription: "Where smart money is flowing now",
     description: "Discover which Polymarket markets high-performing wallets are currently active in. Use this to find where smart money is flowing right now. Returns: market titles, smart money volume, number of smart wallets active.",
     proxyPath: "/pm/polymarket/markets/smart-activity",
     method: "GET",
@@ -81103,6 +81357,8 @@ var PARTNER_SERVICES = [
     id: "predexon_wallet",
     name: "Polymarket Wallet Profile",
     partner: "Predexon",
+    category: "Prediction markets",
+    shortDescription: "Wallet profile (PnL, winrate, positions)",
     description: "Get a complete profile for a Polymarket wallet address: profit, volume, win rate, markets traded, open positions. Use this when the user asks to analyze or look up a specific wallet address.",
     proxyPath: "/pm/polymarket/wallet/:wallet",
     method: "GET",
@@ -81124,6 +81380,8 @@ var PARTNER_SERVICES = [
     id: "predexon_wallet_pnl",
     name: "Polymarket Wallet P&L",
     partner: "Predexon",
+    category: "Prediction markets",
+    shortDescription: "Wallet P&L time series",
     description: "Get P&L history and realized profit/loss time series for a Polymarket wallet. Use this when the user wants to see how a wallet has performed over time.",
     proxyPath: "/pm/polymarket/wallet/pnl/:wallet",
     method: "GET",
@@ -81145,6 +81403,8 @@ var PARTNER_SERVICES = [
     id: "predexon_matching_markets",
     name: "Cross-Market Matching (Polymarket vs Kalshi)",
     partner: "Predexon",
+    category: "Prediction markets",
+    shortDescription: "Polymarket \u2194 Kalshi market pairs",
     description: "Find equivalent markets across Polymarket and Kalshi to compare odds and spot arbitrage. Use this when the user wants to compare prediction market prices across platforms.",
     proxyPath: "/pm/matching-markets",
     method: "GET",
@@ -81169,6 +81429,8 @@ var PARTNER_SERVICES = [
     id: "stock_price",
     name: "Global Stock Realtime Price",
     partner: "BlockRun",
+    category: "Market data",
+    shortDescription: "Realtime stock quote (12 markets)",
     description: "Get realtime price for a listed equity across 12 global markets. Call this for ANY request about a specific stock price, quote, or current trading value on NYSE/Nasdaq, HKEX, TSE, KRX, LSE, XETRA, Euronext, Shanghai/Shenzhen, or Toronto. Do NOT use browser or web scraping \u2014 this returns structured real-time data directly. Returns: symbol, price, confidence interval, publish time, feed ID.",
     proxyPath: "/stocks/:market/price/:symbol",
     method: "GET",
@@ -81202,6 +81464,8 @@ var PARTNER_SERVICES = [
     id: "stock_history",
     name: "Global Stock OHLC History",
     partner: "BlockRun",
+    category: "Market data",
+    shortDescription: "OHLC bars (1m\u2013monthly)",
     description: "Get historical OHLC (candlestick) bars for a listed equity across 12 global markets. Use this for charting, backtesting, or any request about a stock's past price action. Supports resolutions: 1, 5, 15, 60, 240 (minutes) and D, W, M (daily/weekly/monthly). Returns: OHLC arrays (open, high, low, close, volume, timestamps).",
     proxyPath: "/stocks/:market/history/:symbol",
     method: "GET",
@@ -81247,6 +81511,8 @@ var PARTNER_SERVICES = [
     id: "stock_list",
     name: "Global Stock Ticker List",
     partner: "BlockRun",
+    category: "Market data",
+    shortDescription: "Ticker search \u2014 free",
     description: "List and search supported tickers for a given stock market. Use this to resolve a company name to a ticker before calling stock_price or stock_history. FREE \u2014 no x402 payment.",
     proxyPath: "/stocks/:market/list",
     method: "GET",
@@ -81280,6 +81546,8 @@ var PARTNER_SERVICES = [
     id: "crypto_price",
     name: "Crypto Realtime Price",
     partner: "BlockRun",
+    category: "Market data",
+    shortDescription: "Realtime crypto price \u2014 free",
     description: "Get realtime crypto price. Call this for ANY request about current crypto prices (BTC, ETH, SOL, etc.). FREE \u2014 no x402 payment. Quote is always USD. Do NOT use browser or web scraping \u2014 this returns structured real-time data directly.",
     proxyPath: "/crypto/price/:symbol",
     method: "GET",
@@ -81301,6 +81569,8 @@ var PARTNER_SERVICES = [
     id: "fx_price",
     name: "Foreign Exchange Realtime Price",
     partner: "BlockRun",
+    category: "Market data",
+    shortDescription: "Realtime FX rate \u2014 free",
     description: "Get realtime FX rate. Call this for ANY request about currency exchange rates. FREE \u2014 no x402 payment. Do NOT use browser or web scraping.",
     proxyPath: "/fx/price/:symbol",
     method: "GET",
@@ -81322,6 +81592,8 @@ var PARTNER_SERVICES = [
     id: "commodity_price",
     name: "Commodity Realtime Price",
     partner: "BlockRun",
+    category: "Market data",
+    shortDescription: "Realtime commodity spot \u2014 free",
     description: "Get realtime commodity spot price (gold, silver, platinum, etc.). FREE \u2014 no x402 payment. Do NOT use browser or web scraping.",
     proxyPath: "/commodity/price/:symbol",
     method: "GET",
@@ -81337,6 +81609,135 @@ var PARTNER_SERVICES = [
     example: {
       input: { symbol: "XAU-USD" },
       description: "Get realtime gold spot price"
+    }
+  },
+  // ---------------------------------------------------------------------------
+  // BlockRun — Image & Video generation
+  // ---------------------------------------------------------------------------
+  {
+    id: "image_generation",
+    name: "Image Generation",
+    partner: "BlockRun",
+    category: "Image & Video",
+    shortDescription: "8 image models (DALL-E, Flux, Grok, ...)",
+    description: "Generate an image from a text prompt. Models available: google/nano-banana (default), google/nano-banana-pro (up to 4K), openai/gpt-image-1, openai/dall-e-3, black-forest/flux-1.1-pro, xai/grok-imagine-image, xai/grok-imagine-image-pro, zai/cogview-4. Returns a local http://localhost:8402/images/<file>.png URL.",
+    proxyPath: "/images/generations",
+    method: "POST",
+    params: [
+      {
+        name: "prompt",
+        type: "string",
+        description: "Text prompt describing the desired image.",
+        required: true
+      },
+      {
+        name: "model",
+        type: "string",
+        description: "Full model ID (e.g. 'google/nano-banana', 'openai/dall-e-3'). Default: google/nano-banana.",
+        required: false
+      },
+      {
+        name: "size",
+        type: "string",
+        description: "Image size, e.g. '1024x1024', '1792x1024', '4096x4096'. Model-dependent \u2014 see image model table.",
+        required: false
+      },
+      {
+        name: "n",
+        type: "number",
+        description: "Number of images to generate (default 1, max 4).",
+        required: false
+      }
+    ],
+    pricing: {
+      perUnit: "$0.015\u2013$0.15",
+      unit: "image",
+      minimum: "$0.015 (cogview-4)",
+      maximum: "$0.15 (nano-banana-pro 4K)"
+    },
+    example: {
+      input: { model: "google/nano-banana", prompt: "a golden retriever surfing on a wave" },
+      description: "Generate an image with Nano Banana"
+    }
+  },
+  {
+    id: "image_edit",
+    name: "Image Edit / Inpainting",
+    partner: "BlockRun",
+    category: "Image & Video",
+    shortDescription: "Edit existing image (gpt-image-1)",
+    description: "Edit or re-style an existing image via openai/gpt-image-1. Supply `image` as a data URI, https URL, or local file path; optional `mask` for inpainting.",
+    proxyPath: "/images/image2image",
+    method: "POST",
+    params: [
+      {
+        name: "prompt",
+        type: "string",
+        description: "Text prompt describing how to edit the image.",
+        required: true
+      },
+      {
+        name: "image",
+        type: "string",
+        description: "Source image \u2014 data URI, https URL, or local path (~/... or /abs/path).",
+        required: true
+      },
+      {
+        name: "mask",
+        type: "string",
+        description: "Optional inpainting mask in the same formats as `image`.",
+        required: false
+      }
+    ],
+    pricing: {
+      perUnit: "$0.02\u2013$0.04",
+      unit: "image",
+      minimum: "$0.02",
+      maximum: "$0.04 (1536x1024)"
+    },
+    example: {
+      input: { prompt: "make the sky sunset orange", image: "~/Pictures/beach.png" },
+      description: "Edit a local image with gpt-image-1"
+    }
+  },
+  {
+    id: "video_generation",
+    name: "Video Generation",
+    partner: "BlockRun",
+    category: "Image & Video",
+    shortDescription: "Grok Imagine + Seedance, 5\u201310s",
+    description: "Generate a short video (5\u201310s) via xai/grok-imagine-video or bytedance/seedance-1.5-pro (default, cheapest) / seedance-2.0-fast / seedance-2.0. Async \u2014 upstream polling takes 30\u2013120 seconds. Returns a local http://localhost:8402/videos/<file>.mp4 URL.",
+    proxyPath: "/videos/generations",
+    method: "POST",
+    params: [
+      {
+        name: "prompt",
+        type: "string",
+        description: "Text prompt describing the video.",
+        required: true
+      },
+      {
+        name: "model",
+        type: "string",
+        description: "Full model ID. Options: bytedance/seedance-1.5-pro (default), bytedance/seedance-2.0-fast, bytedance/seedance-2.0, xai/grok-imagine-video.",
+        required: false
+      },
+      {
+        name: "duration_seconds",
+        type: "number",
+        description: "Clip length in seconds. Supported: 5, 8, 10. Default depends on model.",
+        required: false
+      }
+    ],
+    pricing: {
+      perUnit: "$0.03\u2013$0.30",
+      unit: "second",
+      minimum: "$0.15 (seedance-1.5-pro 5s)",
+      maximum: "$3.00 (seedance-2.0 10s)"
+    },
+    example: {
+      input: { model: "bytedance/seedance-1.5-pro", prompt: "a cat waving", duration_seconds: 5 },
+      description: "Generate a 5-second Seedance video"
     }
   }
 ];
@@ -81385,7 +81786,7 @@ Environment Variables:
   BLOCKRUN_WALLET_KEY     Private key for x402 payments (auto-generated if not set)
   BLOCKRUN_PROXY_PORT     Default proxy port (default: 8402)
 
-For more info: https://github.com/BlockRunAI/XClawRouter
+For more info: https://blockrun.ai/clawrouter.md
 `);
 }
 async function queryProxy(path, port) {
@@ -81657,14 +82058,26 @@ async function main() {
     console.log(`
 ClawRouter Partner APIs (v${VERSION})
 `);
+    const byCategory = /* @__PURE__ */ new Map();
     for (const svc of PARTNER_SERVICES) {
-      console.log(`  ${svc.name} (${svc.partner})`);
-      console.log(`    ${svc.description}`);
-      console.log(`    Tool:    blockrun_${svc.id}`);
-      console.log(`    Method:  ${svc.method} /v1${svc.proxyPath}`);
-      console.log(
-        `    Pricing: ${svc.pricing.perUnit} per ${svc.pricing.unit} (min ${svc.pricing.minimum}, max ${svc.pricing.maximum})`
-      );
+      const bucket = byCategory.get(svc.category) ?? [];
+      bucket.push(svc);
+      byCategory.set(svc.category, bucket);
+    }
+    const toolWidth = Math.max(...PARTNER_SERVICES.map((s3) => `blockrun_${s3.id}`.length), 28);
+    const priceWidth = Math.max(
+      ...PARTNER_SERVICES.map(
+        (s3) => s3.pricing.perUnit === "free" ? 4 : `${s3.pricing.perUnit}/${s3.pricing.unit}`.length
+      ),
+      12
+    );
+    for (const [category, services] of byCategory) {
+      console.log(`${category}`);
+      for (const svc of services) {
+        const tool = `blockrun_${svc.id}`.padEnd(toolWidth);
+        const price = (svc.pricing.perUnit === "free" ? "free" : `${svc.pricing.perUnit}/${svc.pricing.unit}`).padEnd(priceWidth);
+        console.log(`  ${tool}  ${price}  ${svc.shortDescription}`);
+      }
       console.log();
     }
     if (args.partnersTest) {
@@ -81692,11 +82105,11 @@ ClawRouter Partner APIs (v${VERSION})
   if (args.chain) {
     const targetChain = args.chain;
     if (targetChain === "solana") {
-      const { existsSync: existsSync3 } = await import("fs");
+      const { existsSync: existsSync4 } = await import("fs");
       const { MNEMONIC_FILE: MNEMONIC_FILE2, setupSolana: setupSolana2 } = await Promise.resolve().then(() => (init_auth(), auth_exports));
       const { deriveSolanaKeyBytes: deriveSolanaKeyBytes2, getSolanaAddress: getSolanaAddress2 } = await Promise.resolve().then(() => (init_wallet(), wallet_exports));
       let solanaAddr;
-      if (existsSync3(MNEMONIC_FILE2)) {
+      if (existsSync4(MNEMONIC_FILE2)) {
         const { readFileSync: readFileSync4 } = await import("fs");
         const mnemonic = readFileSync4(MNEMONIC_FILE2, "utf8").trim();
         const keyBytes = deriveSolanaKeyBytes2(mnemonic);
@@ -81729,8 +82142,15 @@ ClawRouter Partner APIs (v${VERSION})
     process.exit(0);
   }
   const wallet = await resolveOrGenerateWalletKey();
-  if (wallet.source === "generated") {
+  if (wallet.source === "okx") {
+    console.log(
+      `[XClawRouter] Using OKX onchainos wallet: ${wallet.address}${wallet.email ? ` (${wallet.email})` : ""}`
+    );
+  } else if (wallet.source === "generated") {
     console.log(`[XClawRouter] Generated new wallet: ${wallet.address}`);
+    console.log(
+      `[XClawRouter] Tip: install OKX onchainos to use your OKX wallet \u2014 https://web3.okx.com/onchainos`
+    );
   } else if (wallet.source === "saved") {
     console.log(`[XClawRouter] Using saved wallet: ${wallet.address}`);
   } else if (wallet.source === "config") {

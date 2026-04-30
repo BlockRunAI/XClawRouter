@@ -48,7 +48,10 @@ describe("ResponseCache", () => {
       expect(ResponseCache.generateKey(body1)).not.toBe(ResponseCache.generateKey(body2));
     });
 
-    it("should ignore stream parameter for cache key", () => {
+    it("should differentiate stream parameter in cache key", () => {
+      // Stream flag changes the response shape (SSE vs JSON), so it must be
+      // part of the cache key — otherwise the first caller's response shape
+      // gets served to the second caller.
       const body1 = JSON.stringify({
         model: "gpt-4",
         messages: [{ role: "user", content: "hello" }],
@@ -60,7 +63,7 @@ describe("ResponseCache", () => {
         stream: false,
       });
 
-      expect(ResponseCache.generateKey(body1)).toBe(ResponseCache.generateKey(body2));
+      expect(ResponseCache.generateKey(body1)).not.toBe(ResponseCache.generateKey(body2));
     });
 
     it("should strip timestamps from messages", () => {

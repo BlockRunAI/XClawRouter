@@ -34,9 +34,9 @@ Use `blockrun/premium` for maximum quality.
 
 | Tier      | Primary Model        | Input | Output |
 | --------- | -------------------- | ----- | ------ |
-| SIMPLE    | moonshot/kimi-k2.5   | $0.60 | $3.00  |
-| MEDIUM    | openai/gpt-5.2-codex | $1.75 | $14.00 |
-| COMPLEX   | claude-opus-4.6      | $5.00 | $25.00 |
+| SIMPLE    | moonshot/kimi-k2.6   | $0.95 | $4.00  |
+| MEDIUM    | openai/gpt-5.3-codex | $1.75 | $14.00 |
+| COMPLEX   | claude-opus-4.7      | $5.00 | $25.00 |
 | REASONING | claude-sonnet-4.6    | $3.00 | $15.00 |
 
 ---

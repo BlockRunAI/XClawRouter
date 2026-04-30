@@ -89,9 +89,7 @@ describe("exclude-models e2e", () => {
     await new Promise((r) => setTimeout(r, 500));
 
     // Check that the exclude filter log appeared
-    const excludeFilterLogs = consoleLogs.filter((l) =>
-      l.includes("[XClawRouter] Exclude filter:"),
-    );
+    const excludeFilterLogs = consoleLogs.filter((l) => l.includes("[XClawRouter] Exclude filter:"));
     expect(excludeFilterLogs.length).toBeGreaterThan(0);
 
     // Check that excluded models appear in the filter log
@@ -127,7 +125,7 @@ describe("exclude-models e2e", () => {
 
     await new Promise((r) => setTimeout(r, 500));
 
-    // nvidia/gpt-oss-120b (FREE_MODEL) should never be tried
+    // free/gpt-oss-120b (FREE_MODEL) should never be tried
     const tryingLogs = consoleLogs.filter((l) => l.includes("[XClawRouter] Trying model"));
     for (const tryLog of tryingLogs) {
       expect(tryLog).not.toContain("free/gpt-oss-120b");

@@ -17,6 +17,7 @@ import type { ModelDefinitionConfig, ModelProviderConfig } from "./types.js";
 export const MODEL_ALIASES: Record<string, string> = {
   // Claude - flagship opus is 4.7; sonnet stays at 4.6
   claude: "anthropic/claude-sonnet-4.6",
+  "br-sonnet": "anthropic/claude-sonnet-4.6",
   sonnet: "anthropic/claude-sonnet-4.6",
   "sonnet-4": "anthropic/claude-sonnet-4.6",
   "sonnet-4.6": "anthropic/claude-sonnet-4.6",
@@ -40,14 +41,15 @@ export const MODEL_ALIASES: Record<string, string> = {
   "anthropic/claude-opus-4": "anthropic/claude-opus-4.7",
   "anthropic/claude-opus-4-7": "anthropic/claude-opus-4.7",
   "anthropic/claude-opus-4-6": "anthropic/claude-opus-4.6",
-  "anthropic/claude-opus-4.5": "anthropic/claude-opus-4.7",
+  "anthropic/claude-opus-4-5": "anthropic/claude-opus-4.5",
   "anthropic/claude-haiku-4": "anthropic/claude-haiku-4.5",
   "anthropic/claude-haiku-4-5": "anthropic/claude-haiku-4.5",
 
   // OpenAI
   gpt: "openai/gpt-4o",
   gpt4: "openai/gpt-4o",
-  gpt5: "openai/gpt-5.4",
+  gpt5: "openai/gpt-5.5",
+  "gpt-5.5": "openai/gpt-5.5",
   "gpt-5.4": "openai/gpt-5.4",
   "gpt-5.4-pro": "openai/gpt-5.4-pro",
   "gpt-5.4-nano": "openai/gpt-5.4-nano",
@@ -66,12 +68,15 @@ export const MODEL_ALIASES: Record<string, string> = {
   "deepseek-chat": "deepseek/deepseek-chat",
   reasoner: "deepseek/deepseek-reasoner",
 
-  // Kimi / Moonshot — nvidia/kimi-k2.5 was retired 2026-04-21 (slow hosting).
-  // Backend aliases nvidia/kimi-k2.5 -> moonshot/kimi-k2.5 (same model, Moonshot SLA).
-  kimi: "moonshot/kimi-k2.5",
-  moonshot: "moonshot/kimi-k2.5",
-  "kimi-k2.5": "moonshot/kimi-k2.5",
+  // Kimi / Moonshot — K2.6 is the featured flagship on BlockRun (K2.5 hidden in
+  // BlockRun's UI 2026-04-28). Bare aliases now resolve to K2.6. Users who
+  // explicitly pinned "kimi-k2.5" continue to get K2.5 (cost-stability opt-in:
+  // $0.60/$3.00 vs K2.6's $0.95/$4.00). NVIDIA-hosted K2.5 was retired 2026-04-21.
+  kimi: "moonshot/kimi-k2.6",
+  moonshot: "moonshot/kimi-k2.6",
+  "kimi-k2": "moonshot/kimi-k2.6",
   "kimi-k2.6": "moonshot/kimi-k2.6",
+  "kimi-k2.5": "moonshot/kimi-k2.5",
   "nvidia/kimi-k2.5": "moonshot/kimi-k2.5",
 
   // Google
@@ -92,43 +97,66 @@ export const MODEL_ALIASES: Record<string, string> = {
   "xai/grok-3-fast": "xai/grok-4-fast-reasoning", // delisted (too expensive)
 
   // NVIDIA — backward compat aliases (nvidia/xxx → free/xxx)
+  // Default free model is gpt-oss-120b (heavy user demand). New free models
+  // added 2026-04-29 — deepseek-v4-pro/flash, nemotron-omni — are additions,
+  // not replacements. Retired-with-redirect entries below mirror BlockRun
+  // server-side decommissioning of slow models (nemotron family, etc.).
   nvidia: "free/gpt-oss-120b",
   "gpt-120b": "free/gpt-oss-120b",
   "gpt-20b": "free/gpt-oss-20b",
   "nvidia/gpt-oss-120b": "free/gpt-oss-120b",
   "nvidia/gpt-oss-20b": "free/gpt-oss-20b",
-  "nvidia/nemotron-ultra-253b": "free/qwen3-next-80b-a3b-thinking", // retired 2026-04-21
-  "nvidia/nemotron-3-super-120b": "free/qwen3-next-80b-a3b-thinking", // retired 2026-04-21
-  "nvidia/nemotron-super-49b": "free/qwen3-next-80b-a3b-thinking", // retired 2026-04-21
-  "nvidia/deepseek-v3.2": "free/deepseek-v3.2",
-  "nvidia/mistral-large-3-675b": "free/mistral-small-4-119b", // retired 2026-04-21
+  "nvidia/deepseek-v3.2": "free/deepseek-v4-pro", // v3.2 phased out 2026-04-29 → v4-pro
+  "free/deepseek-v3.2": "free/deepseek-v4-pro", // local pin redirect
+  "nvidia/deepseek-v4-pro": "free/deepseek-v4-pro",
+  "nvidia/deepseek-v4-flash": "free/deepseek-v4-flash",
+  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning": "free/nemotron-3-nano-omni-30b-a3b-reasoning",
   "nvidia/qwen3-coder-480b": "free/qwen3-coder-480b",
-  "nvidia/devstral-2-123b": "free/qwen3-coder-480b", // retired 2026-04-21
   "qwen/qwen3-coder-480b-a35b-instruct": "free/qwen3-coder-480b",
   "nvidia/glm-4.7": "free/glm-4.7",
   "nvidia/llama-4-maverick": "free/llama-4-maverick",
   "nvidia/qwen3-next-80b-a3b-thinking": "free/qwen3-next-80b-a3b-thinking",
   "nvidia/mistral-small-4-119b": "free/mistral-small-4-119b",
+  // Retired free IDs → successors (mirror server-side redirects)
+  "nvidia/nemotron-ultra-253b": "free/qwen3-next-80b-a3b-thinking",
+  "nvidia/nemotron-3-super-120b": "free/qwen3-next-80b-a3b-thinking",
+  "nvidia/nemotron-super-49b": "free/qwen3-next-80b-a3b-thinking",
+  "nvidia/mistral-large-3-675b": "free/mistral-small-4-119b",
+  "nvidia/devstral-2-123b": "free/qwen3-coder-480b",
+  "free/nemotron-ultra-253b": "free/qwen3-next-80b-a3b-thinking",
+  "free/nemotron-3-super-120b": "free/qwen3-next-80b-a3b-thinking",
+  "free/nemotron-super-49b": "free/qwen3-next-80b-a3b-thinking",
+  "free/mistral-large-3-675b": "free/mistral-small-4-119b",
+  "free/devstral-2-123b": "free/qwen3-coder-480b",
   // Free model shorthand aliases
-  "deepseek-free": "free/deepseek-v3.2",
-  "mistral-free": "free/mistral-small-4-119b", // was mistral-large-3-675b (retired)
+  "deepseek-free": "free/deepseek-v4-pro", // upgraded from v3.2 (2026-04-29)
+  "deepseek-v4-pro": "free/deepseek-v4-pro",
+  "deepseek-v4-flash": "free/deepseek-v4-flash",
+  "v4-pro": "free/deepseek-v4-pro",
+  "v4-flash": "free/deepseek-v4-flash",
+  "mistral-free": "free/mistral-small-4-119b",
   "glm-free": "free/glm-4.7",
   "llama-free": "free/llama-4-maverick",
-  nemotron: "free/qwen3-next-80b-a3b-thinking", // nemotron family retired; qwen3-next is the successor flagship
+  "qwen-coder": "free/qwen3-coder-480b",
+  "qwen-coder-free": "free/qwen3-coder-480b",
+  "qwen-thinking": "free/qwen3-next-80b-a3b-thinking",
+  "qwen3-next": "free/qwen3-next-80b-a3b-thinking",
+  "mistral-small": "free/mistral-small-4-119b",
+  // Vision-capable free model — BlockRun's first
+  "nemotron-omni": "free/nemotron-3-nano-omni-30b-a3b-reasoning",
+  "nano-omni": "free/nemotron-3-nano-omni-30b-a3b-reasoning",
+  "vision-free": "free/nemotron-3-nano-omni-30b-a3b-reasoning",
+  // Retired shorthand aliases redirect to successors
+  nemotron: "free/qwen3-next-80b-a3b-thinking",
   "nemotron-ultra": "free/qwen3-next-80b-a3b-thinking",
   "nemotron-253b": "free/qwen3-next-80b-a3b-thinking",
   "nemotron-super": "free/qwen3-next-80b-a3b-thinking",
   "nemotron-49b": "free/qwen3-next-80b-a3b-thinking",
   "nemotron-120b": "free/qwen3-next-80b-a3b-thinking",
-  devstral: "free/qwen3-coder-480b", // devstral-2 retired; qwen3-coder is the coding successor
+  devstral: "free/qwen3-coder-480b",
   "devstral-2": "free/qwen3-coder-480b",
-  "qwen-coder": "free/qwen3-coder-480b",
-  "qwen-coder-free": "free/qwen3-coder-480b",
-  "qwen-next": "free/qwen3-next-80b-a3b-thinking",
-  "qwen3-next": "free/qwen3-next-80b-a3b-thinking",
-  "mistral-small-free": "free/mistral-small-4-119b",
   maverick: "free/llama-4-maverick",
-  free: "free/qwen3-next-80b-a3b-thinking", // was nemotron-ultra-253b (retired)
+  free: "free/gpt-oss-120b",
 
   // MiniMax
   minimax: "minimax/minimax-m2.7",
@@ -147,6 +175,27 @@ export const MODEL_ALIASES: Record<string, string> = {
 
   // Note: auto, eco, premium are virtual routing profiles registered in BLOCKRUN_MODELS
   // They don't need aliases since they're already top-level model IDs
+
+  // Image generation
+  dalle: "openai/dall-e-3",
+  "dall-e": "openai/dall-e-3",
+  "gpt-image": "openai/gpt-image-1",
+  "nano-banana": "google/nano-banana",
+  banana: "google/nano-banana",
+  "banana-pro": "google/nano-banana-pro",
+  "nano-banana-pro": "google/nano-banana-pro",
+  flux: "black-forest/flux-1.1-pro",
+  "flux-pro": "black-forest/flux-1.1-pro",
+  "grok-imagine": "xai/grok-imagine-image",
+  "grok-imagine-pro": "xai/grok-imagine-image-pro",
+  cogview: "zai/cogview-4",
+
+  // Video generation
+  "grok-video": "xai/grok-imagine-video",
+  seedance: "bytedance/seedance-1.5-pro",
+  "seedance-1.5": "bytedance/seedance-1.5-pro",
+  "seedance-2-fast": "bytedance/seedance-2.0-fast",
+  "seedance-2": "bytedance/seedance-2.0",
 };
 
 /**
@@ -250,7 +299,7 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
   },
   {
     id: "free",
-    name: "Free → Qwen3-Next 80B Thinking",
+    name: "Free → Nemotron Ultra 253B",
     inputPrice: 0,
     outputPrice: 0,
     contextWindow: 131_072,
@@ -321,7 +370,23 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     reasoning: true,
     toolCalling: true,
   },
-  // GPT-5.4 — newest flagship, same input price as 4o but much more capable
+  // GPT-5.5 — newest visible flagship in blockrun. First fully retrained base since
+  // GPT-4.5; 1M+ context, native agent + computer use. Costs 2x gpt-5.4 — routing
+  // tiers still default to gpt-5.4 because it's benchmarked; users can pin 5.5.
+  {
+    id: "openai/gpt-5.5",
+    name: "GPT-5.5",
+    version: "5.5",
+    inputPrice: 5.0,
+    outputPrice: 30.0,
+    contextWindow: 1050000,
+    maxOutput: 128000,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true,
+  },
+  // GPT-5.4 — flagship benchmarked into routing tiers
   {
     id: "openai/gpt-5.4",
     name: "GPT-5.4",
@@ -537,6 +602,19 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     toolCalling: true,
   },
   {
+    id: "anthropic/claude-opus-4.5",
+    name: "Claude Opus 4.5",
+    version: "4.5",
+    inputPrice: 5.0,
+    outputPrice: 25.0,
+    contextWindow: 200000,
+    maxOutput: 32000,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true,
+  },
+  {
     id: "anthropic/claude-opus-4.6",
     name: "Claude Opus 4.6",
     version: "4.6",
@@ -665,9 +743,25 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     toolCalling: true,
   },
 
-  // Kimi K2.5 — prefer nvidia-hosted (more reliable); moonshot direct API is unreliable
+  // Kimi K2.6 — Moonshot's current flagship (256K context, vision + reasoning). Only served via Moonshot direct API.
   {
-    id: "nvidia/kimi-k2.5",
+    id: "moonshot/kimi-k2.6",
+    name: "Kimi K2.6",
+    version: "k2.6",
+    inputPrice: 0.95,
+    outputPrice: 4.0,
+    contextWindow: 262144,
+    maxOutput: 65536,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true,
+  },
+
+  // Kimi K2.5 — Moonshot direct is primary (better SLA). NVIDIA-hosted variant
+  // retired 2026-04-21 (slow throughput) and now redirects to moonshot.
+  {
+    id: "moonshot/kimi-k2.5",
     name: "Kimi K2.5",
     version: "k2.5",
     inputPrice: 0.6,
@@ -680,8 +774,8 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     toolCalling: true,
   },
   {
-    id: "moonshot/kimi-k2.5",
-    name: "Kimi K2.5 (Moonshot)",
+    id: "nvidia/kimi-k2.5",
+    name: "Kimi K2.5 (NVIDIA, retired)",
     version: "k2.5",
     inputPrice: 0.6,
     outputPrice: 3.0,
@@ -692,7 +786,7 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     agentic: true,
     toolCalling: true,
     deprecated: true,
-    fallbackModel: "nvidia/kimi-k2.5",
+    fallbackModel: "moonshot/kimi-k2.5",
   },
 
   // xAI / Grok
@@ -845,12 +939,24 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     reasoning: true,
     agentic: true,
     toolCalling: true,
+    deprecated: true,
+    fallbackModel: "minimax/minimax-m2.7",
   },
 
   // Free models (hosted by NVIDIA, billingMode: "free" on server)
   // IDs use "free/" prefix so users see them as free in the /model picker.
-  // XClawRouter maps free/xxx → nvidia/xxx before sending to BlockRun upstream.
+  // ClawRouter maps free/xxx → nvidia/xxx before sending to BlockRun upstream
+  // (see toUpstreamModelId in src/proxy.ts). BlockRun's NVIDIA_MODEL_MAP in
+  // src/lib/ai-providers.ts maps known IDs to upstream NIM names; for IDs not
+  // in the map, BlockRun falls through to the bare name (modelMap[k] || k),
+  // so new entries here only need to match BlockRun's catalog ID — NVIDIA NIM
+  // accepts the bare name directly.
   // toolCalling intentionally omitted: structured function calling unverified.
+  // 2026-04-29: kept gpt-oss-120b/20b as defaults (heavy user demand); added
+  //   v4-pro / v4-flash (1M context, ~5x speed split) and nemotron-3-nano-omni
+  //   (first vision-capable free model, 256K context, accepts text/image/video/audio).
+  // 2026-04-21: slimmed to 8 models, retired nemotron family + mistral-large-3-675b
+  //   + devstral-2-123b with successor redirects.
   {
     id: "free/gpt-oss-120b",
     name: "[Free] GPT-OSS 120B",
@@ -870,62 +976,30 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     maxOutput: 16384,
   },
   {
-    id: "free/nemotron-ultra-253b",
-    name: "[Free] Nemotron Ultra 253B (retired)",
-    version: "253b",
+    // V4 Pro: 1.6T MoE / 49B active, 1M context. MMLU-Pro 87.5, GPQA 90.1,
+    // SWE-bench 80.6, LiveCodeBench 93.5. NIM ~150 tok/s on Blackwell.
+    // Strongest free reasoning model — phases out free/deepseek-v3.2.
+    id: "free/deepseek-v4-pro",
+    name: "[Free] DeepSeek V4 Pro",
+    version: "v4-pro",
     inputPrice: 0,
     outputPrice: 0,
-    contextWindow: 131072,
-    maxOutput: 16384,
-    reasoning: true,
-    deprecated: true,
-    fallbackModel: "free/qwen3-next-80b-a3b-thinking",
-  },
-  {
-    id: "free/nemotron-3-super-120b",
-    name: "[Free] Nemotron 3 Super 120B (retired)",
-    version: "3-super-120b",
-    inputPrice: 0,
-    outputPrice: 0,
-    contextWindow: 131072,
-    maxOutput: 16384,
-    reasoning: true,
-    deprecated: true,
-    fallbackModel: "free/qwen3-next-80b-a3b-thinking",
-  },
-  {
-    id: "free/nemotron-super-49b",
-    name: "[Free] Nemotron Super 49B (retired)",
-    version: "super-49b",
-    inputPrice: 0,
-    outputPrice: 0,
-    contextWindow: 131072,
-    maxOutput: 16384,
-    reasoning: true,
-    deprecated: true,
-    fallbackModel: "free/qwen3-next-80b-a3b-thinking",
-  },
-  {
-    id: "free/deepseek-v3.2",
-    name: "[Free] DeepSeek V3.2",
-    version: "v3.2",
-    inputPrice: 0,
-    outputPrice: 0,
-    contextWindow: 131072,
+    contextWindow: 1000000,
     maxOutput: 16384,
     reasoning: true,
   },
   {
-    id: "free/mistral-large-3-675b",
-    name: "[Free] Mistral Large 675B (retired)",
-    version: "3-675b",
+    // V4 Flash: 284B / 13B active MoE, 1M context. ~5x faster than V4 Pro.
+    // Strong on chat/summarization (MMLU-Pro 86.2). Caveat: weaker factual
+    // recall (SimpleQA 34% vs Pro's 58%) — pick V4 Pro for fact-heavy loops.
+    id: "free/deepseek-v4-flash",
+    name: "[Free] DeepSeek V4 Flash",
+    version: "v4-flash",
     inputPrice: 0,
     outputPrice: 0,
-    contextWindow: 131072,
+    contextWindow: 1000000,
     maxOutput: 16384,
     reasoning: true,
-    deprecated: true,
-    fallbackModel: "free/mistral-small-4-119b",
   },
   {
     id: "free/qwen3-coder-480b",
@@ -935,17 +1009,6 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     outputPrice: 0,
     contextWindow: 131072,
     maxOutput: 16384,
-  },
-  {
-    id: "free/devstral-2-123b",
-    name: "[Free] Devstral 2 123B (retired)",
-    version: "2-123b",
-    inputPrice: 0,
-    outputPrice: 0,
-    contextWindow: 131072,
-    maxOutput: 16384,
-    deprecated: true,
-    fallbackModel: "free/qwen3-coder-480b",
   },
   {
     id: "free/glm-4.7",
@@ -970,7 +1033,7 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
   {
     id: "free/qwen3-next-80b-a3b-thinking",
     name: "[Free] Qwen3-Next 80B Thinking",
-    version: "80b-a3b",
+    version: "80b-a3b-thinking",
     inputPrice: 0,
     outputPrice: 0,
     contextWindow: 131072,
@@ -980,11 +1043,25 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
   {
     id: "free/mistral-small-4-119b",
     name: "[Free] Mistral Small 4 119B",
-    version: "4-119b",
+    version: "small-4-119b",
     inputPrice: 0,
     outputPrice: 0,
     contextWindow: 131072,
     maxOutput: 16384,
+  },
+  {
+    // Nemotron 3 Nano Omni: first vision-capable free model. 31B / 3.2B active
+    // MoE, 256K context. ChartQA 90.3, DocVQA 95.6, MMMU 70.8. Accepts text,
+    // images, video (up to 2min), audio (up to 1hr). Released 2026-04-27.
+    id: "free/nemotron-3-nano-omni-30b-a3b-reasoning",
+    name: "[Free] Nemotron 3 Nano Omni",
+    version: "30b-a3b-omni-reasoning",
+    inputPrice: 0,
+    outputPrice: 0,
+    contextWindow: 256000,
+    maxOutput: 16384,
+    reasoning: true,
+    vision: true,
   },
 
   // Z.AI GLM-5 Models

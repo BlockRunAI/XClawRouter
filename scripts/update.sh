@@ -2,6 +2,8 @@
 set -e
 set -o pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # ─────────────────────────────────────────────────────────────
 #  ClawRouter Update Script
 #  Safe update: backs up wallet key BEFORE touching anything,
@@ -552,13 +554,14 @@ if (!store.profiles[profileKey]) {
 echo "→ Cleaning models cache..."
 rm -f ~/.openclaw/agents/*/agent/models.json 2>/dev/null || true
 
-# ── Step 8: Populate model allowlist with top 16 models ────────
+# ── Step 8: Populate model allowlist from shared curated list ──
 echo "→ Populating model allowlist..."
 node -e "
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const configPath = path.join(os.homedir(), '.openclaw', 'openclaw.json');
+const topModelsPath = '$SCRIPT_DIR/../src/top-models.json';
 
 if (!fs.existsSync(configPath)) {
   console.log('  No config file found, skipping');
@@ -567,24 +570,10 @@ if (!fs.existsSync(configPath)) {
 
 try {
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-
-  // Curated models for the /model picker
-  const TOP_MODELS = [
-    'auto', 'free', 'eco', 'premium',
-    'anthropic/claude-sonnet-4.6', 'anthropic/claude-opus-4.7', 'anthropic/claude-opus-4.6', 'anthropic/claude-haiku-4.5',
-    'openai/gpt-5.4', 'openai/gpt-5.4-mini', 'openai/gpt-5.4-pro', 'openai/gpt-5.3', 'openai/gpt-5.3-codex',
-    'openai/gpt-5-mini', 'openai/gpt-5-nano', 'openai/gpt-5.4-nano', 'openai/gpt-4o', 'openai/gpt-4o-mini', 'openai/o3', 'openai/o4-mini',
-    'google/gemini-3.1-pro', 'google/gemini-3.1-flash-lite', 'google/gemini-3-pro-preview', 'google/gemini-3-flash-preview',
-    'google/gemini-2.5-pro', 'google/gemini-2.5-flash', 'google/gemini-2.5-flash-lite',
-    'deepseek/deepseek-chat', 'deepseek/deepseek-reasoner', 'nvidia/kimi-k2.5',
-    'xai/grok-3', 'xai/grok-4-0709', 'xai/grok-4-1-fast-reasoning',
-    'minimax/minimax-m2.7', 'minimax/minimax-m2.5',
-    'free/gpt-oss-120b', 'free/gpt-oss-20b',
-    'free/nemotron-ultra-253b', 'free/deepseek-v3.2', 'free/mistral-large-3-675b',
-    'free/qwen3-coder-480b', 'free/devstral-2-123b', 'free/llama-4-maverick',
-    'free/nemotron-3-super-120b', 'free/nemotron-super-49b', 'free/glm-4.7',
-    'zai/glm-5.1', 'zai/glm-5', 'zai/glm-5-turbo'
-  ];
+  const TOP_MODELS = JSON.parse(fs.readFileSync(topModelsPath, 'utf8'));
+  if (!Array.isArray(TOP_MODELS)) {
+    throw new Error('src/top-models.json must contain an array');
+  }
 
   if (!config.agents) config.agents = {};
   if (!config.agents.defaults) config.agents.defaults = {};
