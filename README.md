@@ -85,7 +85,7 @@ This is the stack that lets agents operate autonomously: **x402 + USDC + local r
 [OpenClaw](https://openclaw.ai) is an AI coding agent. If you're using it, ClawRouter installs as a plugin:
 
 ```bash
-curl -fsSL https://blockrun.ai/ClawRouter-update | bash
+curl -fsSL https://blockrun.ai/XClawRouter-update | bash
 openclaw gateway restart
 ```
 
@@ -519,7 +519,7 @@ npm test
 
 You're here. 55+ models, local smart routing, x402 USDC payments — the only stack that lets agents operate independently.
 
-`curl -fsSL https://blockrun.ai/ClawRouter-update | bash`
+`curl -fsSL https://blockrun.ai/XClawRouter-update | bash`
 
 </td>
 <td width="50%">
