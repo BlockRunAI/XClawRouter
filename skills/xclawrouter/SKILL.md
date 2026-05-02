@@ -1,6 +1,18 @@
 ---
 name: xclawrouter
-description: Smart LLM router — save 67% on inference costs. Routes every request to the cheapest capable model across 55+ models from OpenAI, Anthropic, Google, DeepSeek, xAI, NVIDIA, and more. 11 free NVIDIA models included.
+description: Smart LLM router for OKX — agentic wallet, 55+ models, x402 micropayments on Base + Solana. Routes every request to the cheapest capable model. 11 free NVIDIA models included.
+triggers:
+  - "xclawrouter"
+  - "x claw router"
+  - "@blockrun/xclawrouter"
+  - "okx llm router"
+  - "okx ai gateway"
+  - "okx agentic wallet"
+  - "onchainos"
+  - "okx onchainos"
+  - "okx x402"
+  - "save on llm costs okx"
+  - "cheapest model okx"
 homepage: https://github.com/BlockRunAI/XClawRouter
 metadata: { "openclaw": { "emoji": "🦀", "requires": { "config": ["models.providers.blockrun"] } } }
 ---

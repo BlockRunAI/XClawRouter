@@ -1,6 +1,14 @@
 ---
 name: release
 description: Use this skill for EVERY XClawRouter release. Enforces the full checklist — version sync, CHANGELOG, blockrun server constant, build, tests, npm publish, git tag, GitHub release. No step can be skipped.
+triggers:
+  - "release xclawrouter"
+  - "ship xclawrouter"
+  - "publish xclawrouter"
+  - "version bump xclawrouter"
+  - "tag xclawrouter release"
+  - "npm publish xclawrouter"
+  - "xclawrouter release"
 ---
 
 # XClawRouter Release Checklist

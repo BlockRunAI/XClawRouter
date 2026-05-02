@@ -1,6 +1,21 @@
 ---
 name: imagegen
 description: Generate or edit images via BlockRun's image API. Trigger when the user asks to generate, create, draw, make an image — or to edit, modify, change, or retouch an existing image.
+triggers:
+  - "okx image"
+  - "okx image generation"
+  - "xclawrouter image"
+  - "generate image via okx"
+  - "okx ai art"
+  - "okx dall-e"
+  - "okx flux"
+  - "okx nano banana"
+  - "okx cogview"
+  - "okx grok imagine"
+  - "edit image via okx"
+  - "inpainting via okx"
+  - "okx onchainos image"
+  - "okx agentic wallet image"
 metadata: { "openclaw": { "emoji": "🖼️", "requires": { "config": ["models.providers.blockrun"] } } }
 ---
 
