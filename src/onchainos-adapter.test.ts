@@ -182,6 +182,106 @@ describe("OnchainOsAdapter.signX402Payment", () => {
   });
 });
 
+describe("OnchainOsAdapter.addresses", () => {
+  it("parses arrays of plain strings (documented shape)", async () => {
+    const bin = await writeFakeCli(
+      "addresses-string-arrays",
+      `
+      const args = process.argv.slice(2);
+      if (args.join(" ") === "wallet addresses") {
+        process.stdout.write(JSON.stringify({
+          data: {
+            evm: ["0xBaseAdDr0000000000000000000000000000beef"],
+            xlayer: ["0xXLayer000000000000000000000000000000face"],
+            solana: ["SoLAnAaDdReSs1111111111111111111111111111"],
+          }
+        }));
+        process.exit(0);
+      }
+      process.exit(2);
+      `,
+    );
+    const result = await new OnchainOsAdapter({ bin }).addresses();
+    expect(result.evm).toBe("0xBaseAdDr0000000000000000000000000000beef");
+    expect(result.xlayer).toBe("0xXLayer000000000000000000000000000000face");
+    expect(result.solana).toBe("SoLAnAaDdReSs1111111111111111111111111111");
+  });
+
+  it("parses arrays of objects with `address` field", async () => {
+    const bin = await writeFakeCli(
+      "addresses-object-arrays",
+      `
+      process.stdout.write(JSON.stringify({
+        data: {
+          evm: [{ chain: "base", address: "0xObject0000000000000000000000000000000001" }],
+          solana: [{ address: "SoLObjEcT2222222222222222222222222222222" }],
+        }
+      }));
+      process.exit(0);
+      `,
+    );
+    const result = await new OnchainOsAdapter({ bin }).addresses();
+    expect(result.evm).toBe("0xObject0000000000000000000000000000000001");
+    expect(result.solana).toBe("SoLObjEcT2222222222222222222222222222222");
+    expect(result.xlayer).toBeUndefined();
+  });
+
+  it("accepts bare strings (some onchainos builds drop the array)", async () => {
+    const bin = await writeFakeCli(
+      "addresses-bare-strings",
+      `
+      process.stdout.write(JSON.stringify({
+        data: { evm: "0xBare00000000000000000000000000000000feed", solana: "SoLBaReStR3333333333333333333333333333333" }
+      }));
+      process.exit(0);
+      `,
+    );
+    const result = await new OnchainOsAdapter({ bin }).addresses();
+    expect(result.evm).toBe("0xBare00000000000000000000000000000000feed");
+    expect(result.solana).toBe("SoLBaReStR3333333333333333333333333333333");
+  });
+
+  it("falls back to `base` key when `evm` is absent", async () => {
+    const bin = await writeFakeCli(
+      "addresses-base-key",
+      `
+      process.stdout.write(JSON.stringify({
+        data: { base: ["0xBaseKey000000000000000000000000000000001"] }
+      }));
+      process.exit(0);
+      `,
+    );
+    const result = await new OnchainOsAdapter({ bin }).addresses();
+    expect(result.evm).toBe("0xBaseKey000000000000000000000000000000001");
+  });
+
+  it("rejects malformed evm strings (not 0x + 40 hex)", async () => {
+    const bin = await writeFakeCli(
+      "addresses-bad-evm",
+      `
+      process.stdout.write(JSON.stringify({
+        data: { evm: ["not-an-address"], solana: ["sOlOk44444444444444444444444444444444444"] }
+      }));
+      process.exit(0);
+      `,
+    );
+    const result = await new OnchainOsAdapter({ bin }).addresses();
+    expect(result.evm).toBeUndefined();
+    expect(result.solana).toBe("sOlOk44444444444444444444444444444444444");
+  });
+
+  it("returns empty object when no chains are populated", async () => {
+    const bin = await writeFakeCli(
+      "addresses-empty",
+      `process.stdout.write(JSON.stringify({ data: {} })); process.exit(0);`,
+    );
+    const result = await new OnchainOsAdapter({ bin }).addresses();
+    expect(result.evm).toBeUndefined();
+    expect(result.xlayer).toBeUndefined();
+    expect(result.solana).toBeUndefined();
+  });
+});
+
 describe("OnchainOsAdapter.login validation", () => {
   it("rejects malformed emails before invoking the CLI", async () => {
     const adapter = new OnchainOsAdapter({ bin: join(tmpDir, "unused") });

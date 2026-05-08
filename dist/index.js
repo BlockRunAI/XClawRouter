@@ -74116,7 +74116,9 @@ var DEFAULT_ROUTING_CONFIG = {
         "xai/grok-4-fast-reasoning",
         // 1,298ms, $0.20/$0.50
         "deepseek/deepseek-reasoner",
-        // 1,454ms, cheap reasoning
+        // V4 Flash thinking ($0.20/$0.40, 1M ctx)
+        "deepseek/deepseek-v4-pro",
+        // V4 Pro flagship ($0.50/$1.00 promo through 2026-05-31, list $2/$4)
         "openai/o4-mini",
         // 2,328ms ($1.10/$4.40)
         "openai/o3"
@@ -74173,7 +74175,13 @@ var DEFAULT_ROUTING_CONFIG = {
     REASONING: {
       primary: "xai/grok-4-1-fast-reasoning",
       // $0.20/$0.50
-      fallback: ["xai/grok-4-fast-reasoning", "deepseek/deepseek-reasoner"]
+      fallback: [
+        "xai/grok-4-fast-reasoning",
+        "deepseek/deepseek-reasoner",
+        // V4 Flash thinking — $0.20/$0.40
+        "deepseek/deepseek-v4-pro"
+        // V4 Pro flagship — $0.50/$1.00 promo, post-promo $2/$4
+      ]
     }
   },
   // Premium tier configs - best quality (blockrun/premium)
@@ -75203,6 +75211,30 @@ function unwrapData(parsed) {
   }
   return parsed;
 }
+function pickAddressString(value) {
+  if (!value) return void 0;
+  if (typeof value === "string") return value.trim() || void 0;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = pickAddressString(item);
+      if (found) return found;
+    }
+    return void 0;
+  }
+  if (typeof value === "object") {
+    const obj = value;
+    for (const key of ["address", "evmAddress", "publicAddress", "value", "addr"]) {
+      const candidate = obj[key];
+      if (typeof candidate === "string" && candidate.trim()) return candidate.trim();
+    }
+  }
+  return void 0;
+}
+function pickEvmAddress(value) {
+  const addr = pickAddressString(value);
+  if (!addr || !addr.startsWith("0x") || addr.length !== 42) return void 0;
+  return addr;
+}
 var OnchainOsAdapter = class {
   bin;
   timeoutMs;
@@ -75236,6 +75268,27 @@ var OnchainOsAdapter = class {
       email: raw.email,
       evmAddress: evmAddress?.startsWith("0x") ? evmAddress : void 0,
       solanaAddress
+    };
+  }
+  /**
+   * Fetch the wallet's addresses across chains. Use this as a fallback when
+   * `wallet status` doesn't include `evmAddress` — some onchainos builds omit
+   * the address from status but still expose it via `wallet addresses`.
+   *
+   * Tolerates the three shapes onchainos has shipped for each chain entry:
+   *   - bare string: `"0xabc..."`
+   *   - array of strings: `["0xabc...", "0xdef..."]`
+   *   - array of objects: `[{ address: "0xabc...", chain: "base" }, ...]`
+   */
+  async addresses() {
+    const stdout = await runCli(this.bin, ["wallet", "addresses"], {
+      timeoutMs: this.timeoutMs
+    });
+    const raw = unwrapData(parseJson(stdout, "wallet addresses"));
+    return {
+      evm: pickEvmAddress(raw.evm ?? raw.base),
+      xlayer: pickEvmAddress(raw.xlayer),
+      solana: pickAddressString(raw.solana)
     };
   }
   async login(email) {
@@ -75282,8 +75335,17 @@ async function detectOnchainosWallet() {
   if (!adapter.isInstalled()) return void 0;
   try {
     const status = await adapter.status();
-    if (!status.loggedIn || !status.evmAddress) return void 0;
-    return { address: status.evmAddress, email: status.email, adapter };
+    if (!status.loggedIn) return void 0;
+    let evmAddress = status.evmAddress;
+    if (!evmAddress) {
+      try {
+        const addresses = await adapter.addresses();
+        if (addresses.evm) evmAddress = addresses.evm;
+      } catch {
+      }
+    }
+    if (!evmAddress) return void 0;
+    return { address: evmAddress, email: status.email, adapter };
   } catch {
     return void 0;
   }

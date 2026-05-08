@@ -770,11 +770,20 @@ declare class SolanaBalanceMonitor {
  * CLI surface used here (verified against okxclawrouter sample):
  *   onchainos --version
  *   onchainos wallet status                → { data: { loggedIn, evmAddress?, email? } }
- *   onchainos wallet addresses             → { data: { evm?: [...], xlayer?: [...], solana?: [...] } }
+ *   onchainos wallet addresses             → { data: { evm?, xlayer?, solana? } }
+ *                                            Each chain may be a string, an array
+ *                                            of strings, or an array of objects
+ *                                            with an `address` field — handled
+ *                                            tolerantly by `addresses()`.
  *   onchainos wallet login <email>         (interactive)
  *   onchainos wallet logout
  *   onchainos payment x402-pay --accepts <json>
  *                                          → { data: { signature, authorization, sessionCert? } }
+ *
+ * Some onchainos builds omit `evmAddress` from `wallet status` even when the
+ * user is logged in. Callers should fall back to `addresses()` to recover the
+ * Base/EVM address rather than treating "no evmAddress in status" as "no
+ * onchainos wallet".
  *
  * Raw EIP-712 / typed-data signing is NOT exposed by onchainos, so we use
  * `payment x402-pay` for the entire signing step rather than the @x402/fetch
@@ -785,6 +794,14 @@ interface OnchainOsStatus {
     email?: string;
     evmAddress?: `0x${string}`;
     solanaAddress?: string;
+}
+interface OnchainOsAddresses {
+    /** Base / EVM address. */
+    evm?: `0x${string}`;
+    /** OKX X Layer address (EVM-compatible). */
+    xlayer?: `0x${string}`;
+    /** Solana base58 address. */
+    solana?: string;
 }
 interface OnchainOsX402Payment {
     signature: string;
@@ -804,6 +821,17 @@ declare class OnchainOsAdapter {
     /** Quick, synchronous probe — does the binary exist and respond to --version? */
     isInstalled(): boolean;
     status(): Promise<OnchainOsStatus>;
+    /**
+     * Fetch the wallet's addresses across chains. Use this as a fallback when
+     * `wallet status` doesn't include `evmAddress` — some onchainos builds omit
+     * the address from status but still expose it via `wallet addresses`.
+     *
+     * Tolerates the three shapes onchainos has shipped for each chain entry:
+     *   - bare string: `"0xabc..."`
+     *   - array of strings: `["0xabc...", "0xdef..."]`
+     *   - array of objects: `[{ address: "0xabc...", chain: "base" }, ...]`
+     */
+    addresses(): Promise<OnchainOsAddresses>;
     login(email: string): Promise<void>;
     logout(): Promise<void>;
     /**

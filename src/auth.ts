@@ -38,6 +38,12 @@ import { OnchainOsAdapter } from "./onchainos-adapter.js";
  * Detect an OKX onchainos wallet. Returns the EVM address if onchainos is
  * installed AND the user is logged in. Returns undefined otherwise so callers
  * fall back to the legacy local-key path.
+ *
+ * Some onchainos builds omit `evmAddress` from `wallet status`; when the user
+ * is logged in but status has no address, fall back to `wallet addresses` to
+ * recover the Base/EVM address. Without this fallback, the router would
+ * incorrectly think there is no agentic wallet and silently generate a fresh
+ * local key — sending users to a different address than their OKX wallet.
  */
 export async function detectOnchainosWallet(): Promise<
   | {
@@ -51,8 +57,21 @@ export async function detectOnchainosWallet(): Promise<
   if (!adapter.isInstalled()) return undefined;
   try {
     const status = await adapter.status();
-    if (!status.loggedIn || !status.evmAddress) return undefined;
-    return { address: status.evmAddress, email: status.email, adapter };
+    if (!status.loggedIn) return undefined;
+
+    let evmAddress = status.evmAddress;
+    if (!evmAddress) {
+      try {
+        const addresses = await adapter.addresses();
+        if (addresses.evm) evmAddress = addresses.evm;
+      } catch {
+        // `wallet addresses` failed — fall through; we'll return undefined and
+        // the caller will use the legacy local-key path.
+      }
+    }
+
+    if (!evmAddress) return undefined;
+    return { address: evmAddress, email: status.email, adapter };
   } catch {
     return undefined;
   }

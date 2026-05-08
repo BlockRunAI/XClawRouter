@@ -4,6 +4,22 @@ All notable changes to ClawRouter.
 
 ---
 
+## v0.12.174 — May 8, 2026
+
+- **Fix: agentic wallet falsely fell back to a local key when `onchainos wallet status` omitted `evmAddress`.** Some onchainos builds return `{ data: { loggedIn: true, email: ... } }` from `wallet status` without an `evmAddress` field — the user is logged in, the wallet exists, the EVM address is just not surfaced through this command. `auth.ts::detectOnchainosWallet()` was treating "no evmAddress in status" as "no onchainos wallet" and silently generating / loading `~/.openclaw/blockrun/wallet.key` instead, sending x402 payments from a different address than the user's OKX agentic wallet. Now: when status reports `loggedIn=true` but no address, the adapter falls back to `onchainos wallet addresses` and pulls the Base/EVM address from there before deciding to use the agentic wallet path. Only if the addresses subcommand also has no EVM address (or the call fails) does the legacy local-key flow kick in.
+- **`OnchainOsAdapter` gains an `addresses()` method** wrapping `onchainos wallet addresses` with tolerant parsing — accepts the chain entries as a bare string, an array of strings, or an array of objects with `address`/`evmAddress`/`publicAddress`/`value`/`addr` fields, and also accepts `base` as an alias for `evm` since older onchainos builds used the chain-name key. Returns `{ evm?, xlayer?, solana? }`. EVM/xlayer values must look like `0x` + 42 chars; otherwise dropped (matches the lenient `0x` check in `status()`).
+- Tests cover the four shape variants (`string[]`, `object[]`, bare string, `base`-key alias), the malformed-address rejection, and the empty-data case. Auth tests cover the new fallback chain end-to-end: status-without-evmAddress → addresses → success; status-without-evmAddress → addresses-with-no-evm → undefined; status-without-evmAddress → addresses-CLI-crashes → undefined.
+
+---
+
+## v0.12.173 — May 3, 2026
+
+- **DeepSeek V4 Pro added to REASONING fallbacks (auto + eco).** Backend shipped `deepseek/deepseek-v4-pro` (1.6T MoE / 49B active, 1M context — strongest open-weight reasoner; MMLU-Pro 87.5, GPQA 90.1, SWE-bench 80.6, LiveCodeBench 93.5) at **$0.50 in / $1.00 out per 1M under the 75% promo through 2026-05-31** (list $2.00/$4.00 after). Wired into `auto.tiers.REASONING.fallback` and `eco.REASONING.fallback`, after `deepseek-reasoner`. V4 Flash thinking (`deepseek-reasoner`, $0.20/$0.40) stays the cheaper primary; V4 Pro is the harder-task escape hatch.
+- **DeepSeek chat/reasoner now V4 Flash semantics.** `deepseek/deepseek-chat` and `deepseek/deepseek-reasoner` (already in tier configs) had their upstream rerouted to V4 Flash non-thinking / thinking modes — repriced from $0.28/$0.42 to $0.20/$0.40 with 1M context (was 128K). No source change needed — pricing is fetched from `/v1/models` at runtime; tier-config comments updated to note the V4 Flash repricing.
+- **`deepseek/deepseek-v4-pro` added to `top-models.json`** so the OnchainOS `/model` picker surfaces the new flagship.
+
+---
+
 ## v0.12.172 — Apr 30, 2026
 
 - **Fix `ConfigMutationConflictError` during `openclaw plugins install`.** OpenClaw's plugin manager hashes `~/.openclaw/openclaw.json` at the start of `plugins install` and asserts the file is byte-identical when it commits the install record. The plugin's `register()` hook was eagerly writing to that file (provider config, model allowlist, web-search provider, default routing) — the writes invalidated openclaw's hash baseline and the install commit blew up with `config changed since last load`, killing the whole install on machines where the blockrun provider didn't already exist. Plugin now defers its on-disk config persist when `argv` contains `plugins`; in-memory `api.config` is still populated so routing works for the running process, and the install script's existing post-install steps (allowlist population, baseUrl re-verification) plus the next gateway start finish writing the file. The same guard now wraps `deactivate()`'s config cleanup so `openclaw plugins uninstall` won't trip the same race.

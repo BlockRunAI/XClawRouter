@@ -8,11 +8,20 @@
  * CLI surface used here (verified against okxclawrouter sample):
  *   onchainos --version
  *   onchainos wallet status                → { data: { loggedIn, evmAddress?, email? } }
- *   onchainos wallet addresses             → { data: { evm?: [...], xlayer?: [...], solana?: [...] } }
+ *   onchainos wallet addresses             → { data: { evm?, xlayer?, solana? } }
+ *                                            Each chain may be a string, an array
+ *                                            of strings, or an array of objects
+ *                                            with an `address` field — handled
+ *                                            tolerantly by `addresses()`.
  *   onchainos wallet login <email>         (interactive)
  *   onchainos wallet logout
  *   onchainos payment x402-pay --accepts <json>
  *                                          → { data: { signature, authorization, sessionCert? } }
+ *
+ * Some onchainos builds omit `evmAddress` from `wallet status` even when the
+ * user is logged in. Callers should fall back to `addresses()` to recover the
+ * Base/EVM address rather than treating "no evmAddress in status" as "no
+ * onchainos wallet".
  *
  * Raw EIP-712 / typed-data signing is NOT exposed by onchainos, so we use
  * `payment x402-pay` for the entire signing step rather than the @x402/fetch
@@ -41,6 +50,15 @@ export interface OnchainOsStatus {
   email?: string;
   evmAddress?: `0x${string}`;
   solanaAddress?: string;
+}
+
+export interface OnchainOsAddresses {
+  /** Base / EVM address. */
+  evm?: `0x${string}`;
+  /** OKX X Layer address (EVM-compatible). */
+  xlayer?: `0x${string}`;
+  /** Solana base58 address. */
+  solana?: string;
 }
 
 export interface OnchainOsX402Payment {
@@ -133,6 +151,38 @@ function unwrapData<T>(parsed: unknown): T {
   return parsed as T;
 }
 
+/**
+ * Pull a single address string out of whatever shape onchainos returned for a
+ * given chain. The CLI is inconsistent across builds: it may emit a bare
+ * string, an array of strings, or an array of objects with `address`/`value`
+ * fields. We accept all three.
+ */
+function pickAddressString(value: unknown): string | undefined {
+  if (!value) return undefined;
+  if (typeof value === "string") return value.trim() || undefined;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = pickAddressString(item);
+      if (found) return found;
+    }
+    return undefined;
+  }
+  if (typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    for (const key of ["address", "evmAddress", "publicAddress", "value", "addr"]) {
+      const candidate = obj[key];
+      if (typeof candidate === "string" && candidate.trim()) return candidate.trim();
+    }
+  }
+  return undefined;
+}
+
+function pickEvmAddress(value: unknown): `0x${string}` | undefined {
+  const addr = pickAddressString(value);
+  if (!addr || !addr.startsWith("0x") || addr.length !== 42) return undefined;
+  return addr as `0x${string}`;
+}
+
 export class OnchainOsAdapter {
   private readonly bin: string;
   private readonly timeoutMs: number;
@@ -178,6 +228,34 @@ export class OnchainOsAdapter {
       email: raw.email,
       evmAddress: evmAddress?.startsWith("0x") ? evmAddress : undefined,
       solanaAddress,
+    };
+  }
+
+  /**
+   * Fetch the wallet's addresses across chains. Use this as a fallback when
+   * `wallet status` doesn't include `evmAddress` — some onchainos builds omit
+   * the address from status but still expose it via `wallet addresses`.
+   *
+   * Tolerates the three shapes onchainos has shipped for each chain entry:
+   *   - bare string: `"0xabc..."`
+   *   - array of strings: `["0xabc...", "0xdef..."]`
+   *   - array of objects: `[{ address: "0xabc...", chain: "base" }, ...]`
+   */
+  async addresses(): Promise<OnchainOsAddresses> {
+    const stdout = await runCli(this.bin, ["wallet", "addresses"], {
+      timeoutMs: this.timeoutMs,
+    });
+    const raw = unwrapData<{
+      evm?: unknown;
+      base?: unknown;
+      xlayer?: unknown;
+      solana?: unknown;
+    }>(parseJson(stdout, "wallet addresses"));
+
+    return {
+      evm: pickEvmAddress(raw.evm ?? raw.base),
+      xlayer: pickEvmAddress(raw.xlayer),
+      solana: pickAddressString(raw.solana),
     };
   }
 
