@@ -10,7 +10,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 #  restores it if the update process somehow wiped it.
 # ─────────────────────────────────────────────────────────────
 
-PLUGIN_DIR="$HOME/.openclaw/extensions/clawrouter"
+PLUGIN_DIR="$HOME/.openclaw/extensions/xclawrouter"
+# Old install dir from when this plugin was published as @blockrun/clawrouter.
+# Kept so legacy installs get migrated to the new dir on update.
+LEGACY_PLUGIN_DIR="$HOME/.openclaw/extensions/clawrouter"
 CONFIG_PATH="$HOME/.openclaw/openclaw.json"
 WALLET_FILE="$HOME/.openclaw/blockrun/wallet.key"
 WALLET_BACKUP=""
@@ -105,7 +108,7 @@ if [ -f "$WALLET_FILE" ]; then
     # Derive wallet address via node (viem is available post-install)
     WALLET_ADDRESS=$(node -e "
       try {
-        const { privateKeyToAccount } = require('$HOME/.openclaw/extensions/clawrouter/node_modules/viem/accounts/index.js');
+        const { privateKeyToAccount } = require('$HOME/.openclaw/extensions/xclawrouter/node_modules/viem/accounts/index.js');
         const acct = privateKeyToAccount('$WALLET_KEY');
         console.log(acct.address);
       } catch {
@@ -215,17 +218,22 @@ try {
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   let changed = false;
 
-  // Remove stale plugin entries (check all case variants)
+  // Remove stale plugin entries (all case variants + legacy clawrouter names
+  // so users migrating from @blockrun/clawrouter don't end up with duplicates).
   const entries = config?.plugins?.entries;
   const installs = config?.plugins?.installs;
-  for (const key of ['clawrouter', 'ClawRouter', '@blockrun/clawrouter']) {
+  for (const key of [
+    'xclawrouter', 'XClawRouter', '@blockrun/xclawrouter',
+    'clawrouter', 'ClawRouter', '@blockrun/clawrouter',
+  ]) {
     if (entries?.[key]) { delete entries[key]; changed = true; console.log('  Removed plugins.entries.' + key); }
     if (installs?.[key]) { delete installs[key]; changed = true; console.log('  Removed plugins.installs.' + key); }
   }
 
-  // Clean plugins.allow — remove clawrouter (re-added later) and any stale bare
-  // single-word entries that aren't bundled OpenClaw plugins (e.g. "wallet" added
-  // by an AI agent — shows a warning on every gateway start).
+  // Clean plugins.allow — remove xclawrouter / legacy clawrouter (re-added
+  // later) and any stale bare single-word entries that aren't bundled OpenClaw
+  // plugins (e.g. "wallet" added by an AI agent — shows a warning on every
+  // gateway start).
   if (Array.isArray(config?.plugins?.allow)) {
     const BUNDLED = [
       'http','mcp','computer-use','browser','code','image','voice',
@@ -235,7 +243,10 @@ try {
     ];
     const before = config.plugins.allow.length;
     config.plugins.allow = config.plugins.allow.filter(p => {
-      if (p === 'clawrouter' || p === '@blockrun/clawrouter') return false;
+      if (
+        p === 'xclawrouter' || p === '@blockrun/xclawrouter' ||
+        p === 'clawrouter'  || p === '@blockrun/clawrouter'
+      ) return false;
       if (BUNDLED.includes(p)) return true;
       if (p.startsWith('@') || p.includes('/')) return true;
       return false;
@@ -309,16 +320,26 @@ fi
 # Pre-install cleanup: remove any backup/stage dirs from extensions/ BEFORE
 # openclaw plugins install scans the directory. If they exist during install,
 # OpenClaw writes them into config as duplicate plugins.
-for stale in "$HOME/.openclaw/extensions/clawrouter.backup."* "$HOME/.openclaw/extensions/.openclaw-install-stage-"*; do
+for stale in \
+  "$HOME/.openclaw/extensions/xclawrouter.backup."* \
+  "$HOME/.openclaw/extensions/clawrouter.backup."* \
+  "$HOME/.openclaw/extensions/.openclaw-install-stage-"*; do
   [ -d "$stale" ] && rm -rf "$stale"
 done
 
-echo "→ Installing latest ClawRouter..."
+# Pre-migration: if a legacy install exists at extensions/clawrouter/, move it
+# aside so OpenClaw doesn't auto-load two copies of the plugin after install.
+if [ -d "$LEGACY_PLUGIN_DIR" ] && [ "$LEGACY_PLUGIN_DIR" != "$PLUGIN_DIR" ]; then
+  echo "→ Found legacy install at $LEGACY_PLUGIN_DIR — moving aside"
+  mv "$LEGACY_PLUGIN_DIR" "$LEGACY_PLUGIN_DIR.legacy-$(date +%s)" || true
+fi
+
+echo "→ Installing latest XClawRouter..."
 # Run with timeout — openclaw plugins install may hang after printing
-# "Installed plugin: clawrouter" in OpenClaw v2026.4.5 (parallel plugin loading).
+# "Installed plugin: xclawrouter" in OpenClaw v2026.4.5 (parallel plugin loading).
 # 120s is enough for slow connections; the install itself completes in ~30s.
 if command -v timeout >/dev/null 2>&1; then
-  timeout 120 openclaw plugins install @blockrun/clawrouter || {
+  timeout 120 openclaw plugins install @blockrun/xclawrouter || {
     exit_code=$?
     if [ $exit_code -eq 124 ]; then
       echo "  (install command timed out — this is normal with OpenClaw v2026.4.5)"
@@ -328,7 +349,7 @@ if command -v timeout >/dev/null 2>&1; then
     fi
   }
 else
-  openclaw plugins install @blockrun/clawrouter
+  openclaw plugins install @blockrun/xclawrouter
 fi
 
 # Install is complete — clear the rollback trap immediately.
@@ -389,9 +410,9 @@ force_install_from_npm() {
   echo "  → Force-fetching v${version} directly from npm registry..."
   local TMPPACK
   TMPPACK=$(mktemp -d)
-  if npm pack "@blockrun/clawrouter@${version}" --pack-destination "$TMPPACK" --prefer-online >/dev/null 2>&1; then
+  if npm pack "@blockrun/xclawrouter@${version}" --pack-destination "$TMPPACK" --prefer-online >/dev/null 2>&1; then
     local TARBALL
-    TARBALL=$(ls "$TMPPACK"/blockrun-clawrouter-*.tgz 2>/dev/null | head -1)
+    TARBALL=$(ls "$TMPPACK"/blockrun-xclawrouter-*.tgz 2>/dev/null | head -1)
     if [ -n "$TARBALL" ]; then
       rm -rf "$PLUGIN_DIR"
       mkdir -p "$PLUGIN_DIR"
@@ -408,13 +429,13 @@ force_install_from_npm() {
 
 if [ -d "$PLUGIN_DIR" ] && [ -f "$PLUGIN_DIR/package.json" ]; then
   INSTALLED_VER=$(node -e "try{const p=require('$PLUGIN_DIR/package.json');console.log(p.version);}catch{console.log('');}" 2>/dev/null || echo "")
-  LATEST_VER=$(npm view @blockrun/clawrouter@latest version 2>/dev/null || echo "")
+  LATEST_VER=$(npm view @blockrun/xclawrouter@latest version 2>/dev/null || echo "")
   if [ -n "$LATEST_VER" ] && [ -n "$INSTALLED_VER" ] && [ "$INSTALLED_VER" != "$LATEST_VER" ]; then
     echo "  ⚠️  openclaw installed v${INSTALLED_VER} (cached) but latest is v${LATEST_VER}"
     force_install_from_npm "$LATEST_VER" || true
   fi
   INSTALLED_VER=$(node -e "try{const p=require('$PLUGIN_DIR/package.json');console.log(p.version);}catch{console.log('?');}" 2>/dev/null || echo "?")
-  echo "  ✓ ClawRouter v${INSTALLED_VER} installed"
+  echo "  ✓ XClawRouter v${INSTALLED_VER} installed"
 fi
 
 # ── Step 4c: Ensure all dependencies are installed ────────────
@@ -441,8 +462,13 @@ if (!fs.existsSync(configPath)) process.exit(0);
 try {
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   let changed = false;
-  // Remove entries that duplicate the installs record
-  for (const key of ['clawrouter', 'ClawRouter', '@blockrun/clawrouter']) {
+  // Remove entries that duplicate the installs record. Recognize both the
+  // current xclawrouter id and the legacy clawrouter id so users migrating
+  // from @blockrun/clawrouter get cleaned up too.
+  for (const key of [
+    'xclawrouter', 'XClawRouter', '@blockrun/xclawrouter',
+    'clawrouter', 'ClawRouter', '@blockrun/clawrouter',
+  ]) {
     if (config?.plugins?.entries?.[key]) {
       delete config.plugins.entries[key];
       changed = true;
@@ -676,7 +702,13 @@ fi
 # plugin detection), new ones live in blockrun/. Clean both locations.
 echo "→ Cleaning up stale plugin backups..."
 CLEANED=0
-for backup_dir in "$HOME/.openclaw/extensions/clawrouter.backup."* "$HOME/.openclaw/blockrun/clawrouter.backup."*; do
+for backup_dir in \
+  "$HOME/.openclaw/extensions/xclawrouter.backup."* \
+  "$HOME/.openclaw/extensions/xclawrouter.legacy-"* \
+  "$HOME/.openclaw/extensions/clawrouter.backup."* \
+  "$HOME/.openclaw/extensions/clawrouter.legacy-"* \
+  "$HOME/.openclaw/blockrun/xclawrouter.backup."* \
+  "$HOME/.openclaw/blockrun/clawrouter.backup."*; do
   if [ -d "$backup_dir" ]; then
     rm -rf "$backup_dir"
     CLEANED=$((CLEANED + 1))
@@ -733,7 +765,7 @@ try {
 
 # ── Summary ─────────────────────────────────────────────────────
 echo ""
-echo "✓ ClawRouter updated successfully!"
+echo "✓ XClawRouter updated successfully!"
 echo ""
 
 # Show final wallet address
@@ -741,7 +773,7 @@ if [ -f "$WALLET_FILE" ]; then
   FINAL_KEY=$(cat "$WALLET_FILE" | tr -d '[:space:]')
   FINAL_ADDRESS=$(node -e "
     try {
-      const { privateKeyToAccount } = require('$HOME/.openclaw/extensions/clawrouter/node_modules/viem/accounts/index.js');
+      const { privateKeyToAccount } = require('$HOME/.openclaw/extensions/xclawrouter/node_modules/viem/accounts/index.js');
       console.log(privateKeyToAccount('$FINAL_KEY').address);
     } catch { console.log('(run /wallet in OpenClaw to see your address)'); }
   " 2>/dev/null || echo "(run /wallet in OpenClaw to see your address)")
@@ -769,7 +801,7 @@ if systemctl --user is-active openclaw-gateway.service >/dev/null 2>&1 || \
       fi
     done
     if $RESTART_OK; then
-      echo "  ✓ Gateway restarted — ClawRouter active on port 8402"
+      echo "  ✓ Gateway restarted — XClawRouter active on port 8402"
     else
       echo "  ⚠ Gateway restarted but port 8402 not yet up (may still be starting)"
       echo "    Check: systemctl --user status openclaw-gateway.service"
@@ -792,8 +824,8 @@ echo "    /wallet solana     → switch to Solana payments"
 echo "    /stats             → usage & cost breakdown"
 echo ""
 echo "  CLI commands:"
-echo "    npx @blockrun/clawrouter report            # daily usage report"
-echo "    npx @blockrun/clawrouter report weekly      # weekly report"
-echo "    npx @blockrun/clawrouter report monthly     # monthly report"
-echo "    npx @blockrun/clawrouter doctor             # AI diagnostics"
+echo "    npx @blockrun/xclawrouter report            # daily usage report"
+echo "    npx @blockrun/xclawrouter report weekly      # weekly report"
+echo "    npx @blockrun/xclawrouter report monthly     # monthly report"
+echo "    npx @blockrun/xclawrouter doctor             # AI diagnostics"
 echo ""

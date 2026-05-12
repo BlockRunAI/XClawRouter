@@ -1,4 +1,4 @@
-# ClawRouter Update Script for Windows (PowerShell)
+# XClawRouter Update Script for Windows (PowerShell)
 # Usage: iwr -useb https://blockrun.ai/XClawRouter-update.ps1 | iex
 #    or: powershell -ExecutionPolicy Bypass -Command "iwr -useb https://blockrun.ai/XClawRouter-update.ps1 | iex"
 #
@@ -6,7 +6,10 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$PLUGIN_DIR = "$env:USERPROFILE\.openclaw\extensions\clawrouter"
+$PLUGIN_DIR = "$env:USERPROFILE\.openclaw\extensions\xclawrouter"
+# Old install dir from when this plugin was published as @blockrun/clawrouter.
+# Migrated aside before install so OpenClaw won't auto-load two copies.
+$LEGACY_PLUGIN_DIR = "$env:USERPROFILE\.openclaw\extensions\clawrouter"
 $CONFIG_PATH = "$env:USERPROFILE\.openclaw\openclaw.json"
 $WALLET_FILE = "$env:USERPROFILE\.openclaw\blockrun\wallet.key"
 
@@ -16,7 +19,7 @@ function Write-Err  { param($msg) Write-Host "  x $msg" -ForegroundColor Red }
 function Write-Step { param($msg) Write-Host "`n-> $msg" }
 
 Write-Host ""
-Write-Host "ClawRouter Update (Windows)" -ForegroundColor Cyan
+Write-Host "XClawRouter Update (Windows)" -ForegroundColor Cyan
 Write-Host ""
 
 # ── Step 1: Back up wallet ────────────────────────────────────
@@ -54,13 +57,17 @@ if (Test-Path $CONFIG_PATH) {
     try {
         $cfg = Get-Content $CONFIG_PATH -Raw | ConvertFrom-Json
         $changed = $false
-        if ($cfg.plugins -and $cfg.plugins.entries -and $cfg.plugins.entries.PSObject.Properties['clawrouter']) {
-            $cfg.plugins.entries.PSObject.Properties.Remove('clawrouter')
-            $changed = $true
-        }
-        if ($cfg.plugins -and $cfg.plugins.installs -and $cfg.plugins.installs.PSObject.Properties['clawrouter']) {
-            $cfg.plugins.installs.PSObject.Properties.Remove('clawrouter')
-            $changed = $true
+        # Strip both new (xclawrouter) and legacy (clawrouter) entry keys so
+        # users migrating from @blockrun/clawrouter don't end up with duplicates.
+        foreach ($key in @('xclawrouter','XClawRouter','@blockrun/xclawrouter','clawrouter','ClawRouter','@blockrun/clawrouter')) {
+            if ($cfg.plugins -and $cfg.plugins.entries -and $cfg.plugins.entries.PSObject.Properties[$key]) {
+                $cfg.plugins.entries.PSObject.Properties.Remove($key)
+                $changed = $true
+            }
+            if ($cfg.plugins -and $cfg.plugins.installs -and $cfg.plugins.installs.PSObject.Properties[$key]) {
+                $cfg.plugins.installs.PSObject.Properties.Remove($key)
+                $changed = $true
+            }
         }
         if ($changed) {
             $cfg | ConvertTo-Json -Depth 20 | Set-Content $CONFIG_PATH -Encoding UTF8
@@ -95,8 +102,8 @@ if (Test-Path $CONFIG_PATH) {
 # ── Step 4: Get latest version from npm ───────────────────────
 Write-Step "Fetching latest version from npm..."
 try {
-    $verFile = Join-Path $env:TEMP "clawrouter-latest-ver.txt"
-    & cmd /c "npm view @blockrun/clawrouter@latest version > `"$verFile`" 2>nul"
+    $verFile = Join-Path $env:TEMP "xclawrouter-latest-ver.txt"
+    & cmd /c "npm view @blockrun/xclawrouter@latest version > `"$verFile`" 2>nul"
     $LATEST_VERSION = (Get-Content $verFile -ErrorAction Stop).Trim()
     Remove-Item $verFile -ErrorAction SilentlyContinue
     if (-not $LATEST_VERSION -or $LATEST_VERSION -match 'error|ERR') {
@@ -110,14 +117,22 @@ try {
 }
 
 # ── Step 5: Install directly from npm (bypasses openclaw cache) ───
-Write-Step "Downloading ClawRouter v$LATEST_VERSION from npm..."
+Write-Step "Downloading XClawRouter v$LATEST_VERSION from npm..."
 
-$tmpDir = Join-Path $env:TEMP "clawrouter-install-$(Get-Random)"
+$tmpDir = Join-Path $env:TEMP "xclawrouter-install-$(Get-Random)"
 New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
+
+# Pre-migration: if a legacy install exists at extensions\clawrouter, move it
+# aside so OpenClaw won't auto-load both copies after the new install lands.
+if ((Test-Path $LEGACY_PLUGIN_DIR) -and ($LEGACY_PLUGIN_DIR -ne $PLUGIN_DIR)) {
+    $legacyAside = "$LEGACY_PLUGIN_DIR.legacy-$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())"
+    Write-Host "  -> Found legacy install at $LEGACY_PLUGIN_DIR - moving to $legacyAside"
+    Move-Item $LEGACY_PLUGIN_DIR $legacyAside -ErrorAction SilentlyContinue
+}
 
 try {
     # Run npm pack via cmd.exe to completely bypass PowerShell's stderr-as-error behavior
-    & cmd /c "npm pack `"@blockrun/clawrouter@$LATEST_VERSION`" --pack-destination `"$tmpDir`" --prefer-online >nul 2>nul"
+    & cmd /c "npm pack `"@blockrun/xclawrouter@$LATEST_VERSION`" --pack-destination `"$tmpDir`" --prefer-online >nul 2>nul"
 
     $tarball = Get-ChildItem "$tmpDir\*.tgz" | Select-Object -First 1
     if (-not $tarball) { throw "npm pack produced no tarball in $tmpDir" }
@@ -139,7 +154,7 @@ try {
 
 # ── Step 5b: Install npm dependencies ─────────────────────────
 Write-Step "Installing dependencies (Solana, x402, etc.)..."
-$logFile = Join-Path $env:TEMP "clawrouter-npm-install.log"
+$logFile = Join-Path $env:TEMP "xclawrouter-npm-install.log"
 & cmd /c "cd /d `"$PLUGIN_DIR`" && npm install --omit=dev > `"$logFile`" 2>&1"
 if ($LASTEXITCODE -ne 0) {
     Write-Err "npm install failed. Log: $logFile"
@@ -156,11 +171,13 @@ if (Test-Path $CONFIG_PATH) {
         if (-not $cfg.plugins) { $cfg | Add-Member -NotePropertyName plugins -NotePropertyValue ([PSCustomObject]@{}) -Force }
         if (-not $cfg.plugins.allow) { $cfg.plugins | Add-Member -NotePropertyName allow -NotePropertyValue @() -Force }
         $allow = [System.Collections.Generic.List[string]]$cfg.plugins.allow
-        if (-not $allow.Contains('clawrouter')) {
-            $allow.Add('clawrouter')
+        $alreadyListed = $allow.Contains('xclawrouter') -or $allow.Contains('@blockrun/xclawrouter') `
+            -or $allow.Contains('clawrouter') -or $allow.Contains('@blockrun/clawrouter')
+        if (-not $alreadyListed) {
+            $allow.Add('xclawrouter')
             $cfg.plugins.allow = $allow.ToArray()
             $cfg | ConvertTo-Json -Depth 20 | Set-Content $CONFIG_PATH -Encoding UTF8
-            Write-Ok "Added clawrouter to plugins.allow"
+            Write-Ok "Added xclawrouter to plugins.allow"
         } else {
             Write-Ok "Plugin already in allow list"
         }
@@ -223,5 +240,5 @@ Write-Host "ClawRouter v$LATEST_VERSION installed successfully!" -ForegroundColo
 Write-Host ""
 Write-Host "  Run: openclaw gateway restart" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "  To verify: npx @blockrun/clawrouter doctor"
+Write-Host "  To verify: npx @blockrun/xclawrouter doctor"
 Write-Host ""

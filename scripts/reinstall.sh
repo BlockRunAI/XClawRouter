@@ -3,7 +3,11 @@ set -e
 set -o pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PLUGIN_DIR="$HOME/.openclaw/extensions/clawrouter"
+PLUGIN_DIR="$HOME/.openclaw/extensions/xclawrouter"
+# Old install dir from the time this plugin was published as @blockrun/clawrouter.
+# Kept so we can clean up legacy installs and back up legacy wallet files during
+# the migration. Do NOT install into this path — new installs go to PLUGIN_DIR.
+LEGACY_PLUGIN_DIR="$HOME/.openclaw/extensions/clawrouter"
 CONFIG_PATH="$HOME/.openclaw/openclaw.json"
 WALLET_FILE="$HOME/.openclaw/blockrun/wallet.key"
 WALLET_BACKUP=""
@@ -204,15 +208,22 @@ try {
   process.exit(0);
 }
 
-// Clean plugin entries (all case variants to prevent duplicate plugin warnings)
-for (const key of ['clawrouter', 'ClawRouter', '@blockrun/clawrouter']) {
+// Clean plugin entries (all case variants + legacy @blockrun/clawrouter names
+// to prevent duplicate plugin warnings and to migrate users coming from the
+// old package name).
+for (const key of [
+  'xclawrouter', 'XClawRouter', '@blockrun/xclawrouter',
+  'clawrouter', 'ClawRouter', '@blockrun/clawrouter',
+]) {
   if (c.plugins?.entries?.[key]) delete c.plugins.entries[key];
   if (c.plugins?.installs?.[key]) delete c.plugins.installs[key];
 }
 
-// Clean plugins.allow — remove clawrouter (will be re-added after install)
-// and strip any non-bundled plugin names that don't exist (e.g. "wallet" added
-// by an AI agent trying to fix a different problem — causes a warning on every start).
+// Clean plugins.allow — remove xclawrouter (will be re-added after install)
+// plus any legacy clawrouter entry from when the plugin shipped under that
+// name. Strip non-bundled plugin names that don't exist (e.g. "wallet" added
+// by an AI agent trying to fix a different problem — causes a warning on every
+// start).
 if (Array.isArray(c.plugins?.allow)) {
   const BUNDLED_OPENCLAW_PLUGINS = [
     // OpenClaw v2026.x bundled plugin IDs (safe to keep in allow list)
@@ -223,7 +234,10 @@ if (Array.isArray(c.plugins?.allow)) {
   ];
   const before = c.plugins.allow.length;
   c.plugins.allow = c.plugins.allow.filter(p => {
-    if (p === 'clawrouter' || p === '@blockrun/clawrouter') return false; // re-added later
+    if (
+      p === 'xclawrouter' || p === '@blockrun/xclawrouter' ||
+      p === 'clawrouter'  || p === '@blockrun/clawrouter'
+    ) return false; // re-added later under the new id
     if (BUNDLED_OPENCLAW_PLUGINS.includes(p)) return true; // known-good bundled plugins
     // Keep entries that look like npm package names (scoped or plain)
     if (p.startsWith('@') || p.includes('/')) return true;
@@ -410,16 +424,26 @@ fi
 # Pre-install cleanup: remove any backup/stage dirs from extensions/ BEFORE
 # openclaw plugins install scans the directory. If they exist during install,
 # OpenClaw writes them into config as duplicate plugins.
-for stale in "$HOME/.openclaw/extensions/clawrouter.backup."* "$HOME/.openclaw/extensions/.openclaw-install-stage-"*; do
+for stale in \
+  "$HOME/.openclaw/extensions/xclawrouter.backup."* \
+  "$HOME/.openclaw/extensions/clawrouter.backup."* \
+  "$HOME/.openclaw/extensions/.openclaw-install-stage-"*; do
   [ -d "$stale" ] && rm -rf "$stale"
 done
 
-echo "→ Installing ClawRouter..."
+# Pre-migration: if a legacy install lives at extensions/clawrouter/, move it
+# aside so OpenClaw won't auto-load both copies after we install the new pkg.
+if [ -d "$LEGACY_PLUGIN_DIR" ] && [ "$LEGACY_PLUGIN_DIR" != "$PLUGIN_DIR" ]; then
+  echo "→ Found legacy install at $LEGACY_PLUGIN_DIR — moving aside"
+  mv "$LEGACY_PLUGIN_DIR" "$LEGACY_PLUGIN_DIR.legacy-$(date +%s)" || true
+fi
+
+echo "→ Installing XClawRouter..."
 # Run with timeout — openclaw plugins install may hang after printing
-# "Installed plugin: clawrouter" in OpenClaw v2026.4.5 (parallel plugin loading).
+# "Installed plugin: xclawrouter" in OpenClaw v2026.4.5 (parallel plugin loading).
 # 120s is enough for slow connections; the install itself completes in ~30s.
 if command -v timeout >/dev/null 2>&1; then
-  timeout 120 openclaw plugins install @blockrun/clawrouter || {
+  timeout 120 openclaw plugins install @blockrun/xclawrouter || {
     exit_code=$?
     if [ $exit_code -eq 124 ]; then
       echo "  (install command timed out — this is normal with OpenClaw v2026.4.5)"
@@ -429,7 +453,7 @@ if command -v timeout >/dev/null 2>&1; then
     fi
   }
 else
-  openclaw plugins install @blockrun/clawrouter
+  openclaw plugins install @blockrun/xclawrouter
 fi
 
 # Install is complete — clear the rollback trap immediately.
@@ -506,9 +530,9 @@ force_install_from_npm() {
   echo "  → Force-fetching v${version} directly from npm registry..."
   local TMPPACK
   TMPPACK=$(mktemp -d)
-  if npm pack "@blockrun/clawrouter@${version}" --pack-destination "$TMPPACK" --prefer-online >/dev/null 2>&1; then
+  if npm pack "@blockrun/xclawrouter@${version}" --pack-destination "$TMPPACK" --prefer-online >/dev/null 2>&1; then
     local TARBALL
-    TARBALL=$(ls "$TMPPACK"/blockrun-clawrouter-*.tgz 2>/dev/null | head -1)
+    TARBALL=$(ls "$TMPPACK"/blockrun-xclawrouter-*.tgz 2>/dev/null | head -1)
     if [ -n "$TARBALL" ]; then
       rm -rf "$PLUGIN_DIR"
       mkdir -p "$PLUGIN_DIR"
@@ -525,7 +549,7 @@ force_install_from_npm() {
 
 if [ ! -f "$DIST_PATH" ]; then
   echo "  ⚠️  dist/ files missing — openclaw install may have cached an old version"
-  LATEST_VER=$(npm view @blockrun/clawrouter@latest version 2>/dev/null || echo "")
+  LATEST_VER=$(npm view @blockrun/xclawrouter@latest version 2>/dev/null || echo "")
   if [ -n "$LATEST_VER" ]; then
     force_install_from_npm "$LATEST_VER" || exit 1
   else
@@ -540,7 +564,7 @@ if [ ! -f "$DIST_PATH" ]; then
 else
   # dist/ exists — verify we have the latest version (openclaw may have served cached old version)
   INSTALLED_VER=$(node -e "try{const p=require('$PLUGIN_DIR/package.json');console.log(p.version);}catch{console.log('');}" 2>/dev/null || echo "")
-  LATEST_VER=$(npm view @blockrun/clawrouter@latest version 2>/dev/null || echo "")
+  LATEST_VER=$(npm view @blockrun/xclawrouter@latest version 2>/dev/null || echo "")
   if [ -n "$LATEST_VER" ] && [ -n "$INSTALLED_VER" ] && [ "$INSTALLED_VER" != "$LATEST_VER" ]; then
     echo "  ⚠️  openclaw installed v${INSTALLED_VER} (cached) but latest is v${LATEST_VER}"
     force_install_from_npm "$LATEST_VER" || true
@@ -548,7 +572,7 @@ else
 fi
 
 INSTALLED_VER=$(node -e "try{const p=require('$PLUGIN_DIR/package.json');console.log(p.version);}catch{console.log('?');}" 2>/dev/null || echo "?")
-echo "  ✓ ClawRouter v${INSTALLED_VER} installed"
+echo "  ✓ XClawRouter v${INSTALLED_VER} installed"
 
 # 6.1b. Ensure all dependencies are installed (Solana, x402, etc.)
 # openclaw's plugin installer may skip native deps like @solana/kit.
@@ -687,14 +711,20 @@ if (fs.existsSync(configPath)) {
   try {
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
-    // Ensure plugins.allow exists and includes clawrouter
+    // Ensure plugins.allow exists and includes xclawrouter. Recognize the
+    // legacy 'clawrouter' / '@blockrun/clawrouter' entries from older installs
+    // so we don't end up with both old and new names sitting side-by-side.
     if (!config.plugins) config.plugins = {};
     if (!Array.isArray(config.plugins.allow)) {
       config.plugins.allow = [];
     }
-    if (!config.plugins.allow.includes('clawrouter') && !config.plugins.allow.includes('@blockrun/clawrouter')) {
-      config.plugins.allow.push('clawrouter');
-      console.log('  Added clawrouter to plugins.allow');
+    const ALREADY_LISTED = config.plugins.allow.some((p) =>
+      p === 'xclawrouter' || p === '@blockrun/xclawrouter' ||
+      p === 'clawrouter' || p === '@blockrun/clawrouter',
+    );
+    if (!ALREADY_LISTED) {
+      config.plugins.allow.push('xclawrouter');
+      console.log('  Added xclawrouter to plugins.allow');
     } else {
       console.log('  Plugin already in allow list');
     }
@@ -762,7 +792,13 @@ fi
 # plugin detection), new ones live in blockrun/. Clean both locations.
 echo "→ Cleaning up stale plugin backups..."
 CLEANED=0
-for backup_dir in "$HOME/.openclaw/extensions/clawrouter.backup."* "$HOME/.openclaw/blockrun/clawrouter.backup."*; do
+for backup_dir in \
+  "$HOME/.openclaw/extensions/xclawrouter.backup."* \
+  "$HOME/.openclaw/extensions/xclawrouter.legacy-"* \
+  "$HOME/.openclaw/extensions/clawrouter.backup."* \
+  "$HOME/.openclaw/extensions/clawrouter.legacy-"* \
+  "$HOME/.openclaw/blockrun/xclawrouter.backup."* \
+  "$HOME/.openclaw/blockrun/clawrouter.backup."*; do
   if [ -d "$backup_dir" ]; then
     rm -rf "$backup_dir"
     CLEANED=$((CLEANED + 1))
@@ -904,9 +940,9 @@ echo "  /imagegen --model dall-e-3 <prompt>          # DALL-E 3"
 echo "  /imagegen --model gpt-image <prompt>         # GPT Image 1"
 echo ""
 echo "CLI commands:"
-echo "  npx @blockrun/clawrouter report            # daily usage report"
-echo "  npx @blockrun/clawrouter report weekly      # weekly report"
-echo "  npx @blockrun/clawrouter report monthly     # monthly report"
-echo "  npx @blockrun/clawrouter doctor             # AI diagnostics"
+echo "  npx @blockrun/xclawrouter report            # daily usage report"
+echo "  npx @blockrun/xclawrouter report weekly      # weekly report"
+echo "  npx @blockrun/xclawrouter report monthly     # monthly report"
+echo "  npx @blockrun/xclawrouter doctor             # AI diagnostics"
 echo ""
-echo "To uninstall: bash ~/.openclaw/extensions/clawrouter/scripts/uninstall.sh"
+echo "To uninstall: bash ~/.openclaw/extensions/xclawrouter/scripts/uninstall.sh"

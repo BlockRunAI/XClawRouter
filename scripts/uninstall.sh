@@ -23,15 +23,17 @@ kill_port_processes() {
   fi
 }
 
-echo "🦞 ClawRouter Uninstall"
+echo "🦞 XClawRouter Uninstall"
 echo ""
 
 # 1. Stop proxy
 echo "→ Stopping proxy..."
 kill_port_processes 8402
 
-# 2. Remove plugin files
+# 2. Remove plugin files (both new xclawrouter dir and legacy clawrouter dir
+#    from when the package was published as @blockrun/clawrouter).
 echo "→ Removing plugin files..."
+rm -rf ~/.openclaw/extensions/xclawrouter
 rm -rf ~/.openclaw/extensions/clawrouter
 
 # 3. Clean openclaw.json
@@ -58,8 +60,14 @@ try {
     changed = true;
   }
 
-  // Remove plugin entries (check all case variants — OpenClaw stores PascalCase)
-  for (const key of ['clawrouter', 'ClawRouter', '@blockrun/clawrouter']) {
+  // Remove plugin entries — recognize both the current xclawrouter id and
+  // the legacy clawrouter id so a clean uninstall works on either install
+  // generation. OpenClaw stores keys in mixed cases (PascalCase from plugin
+  // name, lowercase from plugin id) so cover all variants.
+  for (const key of [
+    'xclawrouter', 'XClawRouter', '@blockrun/xclawrouter',
+    'clawrouter', 'ClawRouter', '@blockrun/clawrouter',
+  ]) {
     if (config.plugins?.entries?.[key]) {
       delete config.plugins.entries[key];
       console.log('  Removed plugins.entries.' + key);
@@ -75,8 +83,9 @@ try {
   // Remove from plugins.allow
   if (Array.isArray(config.plugins?.allow)) {
     const before = config.plugins.allow.length;
-    config.plugins.allow = config.plugins.allow.filter(
-      p => p !== 'clawrouter' && p !== 'ClawRouter' && p !== '@blockrun/clawrouter'
+    config.plugins.allow = config.plugins.allow.filter(p =>
+      p !== 'xclawrouter' && p !== 'XClawRouter' && p !== '@blockrun/xclawrouter' &&
+      p !== 'clawrouter'  && p !== 'ClawRouter'  && p !== '@blockrun/clawrouter'
     );
     if (config.plugins.allow.length !== before) {
       console.log('  Removed from plugins.allow');
@@ -155,7 +164,7 @@ echo "→ Cleaning models cache..."
 rm -f ~/.openclaw/agents/*/agent/models.json 2>/dev/null || true
 
 echo ""
-echo "✓ ClawRouter uninstalled"
+echo "✓ XClawRouter uninstalled"
 echo ""
 echo "Restart OpenClaw to apply changes:"
 echo "  openclaw gateway restart"

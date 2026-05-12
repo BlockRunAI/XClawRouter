@@ -4,6 +4,25 @@ All notable changes to XClawRouter.
 
 ---
 
+## v0.12.179 — May 12, 2026
+
+- **The real reason v0.12.175-178 never reached users: install scripts pulled the wrong npm package.** This XClawRouter repo bundles `scripts/reinstall.sh`, `scripts/update.sh`, `scripts/update.ps1`, and `scripts/uninstall.sh` for OpenClaw plugin installation — and all four still pointed at `@blockrun/clawrouter` (a separate, unrelated project also published on npm) instead of `@blockrun/xclawrouter` (this project). Net effect: anyone running `bash reinstall.sh` got OpenClaw to fetch a totally different codebase from npm, so none of the previous releases' silent-fallback fixes actually shipped to users on the OpenClaw path. The user-visible symptom was the original bug — silent fallback to a local key with no Agentic Wallet messaging — even though `cli.ts` / `index.ts` had been fixed two days earlier.
+- **`PLUGIN_DIR` migration**: scripts now install into `~/.openclaw/extensions/xclawrouter/` (matching `openclaw.plugin.json`'s `id: "xclawrouter"`). A new `LEGACY_PLUGIN_DIR = ~/.openclaw/extensions/clawrouter` constant is recognized so existing installs at the old path get moved aside (renamed to `clawrouter.legacy-<timestamp>`) before the new install lands — prevents OpenClaw from auto-loading both copies and emitting duplicate-plugin warnings.
+- **Install / fetch / version-check operations** all switched to `@blockrun/xclawrouter`:
+  - `openclaw plugins install @blockrun/clawrouter` → `@blockrun/xclawrouter` (reinstall.sh × 2, update.sh × 2)
+  - `npm pack @blockrun/clawrouter@<v>` → `@blockrun/xclawrouter@<v>` (reinstall.sh, update.sh, update.ps1)
+  - `npm view @blockrun/clawrouter@latest version` → `@blockrun/xclawrouter@latest` (reinstall.sh × 2, update.sh × 2, update.ps1)
+  - Tarball glob `blockrun-clawrouter-*.tgz` → `blockrun-xclawrouter-*.tgz`
+  - Post-install `npx @blockrun/clawrouter <cmd>` help text → `@blockrun/xclawrouter` (reinstall.sh × 4, update.sh × 4, update.ps1 × 1)
+  - Hardcoded path `~/.openclaw/extensions/clawrouter/node_modules/viem/...` in update.sh's wallet-derivation step → updated to the new dir.
+- **OpenClaw config-key migration**: `plugins.entries`, `plugins.installs`, and `plugins.allow` cleanup loops in all four scripts now recognize both new names (`xclawrouter`, `XClawRouter`, `@blockrun/xclawrouter`) and legacy names (`clawrouter`, `ClawRouter`, `@blockrun/clawrouter`). New entries push `xclawrouter`; old ones are removed during cleanup. Users migrating from a `@blockrun/clawrouter` install get cleaned up without manual intervention.
+- **Stale-backup glob extended** across both old (`clawrouter.backup.*`, `clawrouter.legacy-*`) and new (`xclawrouter.backup.*`, `xclawrouter.legacy-*`) prefixes in both `extensions/` and `blockrun/` locations, so reinstalls clean up clutter from either generation.
+- **`uninstall.sh` removes both install directories** (`~/.openclaw/extensions/xclawrouter` and the legacy `~/.openclaw/extensions/clawrouter`) so the uninstall is complete regardless of which name the user originally installed under.
+- **Header banners and verb-tense logs updated** (`ClawRouter Update` → `XClawRouter Update`, etc.). Internal log filenames in `$TEMP` switched from `clawrouter-*.log` to `xclawrouter-*.log` so a partially-completed install on a freshly-migrated system doesn't leave files with the wrong name in the user's temp dir.
+- **All four scripts pass `bash -n` syntax check.** No residual `openclaw plugins install @blockrun/clawrouter` / `npm view @blockrun/clawrouter@*` / `npm pack @blockrun/clawrouter@*` lines remain (grep'd to zero).
+
+---
+
 ## v0.12.178 — May 12, 2026
 
 - **Fix: the Agentic Wallet status block we added in v0.12.177 only fired on the standalone CLI path (`src/cli.ts`).** Users running XClawRouter as an OpenClaw plugin — which is the install path the documentation recommends — went straight through `src/index.ts`, whose two wallet-logging sites (gateway-mode `startProxyInBackground` and the non-gateway-mode `register` callback) destructured `{ address, source, email }` from the resolution and never read `onchainosDetection`. Net effect: every silent-fallback path you listed last week (onchainos installed but not logged in, binary missing, `wallet status` crashed, no EVM address available) was still silent on the OpenClaw path, just hidden one entry point further from view than the standalone CLI. Plugin users saw `Using saved wallet: 0x…` and nothing else, exactly the original bug.
