@@ -40,6 +40,7 @@ import {
   resolvePaymentChain,
   WALLET_FILE,
   MNEMONIC_FILE,
+  formatAgenticWalletStatus,
 } from "./auth.js";
 import type { WalletResolution } from "./auth.js";
 import type { RoutingConfig } from "./router/index.js";
@@ -88,6 +89,35 @@ import { BLOCKRUN_MCP_SERVER_NAME, removeManagedBlockrunMcpServerConfig } from "
 
 function getPackageRoot(): string {
   return join(dirname(fileURLToPath(import.meta.url)), "..");
+}
+
+/**
+ * Emit the Agentic Wallet status block via OpenClaw's structured logger.
+ *
+ * Mirrors the same status block `src/cli.ts` prints to stdout for the
+ * standalone CLI path. Without this, the plugin path (OpenClaw-hosted
+ * XClawRouter) silently falls back to a local key on every onchainos
+ * detection failure mode — which was the original bug, just hidden one
+ * entry point further from view than the CLI.
+ *
+ * Routes each line by its `level` so failure markers (⚠ not installed,
+ * ✗ not logged in) hit `logger.warn` and show up at the right severity in
+ * OpenClaw's UI, while neutral confirmations and `→` next-steps go to
+ * `logger.info`. `XCLAW_QUIET=1` suppresses the whole block to match the
+ * CLI's contract.
+ */
+function emitAgenticWalletStatusViaLogger(
+  logger: { info: (msg: string) => void; warn: (msg: string) => void },
+  wallet: WalletResolution,
+): void {
+  if (process.env.XCLAW_QUIET === "1") return;
+  const detection = wallet.onchainosDetection;
+  if (!detection) return;
+  const lines = formatAgenticWalletStatus(detection);
+  for (const line of lines) {
+    if (line.level === "warn") logger.warn(line.text);
+    else logger.info(line.text);
+  }
 }
 
 /**
@@ -711,6 +741,12 @@ async function startProxyInBackground(
     wallet = await resolveOrGenerateWalletKey();
   }
 
+  // Emit Agentic Wallet status BEFORE the wallet-source log so the user
+  // reads "OKX wallet not installed / not logged in / etc." before learning
+  // which local fallback we picked. Silently skips on `kind: "ok"` and on
+  // the plugin-config path (which has no detection result).
+  emitAgenticWalletStatusViaLogger(api.logger, wallet);
+
   // Log wallet source
   if (wallet.source === "okx") {
     api.logger.info(
@@ -722,8 +758,6 @@ async function startProxyInBackground(
     api.logger.warn(`  Address : ${wallet.address}`);
     api.logger.warn(`  Run /wallet export to get your private key`);
     api.logger.warn(`  Losing this key = losing your USDC funds`);
-    api.logger.warn(`  Or install OKX onchainos to use your OKX wallet:`);
-    api.logger.warn(`     https://web3.okx.com/onchainos`);
     api.logger.warn(`════════════════════════════════════════════════`);
   } else if (wallet.source === "saved") {
     api.logger.info(`Using saved wallet: ${wallet.address}`);
@@ -1866,7 +1900,13 @@ const plugin: OpenClawPluginDefinition = {
         // Generate wallet on first install (even outside gateway mode)
         // This ensures users can see their wallet address immediately after install
         resolveOrGenerateWalletKey()
-          .then(({ address, source, email }) => {
+          .then((wallet) => {
+            // Mirror the standalone CLI: emit the Agentic Wallet status
+            // block before the wallet-source log so onchainos detection
+            // failures aren't silent on the plugin path either.
+            emitAgenticWalletStatusViaLogger(api.logger, wallet);
+
+            const { address, source, email } = wallet;
             if (source === "okx") {
               api.logger.info(
                 `Using OKX onchainos wallet: ${address}${email ? ` (${email})` : ""}`,
@@ -1877,8 +1917,6 @@ const plugin: OpenClawPluginDefinition = {
               api.logger.warn(`  Address : ${address}`);
               api.logger.warn(`  Run /wallet export to get your private key`);
               api.logger.warn(`  Losing this key = losing your USDC funds`);
-              api.logger.warn(`  Or install OKX onchainos to use your OKX wallet:`);
-              api.logger.warn(`     https://web3.okx.com/onchainos`);
               api.logger.warn(`════════════════════════════════════════════════`);
             } else if (source === "saved") {
               api.logger.info(`Using saved wallet: ${address}`);

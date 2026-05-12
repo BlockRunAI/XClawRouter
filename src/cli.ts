@@ -501,12 +501,19 @@ async function main(): Promise<void> {
   // next-step command/URL. Emitted BEFORE the "Using ... wallet:" line so the
   // user understands the state of the option they're (likely) not on, before
   // we tell them which local fallback we picked. XCLAW_QUIET=1 silences it.
+  // (`src/index.ts` emits the same block through OpenClaw's structured
+  // logger — keep these two sites in sync when changing the block shape.)
   const quiet = process.env.XCLAW_QUIET === "1";
   const detection = wallet.onchainosDetection;
   let printedStatus = false;
   if (!quiet && detection) {
     const lines = formatAgenticWalletStatus(detection);
-    for (const line of lines) console.log(line);
+    for (const line of lines) {
+      // CLI uses one stream (stdout); the `level` distinction matters for
+      // structured loggers, not for terminals, so funnel everything through
+      // console.log with the consistent [XClawRouter] prefix.
+      console.log(`[XClawRouter] ${line.text}`);
+    }
     printedStatus = lines.length > 0;
   }
 

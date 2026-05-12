@@ -110,25 +110,37 @@ export async function detectOnchainosWallet(): Promise<OnchainOsDetectionResult>
 export const ONCHAINOS_DOWNLOAD_URL = "https://web3.okx.com/onchainos";
 
 /**
- * Render the multi-line "Agentic Wallet status" block the CLI prints right
- * before the `Using ... wallet:` line.
+ * Severity for each line in the Agentic Wallet status block. Lets callers
+ * route the block through a structured logger (e.g. OpenClaw's
+ * `api.logger.info` / `.warn`) without losing the install-state-vs.-failure
+ * distinction, while plain stdout callers can just print all lines.
  *
- * Earlier releases (v0.12.175 / .176) emitted a single-line `Warn:` plus a
- * single-line `Tip:` — informative, but easy to miss and didn't tell the user
- * *what state* Agentic Wallet was in. This block is more proactive: it states
- * the install status (`✓` or `⚠`) and the login status, and gives the literal
- * next command/URL to act on. Users who get past the post-install screen
- * without reading docs now see, on every launch, both that Agentic Wallet
- * exists and exactly where they are in its adoption flow.
+ * - `info` — neutral confirmation (e.g. "✓ installed", "→ Run: …").
+ * - `warn` — failure or missing-state marker (e.g. "⚠ not installed",
+ *   "✗ not logged in"). Anything the user needs to *act on*.
+ */
+export type AgenticWalletStatusLine = { level: "info" | "warn"; text: string };
+
+/**
+ * Render the multi-line "Agentic Wallet status" block — the canonical
+ * answer to "is OKX onchainos installed, am I logged in, and what should I
+ * do about it?". Emitted on every non-OKX launch so users never wonder why
+ * we silently fell back to a local key.
+ *
+ * Pure function returning structured lines (no `[XClawRouter]` prefix, no
+ * console calls) so it can be routed to:
+ * - plain stdout (`src/cli.ts`, via `console.log` after adding the
+ *   `[XClawRouter] ` prefix), or
+ * - OpenClaw's structured logger (`src/index.ts`, via `api.logger.info` /
+ *   `api.logger.warn` — the plugin name prefix comes from the logger).
  *
  * Returns `[]` for `kind: "ok"` — the existing `Using OKX onchainos wallet:`
  * line already conveys "Agentic Wallet ready" and a status banner above it
  * would be noise.
- *
- * Pure function returning the raw lines so the caller controls suppression
- * (XCLAW_QUIET) and routing (console.log vs. structured logger).
  */
-export function formatAgenticWalletStatus(detection: OnchainOsDetectionResult): string[] {
+export function formatAgenticWalletStatus(
+  detection: OnchainOsDetectionResult,
+): AgenticWalletStatusLine[] {
   switch (detection.kind) {
     case "ok":
       // Status is implicit in the `Using OKX onchainos wallet: …` log that
@@ -136,30 +148,33 @@ export function formatAgenticWalletStatus(detection: OnchainOsDetectionResult): 
       return [];
     case "no-binary":
       return [
-        "[XClawRouter] ⚠ OKX Agentic Wallet not installed",
-        `[XClawRouter]   → Download: ${ONCHAINOS_DOWNLOAD_URL}`,
-        "[XClawRouter]   → After install, run: onchainos login",
+        { level: "warn", text: "⚠ OKX Agentic Wallet not installed" },
+        { level: "info", text: `  → Download: ${ONCHAINOS_DOWNLOAD_URL}` },
+        { level: "info", text: "  → After install, run: onchainos login" },
       ];
     case "not-logged-in":
       return [
-        "[XClawRouter] ✓ OKX Agentic Wallet installed",
-        "[XClawRouter] ✗ Login status: not logged in",
-        "[XClawRouter]   → Run: onchainos login",
+        { level: "info", text: "✓ OKX Agentic Wallet installed" },
+        { level: "warn", text: "✗ Login status: not logged in" },
+        { level: "info", text: "  → Run: onchainos login" },
       ];
     case "status-error":
       return [
-        "[XClawRouter] ✓ OKX Agentic Wallet installed",
-        `[XClawRouter] ✗ Login status: unknown — status check failed: ${detection.reason}`,
+        { level: "info", text: "✓ OKX Agentic Wallet installed" },
+        {
+          level: "warn",
+          text: `✗ Login status: unknown — status check failed: ${detection.reason}`,
+        },
       ];
     case "no-evm-address":
       return [
-        "[XClawRouter] ✓ OKX Agentic Wallet installed (logged in)",
-        "[XClawRouter] ✗ No EVM address found (Solana-only account?)",
+        { level: "info", text: "✓ OKX Agentic Wallet installed (logged in)" },
+        { level: "warn", text: "✗ No EVM address found (Solana-only account?)" },
       ];
     case "addresses-error":
       return [
-        "[XClawRouter] ✓ OKX Agentic Wallet installed (logged in)",
-        `[XClawRouter] ✗ Could not read wallet addresses: ${detection.reason}`,
+        { level: "info", text: "✓ OKX Agentic Wallet installed (logged in)" },
+        { level: "warn", text: `✗ Could not read wallet addresses: ${detection.reason}` },
       ];
   }
 }

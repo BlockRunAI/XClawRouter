@@ -208,38 +208,46 @@ describe("formatAgenticWalletStatus", () => {
 
   it("walks the user through download + next step when onchainos is missing", () => {
     const lines = formatAgenticWalletStatus({ kind: "no-binary" });
-    // Block leads with a clear "not installed" marker, then gives the literal
-    // download URL and the post-install next command — the user can act
-    // without leaving the terminal.
+    // Block leads with a clear "not installed" marker (warn level so it
+    // routes to logger.warn in OpenClaw), then gives the literal download
+    // URL and the post-install next command as info-level — the user can
+    // act without leaving the terminal.
     expect(lines.length).toBeGreaterThanOrEqual(3);
-    expect(lines[0]).toMatch(/not installed/);
-    expect(lines[0]).toMatch(/⚠/);
-    expect(lines.some((l) => l.includes(ONCHAINOS_DOWNLOAD_URL))).toBe(true);
-    expect(lines.some((l) => l.includes("Download:"))).toBe(true);
-    expect(lines.some((l) => l.includes("onchainos login"))).toBe(true);
-    for (const line of lines) expect(line.startsWith("[XClawRouter]")).toBe(true);
+    expect(lines[0].level).toBe("warn");
+    expect(lines[0].text).toMatch(/⚠.*not installed/);
+    expect(lines.some((l) => l.text.includes(ONCHAINOS_DOWNLOAD_URL))).toBe(true);
+    expect(lines.some((l) => l.text.includes("Download:"))).toBe(true);
+    expect(lines.some((l) => l.text.includes("onchainos login"))).toBe(true);
+    // Download URL and next-command instructions are advisory, not failure
+    // markers — they belong on info, not warn.
+    expect(lines.find((l) => l.text.includes("Download:"))?.level).toBe("info");
+    expect(lines.find((l) => l.text.includes("After install"))?.level).toBe("info");
   });
 
   it("confirms install AND shows logged-out status with literal next command", () => {
     const lines = formatAgenticWalletStatus({ kind: "not-logged-in" });
-    expect(lines.some((l) => /✓.*installed/.test(l))).toBe(true);
-    expect(lines.some((l) => /✗.*not logged in/.test(l))).toBe(true);
-    expect(lines.some((l) => l.includes("onchainos login"))).toBe(true);
-    for (const line of lines) expect(line.startsWith("[XClawRouter]")).toBe(true);
+    const installed = lines.find((l) => /✓.*installed/.test(l.text));
+    const loggedOut = lines.find((l) => /✗.*not logged in/.test(l.text));
+    const action = lines.find((l) => l.text.includes("onchainos login"));
+    expect(installed?.level).toBe("info");
+    expect(loggedOut?.level).toBe("warn");
+    expect(action?.level).toBe("info");
   });
 
   it("confirms install and surfaces the underlying reason for kind:status-error", () => {
     const lines = formatAgenticWalletStatus({ kind: "status-error", reason: "daemon down" });
-    expect(lines.some((l) => /✓.*installed/.test(l))).toBe(true);
-    expect(lines.some((l) => /status check failed/i.test(l))).toBe(true);
-    expect(lines.some((l) => l.includes("daemon down"))).toBe(true);
+    expect(lines.find((l) => /✓.*installed/.test(l.text))?.level).toBe("info");
+    const failure = lines.find((l) => /status check failed/i.test(l.text));
+    expect(failure?.level).toBe("warn");
+    expect(failure?.text).toMatch(/daemon down/);
   });
 
   it("notes logged-in + missing EVM (Solana-only hint) for kind:no-evm-address", () => {
     const lines = formatAgenticWalletStatus({ kind: "no-evm-address" });
-    expect(lines.some((l) => /✓.*installed.*logged in/.test(l))).toBe(true);
-    expect(lines.some((l) => /Solana-only/.test(l))).toBe(true);
-    expect(lines.some((l) => /No EVM address/i.test(l))).toBe(true);
+    expect(lines.find((l) => /✓.*installed.*logged in/.test(l.text))?.level).toBe("info");
+    const failure = lines.find((l) => /No EVM address/i.test(l.text));
+    expect(failure?.level).toBe("warn");
+    expect(failure?.text).toMatch(/Solana-only/);
   });
 
   it("notes logged-in and the underlying reason for kind:addresses-error", () => {
@@ -247,12 +255,13 @@ describe("formatAgenticWalletStatus", () => {
       kind: "addresses-error",
       reason: "addresses subcommand crashed",
     });
-    expect(lines.some((l) => /✓.*installed.*logged in/.test(l))).toBe(true);
-    expect(lines.some((l) => /Could not read wallet addresses/.test(l))).toBe(true);
-    expect(lines.some((l) => l.includes("addresses subcommand crashed"))).toBe(true);
+    expect(lines.find((l) => /✓.*installed.*logged in/.test(l.text))?.level).toBe("info");
+    const failure = lines.find((l) => /Could not read wallet addresses/.test(l.text));
+    expect(failure?.level).toBe("warn");
+    expect(failure?.text).toMatch(/addresses subcommand crashed/);
   });
 
-  it("emits only single-line entries (greppable, no embedded newlines)", () => {
+  it("emits only single-line entries (greppable, no embedded newlines, no prefix)", () => {
     const kinds = [
       { kind: "no-binary" as const },
       { kind: "not-logged-in" as const },
@@ -264,10 +273,13 @@ describe("formatAgenticWalletStatus", () => {
       const lines = formatAgenticWalletStatus(detection);
       expect(lines.length, `${detection.kind} should produce at least one line`).toBeGreaterThan(0);
       for (const line of lines) {
-        expect(line.includes("\n"), `${detection.kind}: each line must not contain a newline`).toBe(
+        // Each line is a single line, with an info|warn level marker, and
+        // no [XClawRouter] prefix baked in (callers prefix as appropriate).
+        expect(line.text.includes("\n"), `${detection.kind}: no newlines`).toBe(false);
+        expect(["info", "warn"]).toContain(line.level);
+        expect(line.text.startsWith("[XClawRouter]"), `${detection.kind}: no baked prefix`).toBe(
           false,
         );
-        expect(line.startsWith("[XClawRouter]")).toBe(true);
       }
     }
   });
