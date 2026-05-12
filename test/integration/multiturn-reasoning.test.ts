@@ -114,6 +114,7 @@ describe("multi-turn reasoning model (issue #135)", () => {
     const { server, url } = await startMockUpstream();
     mockServer = server;
 
+    process.env.XCLAWROUTER_USE_LOCAL_WALLET = "1";
     const wallet = await resolveOrGenerateWalletKey();
     proxy = await startProxy({
       wallet,

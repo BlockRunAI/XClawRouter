@@ -41,6 +41,7 @@ import {
   WALLET_FILE,
   MNEMONIC_FILE,
   formatAgenticWalletStatus,
+  OnchainOsRequiredError,
 } from "./auth.js";
 import type { WalletResolution } from "./auth.js";
 import type { RoutingConfig } from "./router/index.js";
@@ -738,7 +739,15 @@ async function startProxyInBackground(
         `pluginConfig.walletKey is set but invalid (expected 0x + 64 hex chars) — falling back to saved wallet`,
       );
     }
-    wallet = await resolveOrGenerateWalletKey();
+    try {
+      wallet = await resolveOrGenerateWalletKey();
+    } catch (err) {
+      if (err instanceof OnchainOsRequiredError) {
+        for (const line of err.message.split("\n")) api.logger.warn(line);
+        return false;
+      }
+      throw err;
+    }
   }
 
   // Emit Agentic Wallet status BEFORE the wallet-source log so the user
@@ -1927,6 +1936,10 @@ const plugin: OpenClawPluginDefinition = {
             }
           })
           .catch((err) => {
+            if (err instanceof OnchainOsRequiredError) {
+              for (const line of err.message.split("\n")) api.logger.warn(line);
+              return;
+            }
             api.logger.warn(
               `Failed to initialize wallet: ${err instanceof Error ? err.message : String(err)}`,
             );

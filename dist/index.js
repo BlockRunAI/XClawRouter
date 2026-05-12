@@ -74116,9 +74116,7 @@ var DEFAULT_ROUTING_CONFIG = {
         "xai/grok-4-fast-reasoning",
         // 1,298ms, $0.20/$0.50
         "deepseek/deepseek-reasoner",
-        // V4 Flash thinking ($0.20/$0.40, 1M ctx)
-        "deepseek/deepseek-v4-pro",
-        // V4 Pro flagship ($0.50/$1.00 promo through 2026-05-31, list $2/$4)
+        // 1,454ms, cheap reasoning
         "openai/o4-mini",
         // 2,328ms ($1.10/$4.40)
         "openai/o3"
@@ -74175,13 +74173,7 @@ var DEFAULT_ROUTING_CONFIG = {
     REASONING: {
       primary: "xai/grok-4-1-fast-reasoning",
       // $0.20/$0.50
-      fallback: [
-        "xai/grok-4-fast-reasoning",
-        "deepseek/deepseek-reasoner",
-        // V4 Flash thinking — $0.20/$0.40
-        "deepseek/deepseek-v4-pro"
-        // V4 Pro flagship — $0.50/$1.00 promo, post-promo $2/$4
-      ]
+      fallback: ["xai/grok-4-fast-reasoning", "deepseek/deepseek-reasoner"]
     }
   },
   // Premium tier configs - best quality (blockrun/premium)
@@ -75330,24 +75322,77 @@ var OnchainOsAdapter = class {
 };
 
 // src/auth.ts
+function errorReason(err) {
+  if (err instanceof Error) return err.message;
+  return String(err);
+}
 async function detectOnchainosWallet() {
   const adapter = new OnchainOsAdapter();
-  if (!adapter.isInstalled()) return void 0;
+  if (!adapter.isInstalled()) return { kind: "no-binary" };
+  let status;
   try {
-    const status = await adapter.status();
-    if (!status.loggedIn) return void 0;
-    let evmAddress = status.evmAddress;
-    if (!evmAddress) {
-      try {
-        const addresses = await adapter.addresses();
-        if (addresses.evm) evmAddress = addresses.evm;
-      } catch {
-      }
+    status = await adapter.status();
+  } catch (err) {
+    return { kind: "status-error", reason: errorReason(err) };
+  }
+  if (!status.loggedIn) return { kind: "not-logged-in" };
+  let evmAddress = status.evmAddress;
+  if (!evmAddress) {
+    try {
+      const addresses = await adapter.addresses();
+      if (addresses.evm) evmAddress = addresses.evm;
+    } catch (err) {
+      return { kind: "addresses-error", reason: errorReason(err) };
     }
-    if (!evmAddress) return void 0;
-    return { address: evmAddress, email: status.email, adapter };
-  } catch {
-    return void 0;
+  }
+  if (!evmAddress) return { kind: "no-evm-address" };
+  return { kind: "ok", address: evmAddress, email: status.email, adapter };
+}
+var ONCHAINOS_DOWNLOAD_URL = "https://web3.okx.com/onchainos";
+var OnchainOsRequiredError = class extends Error {
+  constructor(detection) {
+    const notInstalled = detection.kind === "no-binary";
+    super(
+      "No wallet available.\n\nXClawRouter uses OKX Agentic Wallet (onchainos). " + (notInstalled ? "onchainos is not installed yet.\n" : "onchainos is installed but you're not logged in yet.\n") + "\nRun this one command to install + log in:\n  npx @blockrun/xclawrouter setup\n\nIt will install the onchainos binary (if needed) and prompt you for\nemail + OTP. Then restart the gateway: openclaw gateway restart\n\nOpt-out (legacy local BIP-39 wallet \u2014 you manage backups yourself):\n  export XCLAWROUTER_USE_LOCAL_WALLET=1\n  openclaw gateway restart\n"
+    );
+    this.detection = detection;
+    this.name = "OnchainOsRequiredError";
+  }
+};
+function formatAgenticWalletStatus(detection) {
+  switch (detection.kind) {
+    case "ok":
+      return [];
+    case "no-binary":
+      return [
+        { level: "warn", text: "\u26A0 OKX Agentic Wallet not installed" },
+        { level: "info", text: `  \u2192 Download: ${ONCHAINOS_DOWNLOAD_URL}` },
+        { level: "info", text: "  \u2192 After install, run: onchainos login" }
+      ];
+    case "not-logged-in":
+      return [
+        { level: "info", text: "\u2713 OKX Agentic Wallet installed" },
+        { level: "warn", text: "\u2717 Login status: not logged in" },
+        { level: "info", text: "  \u2192 Run: onchainos login" }
+      ];
+    case "status-error":
+      return [
+        { level: "info", text: "\u2713 OKX Agentic Wallet installed" },
+        {
+          level: "warn",
+          text: `\u2717 Login status: unknown \u2014 status check failed: ${detection.reason}`
+        }
+      ];
+    case "no-evm-address":
+      return [
+        { level: "info", text: "\u2713 OKX Agentic Wallet installed (logged in)" },
+        { level: "warn", text: "\u2717 No EVM address found (Solana-only account?)" }
+      ];
+    case "addresses-error":
+      return [
+        { level: "info", text: "\u2713 OKX Agentic Wallet installed (logged in)" },
+        { level: "warn", text: `\u2717 Could not read wallet addresses: ${detection.reason}` }
+      ];
   }
 }
 var WALLET_DIR = join6(homedir4(), ".openclaw", "blockrun");
@@ -75441,13 +75486,14 @@ Refusing to generate a new wallet to protect existing funds.`
   };
 }
 async function resolveOrGenerateWalletKey() {
-  const onchainos = await detectOnchainosWallet();
-  if (onchainos) {
+  const onchainosDetection = await detectOnchainosWallet();
+  if (onchainosDetection.kind === "ok") {
     return {
-      address: onchainos.address,
+      address: onchainosDetection.address,
       source: "okx",
-      onchainos: onchainos.adapter,
-      email: onchainos.email
+      onchainos: onchainosDetection.adapter,
+      email: onchainosDetection.email,
+      onchainosDetection
     };
   }
   const saved = await loadSavedWallet();
@@ -75461,10 +75507,11 @@ async function resolveOrGenerateWalletKey() {
         address: account.address,
         source: "saved",
         mnemonic,
-        solanaPrivateKeyBytes: solanaKeyBytes
+        solanaPrivateKeyBytes: solanaKeyBytes,
+        onchainosDetection
       };
     }
-    return { key: saved, address: account.address, source: "saved" };
+    return { key: saved, address: account.address, source: "saved", onchainosDetection };
   }
   const envKey = process.env.BLOCKRUN_WALLET_KEY;
   if (typeof envKey === "string" && envKey.startsWith("0x") && envKey.length === 66) {
@@ -75477,10 +75524,14 @@ async function resolveOrGenerateWalletKey() {
         address: account.address,
         source: "env",
         mnemonic,
-        solanaPrivateKeyBytes: solanaKeyBytes
+        solanaPrivateKeyBytes: solanaKeyBytes,
+        onchainosDetection
       };
     }
-    return { key: envKey, address: account.address, source: "env" };
+    return { key: envKey, address: account.address, source: "env", onchainosDetection };
+  }
+  if (process.env.XCLAWROUTER_USE_LOCAL_WALLET !== "1") {
+    throw new OnchainOsRequiredError(onchainosDetection);
   }
   const result = await generateAndSaveWallet();
   return {
@@ -75488,7 +75539,8 @@ async function resolveOrGenerateWalletKey() {
     address: result.address,
     source: "generated",
     mnemonic: result.mnemonic,
-    solanaPrivateKeyBytes: result.solanaPrivateKeyBytes
+    solanaPrivateKeyBytes: result.solanaPrivateKeyBytes,
+    onchainosDetection
   };
 }
 async function setupSolana() {
@@ -76562,7 +76614,7 @@ function hashRequestContent(lastUserContent, toolCallNames) {
 }
 
 // src/updater.ts
-var NPM_REGISTRY = "https://registry.npmjs.org/@blockrun/clawrouter/latest";
+var NPM_REGISTRY = "https://registry.npmjs.org/@blockrun/xclawrouter/latest";
 var CHECK_TIMEOUT_MS = 5e3;
 function compareSemver(a, b) {
   const pa = a.split(".").map(Number);
@@ -76588,8 +76640,8 @@ async function checkForUpdates() {
     if (!latest) return;
     if (compareSemver(latest, VERSION) > 0) {
       console.log("");
-      console.log(`\x1B[33m\u2B06\uFE0F  ClawRouter ${latest} available (you have ${VERSION})\x1B[0m`);
-      console.log(`   Run: \x1B[36mnpx @blockrun/clawrouter@latest\x1B[0m`);
+      console.log(`\x1B[33m\u2B06\uFE0F  XClawRouter ${latest} available (you have ${VERSION})\x1B[0m`);
+      console.log(`   Run: \x1B[36mnpx @blockrun/xclawrouter@latest\x1B[0m`);
       console.log(`   Docs: \x1B[36mhttps://blockrun.ai/clawrouter.md\x1B[0m`);
       console.log("");
     }
@@ -82230,6 +82282,16 @@ async function waitForProxyHealth(port, timeoutMs = 3e3) {
 function getPackageRoot() {
   return join10(dirname3(fileURLToPath2(import.meta.url)), "..");
 }
+function emitAgenticWalletStatusViaLogger(logger, wallet) {
+  if (process.env.XCLAW_QUIET === "1") return;
+  const detection = wallet.onchainosDetection;
+  if (!detection) return;
+  const lines = formatAgenticWalletStatus(detection);
+  for (const line of lines) {
+    if (line.level === "warn") logger.warn(line.text);
+    else logger.info(line.text);
+  }
+}
 function installSkillsToWorkspace(logger) {
   try {
     const packageRoot = getPackageRoot();
@@ -82629,8 +82691,17 @@ async function startProxyInBackground(api, startupGeneration) {
         `pluginConfig.walletKey is set but invalid (expected 0x + 64 hex chars) \u2014 falling back to saved wallet`
       );
     }
-    wallet = await resolveOrGenerateWalletKey();
+    try {
+      wallet = await resolveOrGenerateWalletKey();
+    } catch (err) {
+      if (err instanceof OnchainOsRequiredError) {
+        for (const line of err.message.split("\n")) api.logger.warn(line);
+        return false;
+      }
+      throw err;
+    }
   }
+  emitAgenticWalletStatusViaLogger(api.logger, wallet);
   if (wallet.source === "okx") {
     api.logger.info(
       `Using OKX onchainos wallet: ${wallet.address}${wallet.email ? ` (${wallet.email})` : ""}`
@@ -82641,8 +82712,6 @@ async function startProxyInBackground(api, startupGeneration) {
     api.logger.warn(`  Address : ${wallet.address}`);
     api.logger.warn(`  Run /wallet export to get your private key`);
     api.logger.warn(`  Losing this key = losing your USDC funds`);
-    api.logger.warn(`  Or install OKX onchainos to use your OKX wallet:`);
-    api.logger.warn(`     https://web3.okx.com/onchainos`);
     api.logger.warn(`\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`);
   } else if (wallet.source === "saved") {
     api.logger.info(`Using saved wallet: ${wallet.address}`);
@@ -83554,7 +83623,9 @@ ${errText}`
     });
     if (!isGatewayMode()) {
       if (shouldLogRegistration) {
-        resolveOrGenerateWalletKey().then(({ address: address2, source, email }) => {
+        resolveOrGenerateWalletKey().then((wallet) => {
+          emitAgenticWalletStatusViaLogger(api.logger, wallet);
+          const { address: address2, source, email } = wallet;
           if (source === "okx") {
             api.logger.info(
               `Using OKX onchainos wallet: ${address2}${email ? ` (${email})` : ""}`
@@ -83565,8 +83636,6 @@ ${errText}`
             api.logger.warn(`  Address : ${address2}`);
             api.logger.warn(`  Run /wallet export to get your private key`);
             api.logger.warn(`  Losing this key = losing your USDC funds`);
-            api.logger.warn(`  Or install OKX onchainos to use your OKX wallet:`);
-            api.logger.warn(`     https://web3.okx.com/onchainos`);
             api.logger.warn(`\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`);
           } else if (source === "saved") {
             api.logger.info(`Using saved wallet: ${address2}`);
@@ -83576,6 +83645,10 @@ ${errText}`
             api.logger.info(`Using wallet from BLOCKRUN_WALLET_KEY: ${address2}`);
           }
         }).catch((err) => {
+          if (err instanceof OnchainOsRequiredError) {
+            for (const line of err.message.split("\n")) api.logger.warn(line);
+            return;
+          }
           api.logger.warn(
             `Failed to initialize wallet: ${err instanceof Error ? err.message : String(err)}`
           );

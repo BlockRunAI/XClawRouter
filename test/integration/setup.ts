@@ -33,6 +33,11 @@ function getTestPort(): number {
 export async function startTestProxy(): Promise<ProxyHandle> {
   if (proxyHandle) return proxyHandle;
 
+  // Integration tests don't have a real OKX wallet — opt into the legacy
+  // local-key path so resolveOrGenerateWalletKey() generates one instead of
+  // throwing OnchainOsRequiredError. Safe because these tests run against
+  // mocked upstream / health endpoints, not real x402 payments.
+  process.env.XCLAWROUTER_USE_LOCAL_WALLET = "1";
   const wallet = await resolveOrGenerateWalletKey();
   const testPort = getTestPort();
 

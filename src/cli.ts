@@ -21,7 +21,13 @@ import {
   recoverWalletFromMnemonic,
   savePaymentChain,
   formatAgenticWalletStatus,
+  detectOnchainosWallet,
+  OnchainOsRequiredError,
 } from "./auth.js";
+import { OnchainOsAdapter, resolveOnchainosBin } from "./onchainos-adapter.js";
+import { execSync, execFileSync } from "node:child_process";
+import { homedir } from "node:os";
+import { createInterface } from "node:readline/promises";
 import { getSolanaAddress } from "./wallet.js";
 import { generateReport } from "./report.js";
 import { formatRecentLogs } from "./stats.js";
@@ -33,15 +39,16 @@ function printHelp(): void {
 XClawRouter v${VERSION} - Smart LLM Router
 
 Usage:
-  clawrouter [options]
-  clawrouter status                    # Live proxy status (wallet, balance, chain)
-  clawrouter wallet                    # Wallet details + balance
-  clawrouter models                    # List available models
-  clawrouter stats [--days <n>]        # Usage stats (default: 7 days)
-  clawrouter doctor [opus] [question]
-  clawrouter partners [test]
-  clawrouter report [daily|weekly|monthly] [--json]
-  clawrouter logs [--days <n>]
+  xclawrouter [options]
+  xclawrouter setup                     # Interactive OKX Agentic Wallet onboarding
+  xclawrouter status                    # Live proxy status (wallet, balance, chain)
+  xclawrouter wallet                    # Wallet details + balance
+  xclawrouter models                    # List available models
+  xclawrouter stats [--days <n>]        # Usage stats (default: 7 days)
+  xclawrouter doctor [opus] [question]
+  xclawrouter partners [test]
+  xclawrouter report [daily|weekly|monthly] [--json]
+  xclawrouter logs [--days <n>]
 
 Options:
   --version, -v     Show version number
@@ -57,6 +64,7 @@ Query Commands (talk to running proxy on localhost:${getProxyPort()}):
   cache             Response cache stats (hit rate, size)
 
 Management Commands:
+  setup             Interactive OKX Agentic Wallet onboarding (email login)
   doctor            AI-powered diagnostics (default: Sonnet ~$0.003)
   doctor opus       Use Opus for deeper analysis (~$0.01)
   logs              Per-request breakdown: model, cost, latency, status
@@ -68,8 +76,11 @@ Management Commands:
   chain base        Switch to Base EVM (persists)
 
 Environment Variables:
-  BLOCKRUN_WALLET_KEY     Private key for x402 payments (auto-generated if not set)
-  BLOCKRUN_PROXY_PORT     Default proxy port (default: 8402)
+  BLOCKRUN_WALLET_KEY              Override wallet key (legacy local-key path)
+  BLOCKRUN_PROXY_PORT              Default proxy port (default: 8402)
+  XCLAWROUTER_USE_LOCAL_WALLET=1   Opt into legacy local BIP-39 wallet generation
+                                   (default: require OKX Agentic Wallet via onchainos)
+  XCLAWROUTER_ONCHAINOS_BIN        Override onchainos CLI path
 
 For more info: https://blockrun.ai/clawrouter.md
 `);
@@ -191,6 +202,127 @@ async function cmdStats(port: number, days: number): Promise<void> {
   }
 }
 
+/**
+ * Bootstrap OKX Agentic Wallet for XClawRouter — minimal direct flow.
+ *
+ * Steps:
+ *   1. Install the `onchainos` binary via OKX's official installer if it
+ *      isn't already on PATH.
+ *   2. If already logged in, confirm and exit.
+ *   3. Prompt for email, then exec `onchainos wallet login <email>` and
+ *      let the binary handle OTP interactively (stdio inherit so the user
+ *      sees and types into the binary's own prompts).
+ *
+ * Deliberately no agent / skill detour — the user runs one command, types
+ * email + OTP, and is done. The skill-driven OpenClaw flow remains an
+ * option (see error message in auth.ts), but `setup` is the direct path.
+ */
+async function cmdSetup(): Promise<void> {
+  console.log("\n🦞 XClawRouter — OKX Agentic Wallet setup\n");
+
+  const installerUrl =
+    "https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh";
+
+  const adapter = new OnchainOsAdapter();
+  if (!adapter.isInstalled()) {
+    console.log("→ onchainos binary not found — running OKX official installer");
+    console.log(`  ${installerUrl}`);
+    try {
+      execSync(`curl -sSL --max-time 60 ${installerUrl} | sh`, {
+        stdio: "inherit",
+        env: { ...process.env, PATH: `${homedir()}/.local/bin:${process.env.PATH ?? ""}` },
+      });
+      // OKX installer drops the binary at ~/.local/bin; ensure that's on PATH
+      // for any subprocess we spawn below.
+      process.env.PATH = `${homedir()}/.local/bin:${process.env.PATH ?? ""}`;
+      console.log("✓ onchainos installed");
+    } catch {
+      console.error("\n✗ onchainos install failed.");
+      console.error("  Try installing manually, then re-run setup:");
+      console.error(`    curl -sSL ${installerUrl} | sh`);
+      console.error("  Or opt into a local wallet: export XCLAWROUTER_USE_LOCAL_WALLET=1");
+      process.exit(1);
+    }
+  } else {
+    console.log("✓ onchainos binary detected");
+  }
+
+  // Already logged in? Bail early.
+  const detection = await detectOnchainosWallet();
+  if (detection.kind === "ok") {
+    console.log(
+      `✓ Already logged in: ${detection.address}` +
+        (detection.email ? ` (${detection.email})` : ""),
+    );
+    console.log("\nDone. Restart the gateway to pick it up: openclaw gateway restart");
+    return;
+  }
+
+  // Email prompt.
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  let email: string;
+  try {
+    email = (await rl.question("Email: ")).trim();
+  } finally {
+    rl.close();
+  }
+  if (!email.includes("@")) {
+    console.error(`✗ "${email}" doesn't look like an email address.`);
+    process.exit(1);
+  }
+
+  // OKX onchainos auth is a two-step CLI flow:
+  //   1. `wallet login <email>` — sends OTP to inbox, returns immediately
+  //   2. `wallet verify <otp>`  — completes login with the code from inbox
+  // The binary does NOT prompt for OTP itself, so we collect it and run
+  // verify as a separate call. Earlier versions of this command stopped
+  // after step 1 and left users confused about why detection still
+  // reported `not-logged-in`.
+  const bin = resolveOnchainosBin();
+  console.log(`→ Sending OTP: ${bin} wallet login ${email}`);
+  try {
+    execFileSync(bin, ["wallet", "login", email], { stdio: "inherit" });
+  } catch {
+    console.error("\n✗ Could not send OTP. Check the email address and try again.");
+    process.exit(1);
+  }
+  console.log(`  ✓ OTP sent to ${email}\n`);
+
+  // Collect OTP. Read again from stdin (the previous readline already closed).
+  const rlOtp = createInterface({ input: process.stdin, output: process.stdout });
+  let otp: string;
+  try {
+    otp = (await rlOtp.question("OTP from your inbox: ")).trim();
+  } finally {
+    rlOtp.close();
+  }
+  if (!/^\d{4,8}$/.test(otp)) {
+    console.error(`✗ "${otp}" doesn't look like an OTP code (expected 4-8 digits).`);
+    process.exit(1);
+  }
+
+  console.log(`→ Verifying: ${bin} wallet verify ${otp.replace(/./g, "*")}`);
+  try {
+    execFileSync(bin, ["wallet", "verify", otp], { stdio: "inherit" });
+  } catch {
+    console.error("\n✗ OTP verification failed.");
+    console.error("  Re-run `npx @blockrun/xclawrouter setup` to request a new code.");
+    process.exit(1);
+  }
+
+  const after = await detectOnchainosWallet();
+  if (after.kind !== "ok") {
+    console.error(`\n✗ Verify completed but detection still reports: ${after.kind}`);
+    console.error("  Run `onchainos wallet status` to diagnose.");
+    process.exit(1);
+  }
+
+  console.log(
+    `\n✓ OKX wallet ready: ${after.address}` + (after.email ? ` (${after.email})` : ""),
+  );
+  console.log("\nNext: openclaw gateway restart");
+}
+
 async function cmdCache(port: number): Promise<void> {
   try {
     const data = (await queryProxy("/cache", port)) as Record<string, unknown>;
@@ -217,6 +349,7 @@ function parseArgs(args: string[]): {
   reportPeriod: "daily" | "weekly" | "monthly";
   reportJson: boolean;
   walletRecover: boolean;
+  setup: boolean;
   chain?: "solana" | "base";
   port?: number;
   // Query commands
@@ -239,6 +372,7 @@ function parseArgs(args: string[]): {
     reportPeriod: "daily" as "daily" | "weekly" | "monthly",
     reportJson: false,
     walletRecover: false,
+    setup: false,
     chain: undefined as "solana" | "base" | undefined,
     port: undefined as number | undefined,
     queryStatus: false,
@@ -311,6 +445,8 @@ function parseArgs(args: string[]): {
     ) {
       result.chain = args[i + 1] as "solana" | "base";
       i++;
+    } else if (arg === "setup") {
+      result.setup = true;
     } else if (arg === "--port" && args[i + 1]) {
       result.port = parseInt(args[i + 1], 10);
       i++;
@@ -493,8 +629,41 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
-  // Resolve wallet key
-  const wallet = await resolveOrGenerateWalletKey();
+  if (args.setup) {
+    await cmdSetup();
+    process.exit(0);
+  }
+
+  // Resolve wallet key.
+  //
+  // On a fresh install with no OKX wallet, `resolveOrGenerateWalletKey`
+  // throws `OnchainOsRequiredError` instead of silently generating a local
+  // key. In an INTERACTIVE terminal we transparently run `cmdSetup` here so
+  // a user typing `npx @blockrun/xclawrouter` for the first time gets walked
+  // through OKX install + email + OTP without having to manually invoke a
+  // second command. In NON-interactive contexts (CI, Docker, gateway daemon)
+  // we keep the old error+exit-2 behaviour so automation isn't left hanging
+  // on a stdin prompt that no one will ever answer.
+  let wallet;
+  try {
+    wallet = await resolveOrGenerateWalletKey();
+  } catch (err) {
+    if (err instanceof OnchainOsRequiredError) {
+      const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY);
+      if (interactive) {
+        console.log("\n[XClawRouter] No wallet detected — launching guided setup\n");
+        await cmdSetup();
+        // cmdSetup either exits non-zero on failure or finishes the OKX
+        // login. Re-resolve and continue starting the proxy.
+        wallet = await resolveOrGenerateWalletKey();
+      } else {
+        console.error(`[XClawRouter] ${err.message}`);
+        process.exit(2);
+      }
+    } else {
+      throw err;
+    }
+  }
 
   // Agentic Wallet status block. Tells the user, on every launch, whether
   // onchainos is installed and what their login state is, with the literal

@@ -108,6 +108,80 @@ echo ""
 # Pre-flight: fail fast if config is corrupt
 validate_config
 
+# ─────────────────────────────────────────────────────────────
+# OKX Agentic Wallet bootstrap (skill-driven model)
+#
+# onchainos is a hybrid: a TEE-backed binary that does the signing, plus
+# a set of agent skills that drive the conversational email-login flow.
+# Both pieces ship from https://github.com/okx/onchainos-skills (MIT).
+#
+# Install order:
+#   1. Run OKX's official install.sh — fetches the right binary for this
+#      platform, verifies sha256, drops to ~/.local/bin/onchainos.
+#   2. Fetch the okx-agentic-wallet SKILL.md and stage it under OpenClaw's
+#      workspace skills dir. With this skill installed, OpenClaw's agent
+#      recognizes "我要使用邮箱登录 Agentic Wallet" and runs the OTP flow
+#      via the binary — no shell command from the user.
+#
+# Both steps are idempotent. Set XCLAWROUTER_SKIP_OKX_INSTALL=1 to skip,
+# e.g. for users on the opt-in local-wallet path.
+# ─────────────────────────────────────────────────────────────
+
+OKX_INSTALL_URL="https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh"
+OKX_SKILL_RAW_BASE="https://raw.githubusercontent.com/okx/onchainos-skills/main/skills/okx-agentic-wallet"
+OPENCLAW_SKILLS_DIR="$HOME/.openclaw/workspace/skills/okx-agentic-wallet"
+
+install_okx_skill() {
+  # The skill is a single SKILL.md (plus _shared/ + references/ that the
+  # SKILL.md links to). We pull SKILL.md unconditionally and the linked
+  # references on a best-effort basis — agent reads SKILL.md first, can
+  # work without references in a pinch.
+  mkdir -p "$OPENCLAW_SKILLS_DIR"
+  if curl -sSL --max-time 30 -o "$OPENCLAW_SKILLS_DIR/SKILL.md" "$OKX_SKILL_RAW_BASE/SKILL.md"; then
+    echo "  ✓ Installed okx-agentic-wallet skill to $OPENCLAW_SKILLS_DIR"
+  else
+    echo "  ⚠ Could not download okx-agentic-wallet skill (non-fatal)"
+    echo "    Users can still 'onchainos wallet login' directly."
+  fi
+}
+
+echo "→ Bootstrapping OKX Agentic Wallet (onchainos + skill)..."
+if [ "${XCLAWROUTER_SKIP_OKX_INSTALL:-0}" = "1" ]; then
+  echo "  ⊘ XCLAWROUTER_SKIP_OKX_INSTALL=1 — skipping OKX install"
+elif command -v onchainos >/dev/null 2>&1; then
+  echo "  ✓ onchainos binary already present ($(command -v onchainos))"
+  install_okx_skill
+else
+  if [ -f "$WALLET_FILE" ]; then
+    echo "  ℹ Existing local wallet found at $WALLET_FILE — keeping it"
+    echo "    (to migrate to OKX Agentic Wallet later, rm wallet.key and re-run)"
+  elif [ "${XCLAWROUTER_USE_LOCAL_WALLET:-0}" = "1" ]; then
+    echo "  ⊘ XCLAWROUTER_USE_LOCAL_WALLET=1 — opting into legacy local key"
+  else
+    echo "  → Running OKX official installer: $OKX_INSTALL_URL"
+    if curl -sSL --max-time 60 "$OKX_INSTALL_URL" | sh; then
+      echo "  ✓ onchainos installed"
+      # OKX install.sh appends to PATH in shell profile but doesn't export
+      # to *this* process; pull it in so the rest of reinstall.sh works.
+      export PATH="$HOME/.local/bin:$PATH"
+      install_okx_skill
+      echo ""
+      echo "  Next step (after this install finishes):"
+      echo "    1. Open OpenClaw"
+      echo "    2. Tell the agent:  我要使用邮箱登录 Agentic Wallet"
+      echo "    3. The agent will walk you through email + OTP"
+    else
+      echo ""
+      echo "  ✗ OKX onchainos install failed. To proceed, you can:"
+      echo "    - Re-run this script (network hiccups are common)"
+      echo "    - Install manually: $OKX_INSTALL_URL"
+      echo "    - Opt into local wallet: export XCLAWROUTER_USE_LOCAL_WALLET=1"
+      exit 1
+    fi
+  fi
+fi
+echo ""
+
 # 0. Back up wallet key BEFORE removing anything
 echo "→ Backing up wallet..."
 if [ -f "$WALLET_FILE" ]; then
