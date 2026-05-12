@@ -35,9 +35,43 @@ import { OnchainOsAdapter } from "./onchainos-adapter.js";
 // ---------------------------------------------------------------------------
 
 /**
- * Detect an OKX onchainos wallet. Returns the EVM address if onchainos is
- * installed AND the user is logged in. Returns undefined otherwise so callers
- * fall back to the legacy local-key path.
+ * Result of attempting to use the OKX onchainos Agentic Wallet.
+ *
+ * Every non-`ok` variant must be distinguishable by the caller — otherwise
+ * users who half-installed onchainos, forgot to log in, or hit a transient CLI
+ * error get the same silent local-key fallback and never learn why their OKX
+ * wallet wasn't picked up.
+ *
+ * - `ok` — onchainos is installed, logged in, and we have a usable EVM address.
+ * - `no-binary` — onchainos CLI is not on PATH. Tip handled at the call site
+ *   (companion onboarding-tip issue covers when/how to suggest installing).
+ * - `not-logged-in` — binary is installed but `wallet status` reports
+ *   `loggedIn: false`. User just needs to run `onchainos login`.
+ * - `status-error` — `wallet status` exited non-zero, timed out, or returned
+ *   malformed output. `reason` carries the underlying CLI error message.
+ * - `no-evm-address` — status is logged in but neither `wallet status` nor the
+ *   `wallet addresses` fallback yielded an EVM address (e.g. a Solana-only
+ *   account).
+ * - `addresses-error` — status was logged in without an `evmAddress`, but the
+ *   `wallet addresses` fallback itself failed. `reason` carries the CLI error.
+ */
+export type OnchainOsDetectionResult =
+  | { kind: "ok"; address: `0x${string}`; email?: string; adapter: OnchainOsAdapter }
+  | { kind: "no-binary" }
+  | { kind: "not-logged-in" }
+  | { kind: "status-error"; reason: string }
+  | { kind: "no-evm-address" }
+  | { kind: "addresses-error"; reason: string };
+
+function errorReason(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  return String(err);
+}
+
+/**
+ * Detect an OKX onchainos wallet, returning a discriminated result so callers
+ * can surface a tailored warning per failure mode instead of silently falling
+ * back to a local key.
  *
  * Some onchainos builds omit `evmAddress` from `wallet status`; when the user
  * is logged in but status has no address, fall back to `wallet addresses` to
@@ -45,35 +79,56 @@ import { OnchainOsAdapter } from "./onchainos-adapter.js";
  * incorrectly think there is no agentic wallet and silently generate a fresh
  * local key — sending users to a different address than their OKX wallet.
  */
-export async function detectOnchainosWallet(): Promise<
-  | {
-      address: `0x${string}`;
-      email?: string;
-      adapter: OnchainOsAdapter;
-    }
-  | undefined
-> {
+export async function detectOnchainosWallet(): Promise<OnchainOsDetectionResult> {
   const adapter = new OnchainOsAdapter();
-  if (!adapter.isInstalled()) return undefined;
+  if (!adapter.isInstalled()) return { kind: "no-binary" };
+
+  let status;
   try {
-    const status = await adapter.status();
-    if (!status.loggedIn) return undefined;
+    status = await adapter.status();
+  } catch (err) {
+    return { kind: "status-error", reason: errorReason(err) };
+  }
 
-    let evmAddress = status.evmAddress;
-    if (!evmAddress) {
-      try {
-        const addresses = await adapter.addresses();
-        if (addresses.evm) evmAddress = addresses.evm;
-      } catch {
-        // `wallet addresses` failed — fall through; we'll return undefined and
-        // the caller will use the legacy local-key path.
-      }
+  if (!status.loggedIn) return { kind: "not-logged-in" };
+
+  let evmAddress = status.evmAddress;
+  if (!evmAddress) {
+    try {
+      const addresses = await adapter.addresses();
+      if (addresses.evm) evmAddress = addresses.evm;
+    } catch (err) {
+      return { kind: "addresses-error", reason: errorReason(err) };
     }
+  }
 
-    if (!evmAddress) return undefined;
-    return { address: evmAddress, email: status.email, adapter };
-  } catch {
-    return undefined;
+  if (!evmAddress) return { kind: "no-evm-address" };
+  return { kind: "ok", address: evmAddress, email: status.email, adapter };
+}
+
+/**
+ * Render a single-line warning describing why onchainos detection didn't yield
+ * a usable wallet. Returns `undefined` when no warning should be emitted:
+ *
+ * - `kind: "ok"` — happy path, nothing to warn about.
+ * - `kind: "no-binary"` — the companion onboarding-tip flow owns this message
+ *   so we don't double up.
+ *
+ * Pure function so it can be unit-tested without spawning a CLI subprocess.
+ */
+export function formatOnchainosWarning(detection: OnchainOsDetectionResult): string | undefined {
+  switch (detection.kind) {
+    case "ok":
+    case "no-binary":
+      return undefined;
+    case "not-logged-in":
+      return "[XClawRouter] Warn: OKX onchainos detected but not logged in — run `onchainos login` to enable Agentic Wallet";
+    case "status-error":
+      return `[XClawRouter] Warn: OKX onchainos status check failed: ${detection.reason}. Using local wallet.`;
+    case "no-evm-address":
+      return "[XClawRouter] Warn: OKX onchainos detected but no EVM address found (Solana-only account?). Using local wallet.";
+    case "addresses-error":
+      return `[XClawRouter] Warn: OKX onchainos addresses check failed: ${detection.reason}. Using local wallet.`;
   }
 }
 
@@ -217,6 +272,13 @@ export type WalletResolution = {
   solanaPrivateKeyBytes?: Uint8Array;
   onchainos?: OnchainOsAdapter;
   email?: string;
+  /**
+   * The outcome of OKX onchainos detection. Present whenever
+   * `resolveOrGenerateWalletKey` ran the detection — callers use this to
+   * decide which warning, if any, to show the user. `kind: "ok"` accompanies
+   * `source: "okx"`; any other kind means we fell back to a local key.
+   */
+  onchainosDetection?: OnchainOsDetectionResult;
 };
 
 /**
@@ -228,13 +290,14 @@ export type WalletResolution = {
  */
 export async function resolveOrGenerateWalletKey(): Promise<WalletResolution> {
   // 1. Prefer OKX onchainos when installed + logged in.
-  const onchainos = await detectOnchainosWallet();
-  if (onchainos) {
+  const onchainosDetection = await detectOnchainosWallet();
+  if (onchainosDetection.kind === "ok") {
     return {
-      address: onchainos.address,
+      address: onchainosDetection.address,
       source: "okx",
-      onchainos: onchainos.adapter,
-      email: onchainos.email,
+      onchainos: onchainosDetection.adapter,
+      email: onchainosDetection.email,
+      onchainosDetection,
     };
   }
 
@@ -251,9 +314,10 @@ export async function resolveOrGenerateWalletKey(): Promise<WalletResolution> {
         source: "saved",
         mnemonic,
         solanaPrivateKeyBytes: solanaKeyBytes,
+        onchainosDetection,
       };
     }
-    return { key: saved, address: account.address, source: "saved" };
+    return { key: saved, address: account.address, source: "saved", onchainosDetection };
   }
 
   const envKey = process.env.BLOCKRUN_WALLET_KEY;
@@ -268,9 +332,10 @@ export async function resolveOrGenerateWalletKey(): Promise<WalletResolution> {
         source: "env",
         mnemonic,
         solanaPrivateKeyBytes: solanaKeyBytes,
+        onchainosDetection,
       };
     }
-    return { key: envKey, address: account.address, source: "env" };
+    return { key: envKey, address: account.address, source: "env", onchainosDetection };
   }
 
   const result = await generateAndSaveWallet();
@@ -280,6 +345,7 @@ export async function resolveOrGenerateWalletKey(): Promise<WalletResolution> {
     source: "generated",
     mnemonic: result.mnemonic,
     solanaPrivateKeyBytes: result.solanaPrivateKeyBytes,
+    onchainosDetection,
   };
 }
 

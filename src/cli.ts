@@ -20,6 +20,7 @@ import {
   resolvePaymentChain,
   recoverWalletFromMnemonic,
   savePaymentChain,
+  formatOnchainosWarning,
 } from "./auth.js";
 import { getSolanaAddress } from "./wallet.js";
 import { generateReport } from "./report.js";
@@ -495,15 +496,29 @@ async function main(): Promise<void> {
   // Resolve wallet key
   const wallet = await resolveOrGenerateWalletKey();
 
+  // Surface why OKX detection failed BEFORE the "Using ... wallet" line so the
+  // user sees the actionable hint right next to the wallet we actually picked.
+  // XCLAW_QUIET=1 silences this (and the install Tip) for CI / scripted use.
+  const quiet = process.env.XCLAW_QUIET === "1";
+  const detection = wallet.onchainosDetection;
+  if (!quiet && detection) {
+    const warning = formatOnchainosWarning(detection);
+    if (warning) console.warn(warning);
+  }
+
   if (wallet.source === "okx") {
     console.log(
       `[XClawRouter] Using OKX onchainos wallet: ${wallet.address}${wallet.email ? ` (${wallet.email})` : ""}`,
     );
   } else if (wallet.source === "generated") {
     console.log(`[XClawRouter] Generated new wallet: ${wallet.address}`);
-    console.log(
-      `[XClawRouter] Tip: install OKX onchainos to use your OKX wallet — https://web3.okx.com/onchainos`,
-    );
+    // Only suggest installing onchainos when the binary really isn't there —
+    // otherwise we'd contradict the "detected but not logged in" warning above.
+    if (!quiet && detection?.kind === "no-binary") {
+      console.log(
+        `[XClawRouter] Tip: install OKX onchainos to use your OKX wallet — https://web3.okx.com/onchainos`,
+      );
+    }
   } else if (wallet.source === "saved") {
     console.log(`[XClawRouter] Using saved wallet: ${wallet.address}`);
   } else if (wallet.source === "config") {

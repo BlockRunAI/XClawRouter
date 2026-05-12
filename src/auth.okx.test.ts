@@ -9,7 +9,7 @@ import { writeFile, mkdtemp, rm, chmod } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { detectOnchainosWallet } from "./auth.js";
+import { detectOnchainosWallet, formatOnchainosWarning } from "./auth.js";
 
 let tmpDir: string;
 const ORIG_BIN = process.env.XCLAWROUTER_ONCHAINOS_BIN;
@@ -40,7 +40,7 @@ afterEach(() => {
 });
 
 describe("detectOnchainosWallet", () => {
-  it("returns OKX address when onchainos is installed and logged in", async () => {
+  it("returns kind:ok with OKX address when installed and logged in", async () => {
     const bin = await writeFakeCli(
       "okx-logged-in",
       `
@@ -61,13 +61,14 @@ describe("detectOnchainosWallet", () => {
     );
     process.env.XCLAWROUTER_ONCHAINOS_BIN = bin;
     const detected = await detectOnchainosWallet();
-    expect(detected).toBeDefined();
-    expect(detected!.address).toBe("0xCafe000000000000000000000000000000000001");
-    expect(detected!.email).toBe("user@example.com");
-    expect(detected!.adapter).toBeDefined();
+    expect(detected.kind).toBe("ok");
+    if (detected.kind !== "ok") throw new Error("unreachable");
+    expect(detected.address).toBe("0xCafe000000000000000000000000000000000001");
+    expect(detected.email).toBe("user@example.com");
+    expect(detected.adapter).toBeDefined();
   });
 
-  it("returns undefined when onchainos is installed but not logged in", async () => {
+  it("returns kind:not-logged-in when binary is installed but status reports loggedIn:false", async () => {
     const bin = await writeFakeCli(
       "okx-logged-out",
       `
@@ -81,15 +82,17 @@ describe("detectOnchainosWallet", () => {
       `,
     );
     process.env.XCLAWROUTER_ONCHAINOS_BIN = bin;
-    expect(await detectOnchainosWallet()).toBeUndefined();
+    const detected = await detectOnchainosWallet();
+    expect(detected.kind).toBe("not-logged-in");
   });
 
-  it("returns undefined when the binary is missing", async () => {
+  it("returns kind:no-binary when the binary is missing", async () => {
     process.env.XCLAWROUTER_ONCHAINOS_BIN = join(tmpDir, "definitely-missing");
-    expect(await detectOnchainosWallet()).toBeUndefined();
+    const detected = await detectOnchainosWallet();
+    expect(detected.kind).toBe("no-binary");
   });
 
-  it("falls back to `wallet addresses` when status omits evmAddress", async () => {
+  it("falls back to `wallet addresses` when status omits evmAddress (kind:ok)", async () => {
     const bin = await writeFakeCli(
       "okx-status-no-evm",
       `
@@ -116,12 +119,13 @@ describe("detectOnchainosWallet", () => {
     );
     process.env.XCLAWROUTER_ONCHAINOS_BIN = bin;
     const detected = await detectOnchainosWallet();
-    expect(detected).toBeDefined();
-    expect(detected!.address).toBe("0xFa11BackAddre550000000000000000000000001");
-    expect(detected!.email).toBe("majesty@example.com");
+    expect(detected.kind).toBe("ok");
+    if (detected.kind !== "ok") throw new Error("unreachable");
+    expect(detected.address).toBe("0xFa11BackAddre550000000000000000000000001");
+    expect(detected.email).toBe("majesty@example.com");
   });
 
-  it("returns undefined when status omits evmAddress AND addresses has no EVM", async () => {
+  it("returns kind:no-evm-address when status AND addresses both lack an EVM address", async () => {
     const bin = await writeFakeCli(
       "okx-no-evm-anywhere",
       `
@@ -142,10 +146,11 @@ describe("detectOnchainosWallet", () => {
       `,
     );
     process.env.XCLAWROUTER_ONCHAINOS_BIN = bin;
-    expect(await detectOnchainosWallet()).toBeUndefined();
+    const detected = await detectOnchainosWallet();
+    expect(detected.kind).toBe("no-evm-address");
   });
 
-  it("returns undefined when status omits evmAddress AND addresses CLI fails", async () => {
+  it("returns kind:addresses-error when status lacks evmAddress AND addresses CLI fails", async () => {
     const bin = await writeFakeCli(
       "okx-addresses-broken",
       `
@@ -161,10 +166,13 @@ describe("detectOnchainosWallet", () => {
       `,
     );
     process.env.XCLAWROUTER_ONCHAINOS_BIN = bin;
-    expect(await detectOnchainosWallet()).toBeUndefined();
+    const detected = await detectOnchainosWallet();
+    expect(detected.kind).toBe("addresses-error");
+    if (detected.kind !== "addresses-error") throw new Error("unreachable");
+    expect(detected.reason.length).toBeGreaterThan(0);
   });
 
-  it("returns undefined when wallet status throws", async () => {
+  it("returns kind:status-error when wallet status throws", async () => {
     const bin = await writeFakeCli(
       "okx-status-broken",
       `
@@ -176,6 +184,77 @@ describe("detectOnchainosWallet", () => {
       `,
     );
     process.env.XCLAWROUTER_ONCHAINOS_BIN = bin;
-    expect(await detectOnchainosWallet()).toBeUndefined();
+    const detected = await detectOnchainosWallet();
+    expect(detected.kind).toBe("status-error");
+    if (detected.kind !== "status-error") throw new Error("unreachable");
+    expect(detected.reason.length).toBeGreaterThan(0);
+  });
+});
+
+describe("formatOnchainosWarning", () => {
+  it("returns undefined for kind:ok (no warning on happy path)", () => {
+    expect(
+      formatOnchainosWarning({
+        kind: "ok",
+        address: "0xabc0000000000000000000000000000000000001",
+        // adapter intentionally cast — formatter ignores it
+        adapter: {} as never,
+      }),
+    ).toBeUndefined();
+  });
+
+  it("returns undefined for kind:no-binary (companion onboarding-tip owns this)", () => {
+    expect(formatOnchainosWarning({ kind: "no-binary" })).toBeUndefined();
+  });
+
+  it("emits an actionable login hint for kind:not-logged-in", () => {
+    const msg = formatOnchainosWarning({ kind: "not-logged-in" });
+    expect(msg).toBeDefined();
+    expect(msg).toMatch(/^\[XClawRouter\] Warn: /);
+    expect(msg).toMatch(/not logged in/);
+    expect(msg).toMatch(/onchainos login/);
+  });
+
+  it("includes the underlying reason for kind:status-error", () => {
+    const msg = formatOnchainosWarning({ kind: "status-error", reason: "daemon down" });
+    expect(msg).toBeDefined();
+    expect(msg).toMatch(/^\[XClawRouter\] Warn: /);
+    expect(msg).toMatch(/status check failed/);
+    expect(msg).toMatch(/daemon down/);
+    expect(msg).toMatch(/Using local wallet/);
+  });
+
+  it("hints at Solana-only accounts for kind:no-evm-address", () => {
+    const msg = formatOnchainosWarning({ kind: "no-evm-address" });
+    expect(msg).toBeDefined();
+    expect(msg).toMatch(/^\[XClawRouter\] Warn: /);
+    expect(msg).toMatch(/no EVM address/);
+    expect(msg).toMatch(/Solana-only/);
+  });
+
+  it("includes the underlying reason for kind:addresses-error", () => {
+    const msg = formatOnchainosWarning({
+      kind: "addresses-error",
+      reason: "addresses subcommand crashed",
+    });
+    expect(msg).toBeDefined();
+    expect(msg).toMatch(/^\[XClawRouter\] Warn: /);
+    expect(msg).toMatch(/addresses check failed/);
+    expect(msg).toMatch(/addresses subcommand crashed/);
+    expect(msg).toMatch(/Using local wallet/);
+  });
+
+  it("produces single-line messages (greppable)", () => {
+    const kinds = [
+      { kind: "not-logged-in" as const },
+      { kind: "status-error" as const, reason: "err" },
+      { kind: "no-evm-address" as const },
+      { kind: "addresses-error" as const, reason: "err" },
+    ];
+    for (const detection of kinds) {
+      const msg = formatOnchainosWarning(detection);
+      expect(msg, `${detection.kind} should produce a message`).toBeDefined();
+      expect(msg!.includes("\n"), `${detection.kind} message must be one line`).toBe(false);
+    }
   });
 });
