@@ -1,6 +1,35 @@
 # Changelog
 
-All notable changes to ClawRouter.
+All notable changes to XClawRouter.
+
+---
+
+## v0.12.176 — May 12, 2026
+
+- **Fix: Agentic Wallet adoption hint only fired once, on the launch that generated a brand-new local key.** The `[XClawRouter] Tip: install OKX onchainos…` line was hard-coded inside the `else if (wallet.source === "generated")` branch in `src/cli.ts`, so users who skipped the first-launch prompt (i.e. virtually all of them) silently loaded their saved local key on every subsequent run with no Agentic Wallet guidance. That made the new-wallet code path the only re-touch point for adoption — once a user had a `wallet.key` on disk, XClawRouter never mentioned Agentic Wallet again. The dominant funnel leak for OKX onchainos in this CLI.
+- **Lift the Tip into a general post-resolution emission.** Now fires on every launch where `wallet.source !== "okx"`, gated by `XCLAW_QUIET=1`. The copy branches on `wallet.onchainosDetection.kind` so the suggestion is right-fit for the user's actual state:
+  - `no-binary` → `Tip: install OKX onchainos for Agentic Wallet — https://web3.okx.com/onchainos`
+  - any other non-`ok` kind (binary is present but detection failed somewhere) → `Tip: run \`onchainos login\` to enable OKX Agentic Wallet`
+  - `kind: "ok"` (already on OKX) → no Tip.
+- **Suppression hint is discoverable inline.** Whenever the Tip emits, a second line — `[XClawRouter]      (set XCLAW_QUIET=1 to suppress)` — prints alongside so users who want to opt out can find the env var without searching docs.
+- **`formatOnchainosTip(detection)` exported from `src/auth.ts`** as a pure helper paralleling `formatOnchainosWarning` from v0.12.175. Returns `undefined` for `ok` and for missing detection (e.g. the plugin-config wallet path that bypasses onchainos entirely — there's no inferred user intent to nudge there).
+- **Tests.** 8 new cases in `src/auth.okx.test.ts` covering all 6 detection kinds, `undefined` detection input, and the single-line/greppable invariant. Full vitest suite: 502 passing, 3 pre-existing skips.
+
+---
+
+## v0.12.175 — May 12, 2026
+
+- **Fix: `detectOnchainosWallet` collapsed every non-success outcome into `undefined`.** Five distinct failure modes — binary missing, not logged in, `wallet status` crashed, no EVM address available, `wallet addresses` crashed — were all indistinguishable to the caller, so the CLI silently fell back to a local key with only `Using saved wallet: 0x…` printed. Users who half-installed onchainos, forgot to log in, or hit a transient CLI error had no way to recover except by accident. v0.12.174 fixed one specific subcase (status omits `evmAddress` but `wallet addresses` has it); this release generalizes the same observability principle to the other four paths.
+- **`detectOnchainosWallet` now returns a discriminated union** `OnchainOsDetectionResult` covering all five outcomes plus `ok`. `status-error` and `addresses-error` carry the underlying CLI error message as a `reason` field so the warning can name what actually went wrong instead of saying "something failed". The `try/catch` is split — status errors and addresses errors no longer get conflated.
+- **`WalletResolution` gains an `onchainosDetection` field** so the CLI can render the warning regardless of which wallet source ultimately won. Plumbed through every non-`okx` branch in `resolveOrGenerateWalletKey`.
+- **`formatOnchainosWarning(detection)` exported helper** — pure, single-line `[XClawRouter] Warn: …` per mode (returns `undefined` for `ok` and for `no-binary`, which v0.12.176's Tip flow owns to avoid double-messaging). Each warning is a single greppable line with the `[XClawRouter] Warn:` prefix so users can filter / log-search.
+  - `not-logged-in` → `OKX onchainos detected but not logged in — run \`onchainos login\` to enable Agentic Wallet`
+  - `status-error` → `OKX onchainos status check failed: <reason>. Using local wallet.`
+  - `no-evm-address` → `OKX onchainos detected but no EVM address found (Solana-only account?). Using local wallet.`
+  - `addresses-error` → `OKX onchainos addresses check failed: <reason>. Using local wallet.`
+- **`XCLAW_QUIET=1` suppresses** both the warning and the install/login Tip from v0.12.176.
+- **Wallet resolution flow is unchanged.** No warning is fatal — every path still falls back to the next wallet source. The only thing that changed is observability.
+- **Tests.** Existing 7 detection cases in `src/auth.okx.test.ts` tightened to assert on `kind` (not just `undefined`). 7 new cases cover `formatOnchainosWarning` per variant, including the single-line/greppable invariant. Typecheck + lint clean; full vitest suite green.
 
 ---
 
