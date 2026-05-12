@@ -21,6 +21,7 @@ import {
   recoverWalletFromMnemonic,
   savePaymentChain,
   formatOnchainosWarning,
+  formatOnchainosTip,
 } from "./auth.js";
 import { getSolanaAddress } from "./wallet.js";
 import { generateReport } from "./report.js";
@@ -512,19 +513,24 @@ async function main(): Promise<void> {
     );
   } else if (wallet.source === "generated") {
     console.log(`[XClawRouter] Generated new wallet: ${wallet.address}`);
-    // Only suggest installing onchainos when the binary really isn't there —
-    // otherwise we'd contradict the "detected but not logged in" warning above.
-    if (!quiet && detection?.kind === "no-binary") {
-      console.log(
-        `[XClawRouter] Tip: install OKX onchainos to use your OKX wallet — https://web3.okx.com/onchainos`,
-      );
-    }
   } else if (wallet.source === "saved") {
     console.log(`[XClawRouter] Using saved wallet: ${wallet.address}`);
   } else if (wallet.source === "config") {
     console.log(`[XClawRouter] Using wallet from plugin config: ${wallet.address}`);
   } else {
     console.log(`[XClawRouter] Using wallet from BLOCKRUN_WALLET_KEY: ${wallet.address}`);
+  }
+
+  // Recurring Agentic Wallet adoption hint. Fires on every non-OKX launch so
+  // users who skipped the first-launch prompt aren't permanently funneled away
+  // from Agentic Wallet. Copy branches on whether the onchainos binary is
+  // present (suggest `onchainos login`) or missing (install link).
+  if (!quiet && wallet.source !== "okx") {
+    const tip = formatOnchainosTip(detection);
+    if (tip) {
+      console.log(tip);
+      console.log(`[XClawRouter]      (set XCLAW_QUIET=1 to suppress)`);
+    }
   }
 
   // Show Solana address if available

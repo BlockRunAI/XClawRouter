@@ -9,7 +9,7 @@ import { writeFile, mkdtemp, rm, chmod } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { detectOnchainosWallet, formatOnchainosWarning } from "./auth.js";
+import { detectOnchainosWallet, formatOnchainosWarning, formatOnchainosTip } from "./auth.js";
 
 let tmpDir: string;
 const ORIG_BIN = process.env.XCLAWROUTER_ONCHAINOS_BIN;
@@ -255,6 +255,67 @@ describe("formatOnchainosWarning", () => {
       const msg = formatOnchainosWarning(detection);
       expect(msg, `${detection.kind} should produce a message`).toBeDefined();
       expect(msg!.includes("\n"), `${detection.kind} message must be one line`).toBe(false);
+    }
+  });
+});
+
+describe("formatOnchainosTip", () => {
+  it("returns undefined for undefined detection (e.g. plugin-config path)", () => {
+    expect(formatOnchainosTip(undefined)).toBeUndefined();
+  });
+
+  it("returns undefined for kind:ok (user already on OKX, no nudge needed)", () => {
+    expect(
+      formatOnchainosTip({
+        kind: "ok",
+        address: "0xabc0000000000000000000000000000000000001",
+        adapter: {} as never,
+      }),
+    ).toBeUndefined();
+  });
+
+  it("suggests installation when the onchainos binary is missing", () => {
+    const tip = formatOnchainosTip({ kind: "no-binary" });
+    expect(tip).toBeDefined();
+    expect(tip).toMatch(/^\[XClawRouter\] Tip: /);
+    expect(tip).toMatch(/install OKX onchainos/);
+    expect(tip).toMatch(/https:\/\/web3\.okx\.com\/onchainos/);
+  });
+
+  it("suggests `onchainos login` when binary is present but not logged in", () => {
+    const tip = formatOnchainosTip({ kind: "not-logged-in" });
+    expect(tip).toBeDefined();
+    expect(tip).toMatch(/^\[XClawRouter\] Tip: /);
+    expect(tip).toMatch(/onchainos login/);
+  });
+
+  it("suggests `onchainos login` for status-error (binary is present)", () => {
+    const tip = formatOnchainosTip({ kind: "status-error", reason: "daemon down" });
+    expect(tip).toMatch(/onchainos login/);
+  });
+
+  it("suggests `onchainos login` for no-evm-address (binary is present)", () => {
+    const tip = formatOnchainosTip({ kind: "no-evm-address" });
+    expect(tip).toMatch(/onchainos login/);
+  });
+
+  it("suggests `onchainos login` for addresses-error (binary is present)", () => {
+    const tip = formatOnchainosTip({ kind: "addresses-error", reason: "crashed" });
+    expect(tip).toMatch(/onchainos login/);
+  });
+
+  it("produces single-line tips (greppable)", () => {
+    const kinds = [
+      { kind: "no-binary" as const },
+      { kind: "not-logged-in" as const },
+      { kind: "status-error" as const, reason: "err" },
+      { kind: "no-evm-address" as const },
+      { kind: "addresses-error" as const, reason: "err" },
+    ];
+    for (const detection of kinds) {
+      const tip = formatOnchainosTip(detection);
+      expect(tip, `${detection.kind} should produce a tip`).toBeDefined();
+      expect(tip!.includes("\n"), `${detection.kind} tip must be one line`).toBe(false);
     }
   });
 });

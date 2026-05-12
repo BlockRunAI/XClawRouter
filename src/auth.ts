@@ -111,8 +111,8 @@ export async function detectOnchainosWallet(): Promise<OnchainOsDetectionResult>
  * a usable wallet. Returns `undefined` when no warning should be emitted:
  *
  * - `kind: "ok"` — happy path, nothing to warn about.
- * - `kind: "no-binary"` — the companion onboarding-tip flow owns this message
- *   so we don't double up.
+ * - `kind: "no-binary"` — the onboarding-tip flow (`formatOnchainosTip`) owns
+ *   this message so we don't double up.
  *
  * Pure function so it can be unit-tested without spawning a CLI subprocess.
  */
@@ -129,6 +129,41 @@ export function formatOnchainosWarning(detection: OnchainOsDetectionResult): str
       return "[XClawRouter] Warn: OKX onchainos detected but no EVM address found (Solana-only account?). Using local wallet.";
     case "addresses-error":
       return `[XClawRouter] Warn: OKX onchainos addresses check failed: ${detection.reason}. Using local wallet.`;
+  }
+}
+
+/**
+ * Render the recurring Agentic Wallet adoption Tip.
+ *
+ * The CLI used to emit this hint only on the one launch where a new local
+ * wallet was generated — users who skipped that prompt never saw it again and
+ * were effectively locked into local-key mode forever. Now the Tip fires on
+ * every launch that isn't already on OKX, gated by `XCLAW_QUIET=1` at the
+ * call site.
+ *
+ * Two copy variants, chosen by detection kind:
+ * - `no-binary` → suggest installing onchainos (the install-link copy).
+ * - any other non-`ok` kind → binary is present, so suggest `onchainos login`
+ *   (cheapest conversion path).
+ *
+ * Returns `undefined` for `kind: "ok"` and for missing detection (e.g. the
+ * plugin-config wallet path that bypasses detection entirely — there's no
+ * inferred user intent to nudge there).
+ */
+export function formatOnchainosTip(
+  detection: OnchainOsDetectionResult | undefined,
+): string | undefined {
+  if (!detection) return undefined;
+  switch (detection.kind) {
+    case "ok":
+      return undefined;
+    case "no-binary":
+      return "[XClawRouter] Tip: install OKX onchainos for Agentic Wallet — https://web3.okx.com/onchainos";
+    case "not-logged-in":
+    case "status-error":
+    case "no-evm-address":
+    case "addresses-error":
+      return "[XClawRouter] Tip: run `onchainos login` to enable OKX Agentic Wallet";
   }
 }
 
