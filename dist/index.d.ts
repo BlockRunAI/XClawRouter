@@ -848,15 +848,55 @@ declare class OnchainOsAdapter {
  *   1. OKX onchainos CLI (if installed AND user is logged in) — preferred.
  *      Private keys never enter this process; signing happens via
  *      `onchainos payment x402-pay`. See onchainos-adapter.ts.
- *   2. Saved wallet.key file (legacy BIP-39 path)
+ *   2. Saved wallet.key file (legacy BIP-39 path — preserved for existing users)
  *   3. BLOCKRUN_WALLET_KEY env var (legacy)
- *   4. Auto-generated BIP-39 wallet (legacy fallback when no OKX wallet)
- *
- * The legacy BIP-39 path remains so users without onchainos still work, but
- * fresh installs that have onchainos installed and signed in will use the
- * OKX wallet identity instead of generating a new local key.
+ *   4. Auto-generated BIP-39 wallet — **opt-in only**, gated behind
+ *      `XCLAWROUTER_USE_LOCAL_WALLET=1`. On a fresh install with no OKX
+ *      wallet, resolution throws `OnchainOsRequiredError` instead of silently
+ *      generating a local key. This is the fix for "一装就生成本地 wallet"
+ *      — users should be guided to install/login onchainos, not handed a
+ *      local key they don't realize is in play.
  */
 
+/**
+ * Result of attempting to use the OKX onchainos Agentic Wallet.
+ *
+ * Every non-`ok` variant must be distinguishable by the caller — otherwise
+ * users who half-installed onchainos, forgot to log in, or hit a transient CLI
+ * error get the same silent local-key fallback and never learn why their OKX
+ * wallet wasn't picked up.
+ *
+ * - `ok` — onchainos is installed, logged in, and we have a usable EVM address.
+ * - `no-binary` — onchainos CLI is not on PATH. Tip handled at the call site
+ *   (companion onboarding-tip issue covers when/how to suggest installing).
+ * - `not-logged-in` — binary is installed but `wallet status` reports
+ *   `loggedIn: false`. User just needs to run `onchainos login`.
+ * - `status-error` — `wallet status` exited non-zero, timed out, or returned
+ *   malformed output. `reason` carries the underlying CLI error message.
+ * - `no-evm-address` — status is logged in but neither `wallet status` nor the
+ *   `wallet addresses` fallback yielded an EVM address (e.g. a Solana-only
+ *   account).
+ * - `addresses-error` — status was logged in without an `evmAddress`, but the
+ *   `wallet addresses` fallback itself failed. `reason` carries the CLI error.
+ */
+type OnchainOsDetectionResult = {
+    kind: "ok";
+    address: `0x${string}`;
+    email?: string;
+    adapter: OnchainOsAdapter;
+} | {
+    kind: "no-binary";
+} | {
+    kind: "not-logged-in";
+} | {
+    kind: "status-error";
+    reason: string;
+} | {
+    kind: "no-evm-address";
+} | {
+    kind: "addresses-error";
+    reason: string;
+};
 declare function savePaymentChain(chain: "base" | "solana"): Promise<void>;
 declare function loadPaymentChain(): Promise<"base" | "solana">;
 /**
@@ -881,6 +921,13 @@ type WalletResolution = {
     solanaPrivateKeyBytes?: Uint8Array;
     onchainos?: OnchainOsAdapter;
     email?: string;
+    /**
+     * The outcome of OKX onchainos detection. Present whenever
+     * `resolveOrGenerateWalletKey` ran the detection — callers use this to
+     * decide which warning, if any, to show the user. `kind: "ok"` accompanies
+     * `source: "okx"`; any other kind means we fell back to a local key.
+     */
+    onchainosDetection?: OnchainOsDetectionResult;
 };
 /** Set up Solana for an existing local-key wallet. Not used in OKX mode. */
 declare function setupSolana(): Promise<{

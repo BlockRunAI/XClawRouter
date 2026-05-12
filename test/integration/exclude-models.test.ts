@@ -39,6 +39,7 @@ describe("exclude-models e2e", () => {
       originalLog(...args);
     };
 
+    process.env.XCLAWROUTER_USE_LOCAL_WALLET = "1";
     const wallet = await resolveOrGenerateWalletKey();
     proxy = await startProxy({
       wallet,

@@ -5,13 +5,14 @@
  *   1. OKX onchainos CLI (if installed AND user is logged in) — preferred.
  *      Private keys never enter this process; signing happens via
  *      `onchainos payment x402-pay`. See onchainos-adapter.ts.
- *   2. Saved wallet.key file (legacy BIP-39 path)
+ *   2. Saved wallet.key file (legacy BIP-39 path — preserved for existing users)
  *   3. BLOCKRUN_WALLET_KEY env var (legacy)
- *   4. Auto-generated BIP-39 wallet (legacy fallback when no OKX wallet)
- *
- * The legacy BIP-39 path remains so users without onchainos still work, but
- * fresh installs that have onchainos installed and signed in will use the
- * OKX wallet identity instead of generating a new local key.
+ *   4. Auto-generated BIP-39 wallet — **opt-in only**, gated behind
+ *      `XCLAWROUTER_USE_LOCAL_WALLET=1`. On a fresh install with no OKX
+ *      wallet, resolution throws `OnchainOsRequiredError` instead of silently
+ *      generating a local key. This is the fix for "一装就生成本地 wallet"
+ *      — users should be guided to install/login onchainos, not handed a
+ *      local key they don't realize is in play.
  */
 
 import { writeFile, mkdir } from "node:fs/promises";
@@ -108,6 +109,37 @@ export async function detectOnchainosWallet(): Promise<OnchainOsDetectionResult>
 
 /** URL where users can download / read about OKX onchainos. */
 export const ONCHAINOS_DOWNLOAD_URL = "https://web3.okx.com/onchainos";
+
+/**
+ * Thrown when a fresh install has no OKX wallet AND no legacy saved wallet,
+ * AND the user has not explicitly opted into local-key generation via
+ * `XCLAWROUTER_USE_LOCAL_WALLET=1`. Callers should surface the message
+ * verbatim — it contains the next-step commands the user needs.
+ */
+export class OnchainOsRequiredError extends Error {
+  constructor(public readonly detection: OnchainOsDetectionResult) {
+    const notInstalled = detection.kind === "no-binary";
+    super(
+      "No wallet available.\n" +
+        "\n" +
+        "XClawRouter uses OKX Agentic Wallet (onchainos). " +
+        (notInstalled
+          ? "onchainos is not installed yet.\n"
+          : "onchainos is installed but you're not logged in yet.\n") +
+        "\n" +
+        "Run this one command to install + log in:\n" +
+        "  npx @blockrun/xclawrouter setup\n" +
+        "\n" +
+        "It will install the onchainos binary (if needed) and prompt you for\n" +
+        "email + OTP. Then restart the gateway: openclaw gateway restart\n" +
+        "\n" +
+        "Opt-out (legacy local BIP-39 wallet — you manage backups yourself):\n" +
+        "  export XCLAWROUTER_USE_LOCAL_WALLET=1\n" +
+        "  openclaw gateway restart\n",
+    );
+    this.name = "OnchainOsRequiredError";
+  }
+}
 
 /**
  * Severity for each line in the Agentic Wallet status block. Lets callers
@@ -383,6 +415,15 @@ export async function resolveOrGenerateWalletKey(): Promise<WalletResolution> {
       };
     }
     return { key: envKey, address: account.address, source: "env", onchainosDetection };
+  }
+
+  // Fresh install with no OKX wallet AND no legacy saved key.
+  // Refuse to silently generate a local BIP-39 wallet — users have been
+  // surprised by "一装就生成本地 wallet" too many times. They must either:
+  //   (a) install + log in to onchainos, OR
+  //   (b) explicitly opt into the legacy local-key path.
+  if (process.env.XCLAWROUTER_USE_LOCAL_WALLET !== "1") {
+    throw new OnchainOsRequiredError(onchainosDetection);
   }
 
   const result = await generateAndSaveWallet();

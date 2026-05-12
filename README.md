@@ -82,25 +82,41 @@ This is the stack that lets agents operate autonomously: **x402 + USDC + local r
 
 ### Option A — OpenClaw Agent
 
-[OpenClaw](https://openclaw.ai) is an AI coding agent. If you're using it, ClawRouter installs as a plugin:
+[OpenClaw](https://openclaw.ai) is an AI coding agent. If you're using it, XClawRouter installs as a plugin. Three install paths — pick whichever fits:
+
+**1. One-liner (recommended)** — bundles config injection, cleanup of legacy installs, and onchainos bootstrap:
 
 ```bash
 curl -fsSL https://blockrun.ai/XClawRouter-update | bash
 openclaw gateway restart
 ```
 
-Done. Smart routing (`blockrun/auto`) is now your default model.
+**2. Manual via OpenClaw plugin manager** — if you want to see each step:
+
+```bash
+openclaw plugins install @blockrun/xclawrouter
+openclaw gateway restart
+```
+
+**3. Global npm install** — same effect as #2, useful for CI or pinned deployments:
+
+```bash
+npm install -g @blockrun/xclawrouter
+openclaw gateway restart
+```
+
+Done. Smart routing (`blockrun/auto`) is now your default model. On first run XClawRouter prompts you to log in to your OKX Agentic Wallet via email — no local private key, signing happens in OKX's TEE.
 
 ### Option B — Standalone (continue.dev, Cursor, VS Code, any OpenAI-compatible client)
 
 > **Using Claude Code?** Check out [BRCC](https://blockrun.ai/brcc.md) — it's purpose-built for Claude Code with the same smart routing and x402 payments.
 
-No OpenClaw required. ClawRouter runs as a local proxy on port 8402.
+No OpenClaw required. XClawRouter runs as a local proxy on port 8402.
 
 **1. Start the proxy**
 
 ```bash
-npx @blockrun/clawrouter
+npx @blockrun/xclawrouter
 ```
 
 **2. Fund your wallet** — optional, skip for free tier
