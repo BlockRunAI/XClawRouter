@@ -9,7 +9,11 @@ import { writeFile, mkdtemp, rm, chmod } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { detectOnchainosWallet, formatOnchainosWarning, formatOnchainosTip } from "./auth.js";
+import {
+  detectOnchainosWallet,
+  formatAgenticWalletStatus,
+  ONCHAINOS_DOWNLOAD_URL,
+} from "./auth.js";
 
 let tmpDir: string;
 const ORIG_BIN = process.env.XCLAWROUTER_ONCHAINOS_BIN;
@@ -191,120 +195,64 @@ describe("detectOnchainosWallet", () => {
   });
 });
 
-describe("formatOnchainosWarning", () => {
-  it("returns undefined for kind:ok (no warning on happy path)", () => {
+describe("formatAgenticWalletStatus", () => {
+  it("returns no lines for kind:ok (status is implicit in the OKX wallet log)", () => {
     expect(
-      formatOnchainosWarning({
+      formatAgenticWalletStatus({
         kind: "ok",
         address: "0xabc0000000000000000000000000000000000001",
-        // adapter intentionally cast — formatter ignores it
         adapter: {} as never,
       }),
-    ).toBeUndefined();
+    ).toEqual([]);
   });
 
-  it("returns undefined for kind:no-binary (companion onboarding-tip owns this)", () => {
-    expect(formatOnchainosWarning({ kind: "no-binary" })).toBeUndefined();
+  it("walks the user through download + next step when onchainos is missing", () => {
+    const lines = formatAgenticWalletStatus({ kind: "no-binary" });
+    // Block leads with a clear "not installed" marker, then gives the literal
+    // download URL and the post-install next command — the user can act
+    // without leaving the terminal.
+    expect(lines.length).toBeGreaterThanOrEqual(3);
+    expect(lines[0]).toMatch(/not installed/);
+    expect(lines[0]).toMatch(/⚠/);
+    expect(lines.some((l) => l.includes(ONCHAINOS_DOWNLOAD_URL))).toBe(true);
+    expect(lines.some((l) => l.includes("Download:"))).toBe(true);
+    expect(lines.some((l) => l.includes("onchainos login"))).toBe(true);
+    for (const line of lines) expect(line.startsWith("[XClawRouter]")).toBe(true);
   });
 
-  it("emits an actionable login hint for kind:not-logged-in", () => {
-    const msg = formatOnchainosWarning({ kind: "not-logged-in" });
-    expect(msg).toBeDefined();
-    expect(msg).toMatch(/^\[XClawRouter\] Warn: /);
-    expect(msg).toMatch(/not logged in/);
-    expect(msg).toMatch(/onchainos login/);
+  it("confirms install AND shows logged-out status with literal next command", () => {
+    const lines = formatAgenticWalletStatus({ kind: "not-logged-in" });
+    expect(lines.some((l) => /✓.*installed/.test(l))).toBe(true);
+    expect(lines.some((l) => /✗.*not logged in/.test(l))).toBe(true);
+    expect(lines.some((l) => l.includes("onchainos login"))).toBe(true);
+    for (const line of lines) expect(line.startsWith("[XClawRouter]")).toBe(true);
   });
 
-  it("includes the underlying reason for kind:status-error", () => {
-    const msg = formatOnchainosWarning({ kind: "status-error", reason: "daemon down" });
-    expect(msg).toBeDefined();
-    expect(msg).toMatch(/^\[XClawRouter\] Warn: /);
-    expect(msg).toMatch(/status check failed/);
-    expect(msg).toMatch(/daemon down/);
-    expect(msg).toMatch(/Using local wallet/);
+  it("confirms install and surfaces the underlying reason for kind:status-error", () => {
+    const lines = formatAgenticWalletStatus({ kind: "status-error", reason: "daemon down" });
+    expect(lines.some((l) => /✓.*installed/.test(l))).toBe(true);
+    expect(lines.some((l) => /status check failed/i.test(l))).toBe(true);
+    expect(lines.some((l) => l.includes("daemon down"))).toBe(true);
   });
 
-  it("hints at Solana-only accounts for kind:no-evm-address", () => {
-    const msg = formatOnchainosWarning({ kind: "no-evm-address" });
-    expect(msg).toBeDefined();
-    expect(msg).toMatch(/^\[XClawRouter\] Warn: /);
-    expect(msg).toMatch(/no EVM address/);
-    expect(msg).toMatch(/Solana-only/);
+  it("notes logged-in + missing EVM (Solana-only hint) for kind:no-evm-address", () => {
+    const lines = formatAgenticWalletStatus({ kind: "no-evm-address" });
+    expect(lines.some((l) => /✓.*installed.*logged in/.test(l))).toBe(true);
+    expect(lines.some((l) => /Solana-only/.test(l))).toBe(true);
+    expect(lines.some((l) => /No EVM address/i.test(l))).toBe(true);
   });
 
-  it("includes the underlying reason for kind:addresses-error", () => {
-    const msg = formatOnchainosWarning({
+  it("notes logged-in and the underlying reason for kind:addresses-error", () => {
+    const lines = formatAgenticWalletStatus({
       kind: "addresses-error",
       reason: "addresses subcommand crashed",
     });
-    expect(msg).toBeDefined();
-    expect(msg).toMatch(/^\[XClawRouter\] Warn: /);
-    expect(msg).toMatch(/addresses check failed/);
-    expect(msg).toMatch(/addresses subcommand crashed/);
-    expect(msg).toMatch(/Using local wallet/);
+    expect(lines.some((l) => /✓.*installed.*logged in/.test(l))).toBe(true);
+    expect(lines.some((l) => /Could not read wallet addresses/.test(l))).toBe(true);
+    expect(lines.some((l) => l.includes("addresses subcommand crashed"))).toBe(true);
   });
 
-  it("produces single-line messages (greppable)", () => {
-    const kinds = [
-      { kind: "not-logged-in" as const },
-      { kind: "status-error" as const, reason: "err" },
-      { kind: "no-evm-address" as const },
-      { kind: "addresses-error" as const, reason: "err" },
-    ];
-    for (const detection of kinds) {
-      const msg = formatOnchainosWarning(detection);
-      expect(msg, `${detection.kind} should produce a message`).toBeDefined();
-      expect(msg!.includes("\n"), `${detection.kind} message must be one line`).toBe(false);
-    }
-  });
-});
-
-describe("formatOnchainosTip", () => {
-  it("returns undefined for undefined detection (e.g. plugin-config path)", () => {
-    expect(formatOnchainosTip(undefined)).toBeUndefined();
-  });
-
-  it("returns undefined for kind:ok (user already on OKX, no nudge needed)", () => {
-    expect(
-      formatOnchainosTip({
-        kind: "ok",
-        address: "0xabc0000000000000000000000000000000000001",
-        adapter: {} as never,
-      }),
-    ).toBeUndefined();
-  });
-
-  it("suggests installation when the onchainos binary is missing", () => {
-    const tip = formatOnchainosTip({ kind: "no-binary" });
-    expect(tip).toBeDefined();
-    expect(tip).toMatch(/^\[XClawRouter\] Tip: /);
-    expect(tip).toMatch(/install OKX onchainos/);
-    expect(tip).toMatch(/https:\/\/web3\.okx\.com\/onchainos/);
-  });
-
-  it("suggests `onchainos login` when binary is present but not logged in", () => {
-    const tip = formatOnchainosTip({ kind: "not-logged-in" });
-    expect(tip).toBeDefined();
-    expect(tip).toMatch(/^\[XClawRouter\] Tip: /);
-    expect(tip).toMatch(/onchainos login/);
-  });
-
-  it("suggests `onchainos login` for status-error (binary is present)", () => {
-    const tip = formatOnchainosTip({ kind: "status-error", reason: "daemon down" });
-    expect(tip).toMatch(/onchainos login/);
-  });
-
-  it("suggests `onchainos login` for no-evm-address (binary is present)", () => {
-    const tip = formatOnchainosTip({ kind: "no-evm-address" });
-    expect(tip).toMatch(/onchainos login/);
-  });
-
-  it("suggests `onchainos login` for addresses-error (binary is present)", () => {
-    const tip = formatOnchainosTip({ kind: "addresses-error", reason: "crashed" });
-    expect(tip).toMatch(/onchainos login/);
-  });
-
-  it("produces single-line tips (greppable)", () => {
+  it("emits only single-line entries (greppable, no embedded newlines)", () => {
     const kinds = [
       { kind: "no-binary" as const },
       { kind: "not-logged-in" as const },
@@ -313,9 +261,14 @@ describe("formatOnchainosTip", () => {
       { kind: "addresses-error" as const, reason: "err" },
     ];
     for (const detection of kinds) {
-      const tip = formatOnchainosTip(detection);
-      expect(tip, `${detection.kind} should produce a tip`).toBeDefined();
-      expect(tip!.includes("\n"), `${detection.kind} tip must be one line`).toBe(false);
+      const lines = formatAgenticWalletStatus(detection);
+      expect(lines.length, `${detection.kind} should produce at least one line`).toBeGreaterThan(0);
+      for (const line of lines) {
+        expect(line.includes("\n"), `${detection.kind}: each line must not contain a newline`).toBe(
+          false,
+        );
+        expect(line.startsWith("[XClawRouter]")).toBe(true);
+      }
     }
   });
 });

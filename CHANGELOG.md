@@ -4,6 +4,35 @@ All notable changes to XClawRouter.
 
 ---
 
+## v0.12.177 — May 12, 2026
+
+- **Replace the one-line Warn/Tip pair with a structured "Agentic Wallet status" block.** v0.12.175/.176 made the silent fallback non-silent — the CLI now told you when OKX detection failed and nudged you toward `onchainos login` — but two short, separated lines were still easy to miss in a noisy startup, and they never explicitly told the user "Agentic Wallet IS installed; you just need to log in." Replace both formatters with a single multi-line block emitted *before* the `Using ... wallet:` line, so the install state and login state are unambiguous and act-on-able from a single glance.
+- **`formatAgenticWalletStatus(detection): string[]`** — new exported pure helper in `src/auth.ts`, replaces `formatOnchainosWarning` and `formatOnchainosTip` (both deleted). Returns the literal lines to print for each detection kind:
+  - `no-binary` →
+    `[XClawRouter] ⚠ OKX Agentic Wallet not installed`
+    `[XClawRouter]   → Download: https://web3.okx.com/onchainos`
+    `[XClawRouter]   → After install, run: onchainos login`
+  - `not-logged-in` →
+    `[XClawRouter] ✓ OKX Agentic Wallet installed`
+    `[XClawRouter] ✗ Login status: not logged in`
+    `[XClawRouter]   → Run: onchainos login`
+  - `status-error` →
+    `[XClawRouter] ✓ OKX Agentic Wallet installed`
+    `[XClawRouter] ✗ Login status: unknown — status check failed: <reason>`
+  - `no-evm-address` →
+    `[XClawRouter] ✓ OKX Agentic Wallet installed (logged in)`
+    `[XClawRouter] ✗ No EVM address found (Solana-only account?)`
+  - `addresses-error` →
+    `[XClawRouter] ✓ OKX Agentic Wallet installed (logged in)`
+    `[XClawRouter] ✗ Could not read wallet addresses: <reason>`
+  - `ok` → empty array (the existing `Using OKX onchainos wallet:` log conveys ready-state; a status banner above it would be noise).
+- **`ONCHAINOS_DOWNLOAD_URL` exported as a single constant** (`https://web3.okx.com/onchainos`) so the download link lives in one place and tests can pin to it rather than asserting a literal URL string.
+- **CLI integration (`src/cli.ts`).** After `resolveOrGenerateWalletKey()`, emit each status line via `console.log` before the `Using ... wallet:` log. The block leads — so the user reads "Agentic Wallet not installed / not logged in" *first*, then sees which local fallback we landed on. `XCLAW_QUIET=1` suppresses the whole block. A trailing `[XClawRouter]   (set XCLAW_QUIET=1 to suppress this block)` line prints only when the block was actually emitted, so OKX users (where the block is empty) don't end up with a dangling suppression hint.
+- **Removed**: `formatOnchainosWarning`, `formatOnchainosTip` from `src/auth.ts` and their callers in `src/cli.ts`. The two-formatter design was a stepping stone that got superseded after one release — kept the symbols cleanly out of the public surface rather than leaving them as deprecated shims.
+- **Tests (`src/auth.okx.test.ts`).** The old 14 formatter tests are replaced by 7 status-block tests covering each detection kind: presence of `✓`/`⚠`/`✗` markers, the literal download URL in the no-binary block, the literal `onchainos login` command where applicable, the underlying error `reason` carried through into the `status-error` / `addresses-error` blocks, the Solana-only hint for `no-evm-address`, the `[XClawRouter]` prefix on every line, and the single-line-per-entry invariant. 502 tests passing (was 502; net zero — old formatter tests pruned, new status tests added).
+
+---
+
 ## v0.12.176 — May 12, 2026
 
 - **Fix: Agentic Wallet adoption hint only fired once, on the launch that generated a brand-new local key.** The `[XClawRouter] Tip: install OKX onchainos…` line was hard-coded inside the `else if (wallet.source === "generated")` branch in `src/cli.ts`, so users who skipped the first-launch prompt (i.e. virtually all of them) silently loaded their saved local key on every subsequent run with no Agentic Wallet guidance. That made the new-wallet code path the only re-touch point for adoption — once a user had a `wallet.key` on disk, XClawRouter never mentioned Agentic Wallet again. The dominant funnel leak for OKX onchainos in this CLI.

@@ -20,8 +20,7 @@ import {
   resolvePaymentChain,
   recoverWalletFromMnemonic,
   savePaymentChain,
-  formatOnchainosWarning,
-  formatOnchainosTip,
+  formatAgenticWalletStatus,
 } from "./auth.js";
 import { getSolanaAddress } from "./wallet.js";
 import { generateReport } from "./report.js";
@@ -497,14 +496,18 @@ async function main(): Promise<void> {
   // Resolve wallet key
   const wallet = await resolveOrGenerateWalletKey();
 
-  // Surface why OKX detection failed BEFORE the "Using ... wallet" line so the
-  // user sees the actionable hint right next to the wallet we actually picked.
-  // XCLAW_QUIET=1 silences this (and the install Tip) for CI / scripted use.
+  // Agentic Wallet status block. Tells the user, on every launch, whether
+  // onchainos is installed and what their login state is, with the literal
+  // next-step command/URL. Emitted BEFORE the "Using ... wallet:" line so the
+  // user understands the state of the option they're (likely) not on, before
+  // we tell them which local fallback we picked. XCLAW_QUIET=1 silences it.
   const quiet = process.env.XCLAW_QUIET === "1";
   const detection = wallet.onchainosDetection;
+  let printedStatus = false;
   if (!quiet && detection) {
-    const warning = formatOnchainosWarning(detection);
-    if (warning) console.warn(warning);
+    const lines = formatAgenticWalletStatus(detection);
+    for (const line of lines) console.log(line);
+    printedStatus = lines.length > 0;
   }
 
   if (wallet.source === "okx") {
@@ -521,16 +524,10 @@ async function main(): Promise<void> {
     console.log(`[XClawRouter] Using wallet from BLOCKRUN_WALLET_KEY: ${wallet.address}`);
   }
 
-  // Recurring Agentic Wallet adoption hint. Fires on every non-OKX launch so
-  // users who skipped the first-launch prompt aren't permanently funneled away
-  // from Agentic Wallet. Copy branches on whether the onchainos binary is
-  // present (suggest `onchainos login`) or missing (install link).
-  if (!quiet && wallet.source !== "okx") {
-    const tip = formatOnchainosTip(detection);
-    if (tip) {
-      console.log(tip);
-      console.log(`[XClawRouter]      (set XCLAW_QUIET=1 to suppress)`);
-    }
+  // Suppression hint only when we actually emitted a status block — so a
+  // running OKX wallet doesn't end up with a dangling "(set XCLAW_QUIET…)".
+  if (printedStatus) {
+    console.log(`[XClawRouter]   (set XCLAW_QUIET=1 to suppress this block)`);
   }
 
   // Show Solana address if available
