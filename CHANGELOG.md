@@ -4,6 +4,12 @@ All notable changes to XClawRouter.
 
 ---
 
+## v0.12.183 — May 13, 2026
+
+- **`src/router/config.ts`: add `deepseek/deepseek-v4-pro` to the reasoning route's fallback chain.** The reasoning tier already lists `deepseek/deepseek-reasoner` (V4 Flash thinking, $0.20/$0.40, 1M ctx) as a cheap fallback; V4 Pro is the flagship sibling at $0.50/$1.00 during the promo window through 2026-05-31 (list pricing $2/$4 post-promo). Adding it alongside Flash gives the router a higher-capability option before falling out of the DeepSeek family entirely. Updated both the candidates list and the explicit `fallback: [...]` array. No scoring/ranking changes — pure registry addition.
+
+---
+
 ## v0.12.182 — May 12, 2026
 
 - **Restore the `clawrouter` CLI bin name as a deprecation alias.** v0.12.180 renamed the bin from `clawrouter` to `xclawrouter` (matching the new package name) but didn't keep a transitional alias, so anyone running `pm2 start clawrouter`, shell aliases, or following older onboarding docs broke on upgrade. `package.json` now ships both `xclawrouter` and `clawrouter` bin entries pointing at the same `./dist/cli.js`; invocations under the old name print `clawrouter is deprecated — use xclawrouter (alias removed in v0.13)` to stderr and then continue normally. Suppress the notice with `XCLAW_SUPPRESS_RENAME_NOTICE=1`. The alias will be removed in v0.13 — one release of deprecation runway, called out in the warning text.
