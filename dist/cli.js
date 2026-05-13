@@ -73658,7 +73658,9 @@ var DEFAULT_ROUTING_CONFIG = {
         "xai/grok-4-fast-reasoning",
         // 1,298ms, $0.20/$0.50
         "deepseek/deepseek-reasoner",
-        // 1,454ms, cheap reasoning
+        // V4 Flash thinking ($0.20/$0.40, 1M ctx)
+        "deepseek/deepseek-v4-pro",
+        // V4 Pro flagship ($0.50/$1.00 promo through 2026-05-31, list $2/$4)
         "openai/o4-mini",
         // 2,328ms ($1.10/$4.40)
         "openai/o3"
@@ -73715,7 +73717,13 @@ var DEFAULT_ROUTING_CONFIG = {
     REASONING: {
       primary: "xai/grok-4-1-fast-reasoning",
       // $0.20/$0.50
-      fallback: ["xai/grok-4-fast-reasoning", "deepseek/deepseek-reasoner"]
+      fallback: [
+        "xai/grok-4-fast-reasoning",
+        "deepseek/deepseek-reasoner",
+        // V4 Flash thinking — $0.20/$0.40
+        "deepseek/deepseek-v4-pro"
+        // V4 Pro flagship — $0.50/$1.00 promo, post-promo $2/$4
+      ]
     }
   },
   // Premium tier configs - best quality (blockrun/premium)
