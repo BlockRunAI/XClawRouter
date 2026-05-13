@@ -347,6 +347,19 @@ type OpenClawPluginDefinition = {
     name?: string;
     description?: string;
     version?: string;
+    /**
+     * OpenClaw 2026.5.7+ capability contracts. The gateway's plugin loader
+     * validates that every tool/middleware/factory the plugin tries to
+     * register is declared here upfront; anything undeclared is silently
+     * dropped and a diagnostic is recorded (visible via
+     * `openclaw plugins doctor`). Keep `tools` in sync with the names
+     * passed to `api.registerTool()`.
+     */
+    contracts?: {
+        tools?: string[];
+        embeddedExtensionFactories?: string[];
+        agentToolResultMiddleware?: string[];
+    };
     register?: (api: OpenClawPluginApi) => void | Promise<void>;
     activate?: (api: OpenClawPluginApi) => void | Promise<void>;
     deactivate?: (api: OpenClawPluginApi) => void | Promise<void>;

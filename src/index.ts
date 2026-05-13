@@ -1587,10 +1587,43 @@ function createWalletCommand(api?: OpenClawPluginApi): OpenClawPluginCommandDefi
 }
 
 const plugin: OpenClawPluginDefinition = {
-  id: "clawrouter",
+  // MUST match openclaw.plugin.json's `id` field. OpenClaw's plugin loader
+  // validates the two match; a mismatch makes the gateway silently refuse to
+  // load the plugin (visible only via `openclaw plugins doctor`). The manifest
+  // declares "xclawrouter", so this must too.
+  id: "xclawrouter",
   name: "XClawRouter",
   description: "Smart LLM router — 55+ models, x402 micropayments, 78% cost savings",
   version: VERSION,
+
+  // OpenClaw 2026.5.7+ requires plugins to declare upfront every tool name
+  // they will register via `api.registerTool()`. The gateway's
+  // capability-registry validates each registered tool against this list and
+  // silently drops any undeclared tool — taking the whole plugin's gateway
+  // load with it (see `bundled-capability-runtime` in openclaw/dist). Keep
+  // this in sync with the `id` values in src/partners/registry.ts; the
+  // partner tools surface under the `blockrun_` prefix.
+  contracts: {
+    tools: [
+      "blockrun_predexon_events",
+      "blockrun_predexon_leaderboard",
+      "blockrun_predexon_markets",
+      "blockrun_predexon_smart_money",
+      "blockrun_predexon_smart_activity",
+      "blockrun_predexon_wallet",
+      "blockrun_predexon_wallet_pnl",
+      "blockrun_predexon_matching_markets",
+      "blockrun_stock_price",
+      "blockrun_stock_history",
+      "blockrun_stock_list",
+      "blockrun_crypto_price",
+      "blockrun_fx_price",
+      "blockrun_commodity_price",
+      "blockrun_image_generation",
+      "blockrun_image_edit",
+      "blockrun_video_generation",
+    ],
+  },
 
   register(api: OpenClawPluginApi) {
     // Check if XClawRouter is disabled via environment variable
@@ -2072,8 +2105,10 @@ const plugin: OpenClawPluginDefinition = {
           // Remove managed BlockRun MCP server config, but preserve any user-managed override.
           removeManagedBlockrunMcpServerConfig(config as OpenClawConfig);
 
-          // Remove plugin entries (all case variants)
-          for (const key of ["clawrouter", "XClawRouter", "@blockrun/xclawrouter"]) {
+          // Remove plugin entries (all case variants + legacy id "clawrouter"
+          // from when this package shipped under that id, before the rename
+          // to "xclawrouter" matching the npm package name).
+          for (const key of ["xclawrouter", "clawrouter", "XClawRouter", "@blockrun/xclawrouter"]) {
             if (config.plugins?.entries?.[key]) delete config.plugins.entries[key];
             if (config.plugins?.installs?.[key]) delete config.plugins.installs[key];
           }
@@ -2082,7 +2117,10 @@ const plugin: OpenClawPluginDefinition = {
           if (Array.isArray(config.plugins?.allow)) {
             config.plugins.allow = config.plugins.allow.filter(
               (p: string) =>
-                p !== "clawrouter" && p !== "XClawRouter" && p !== "@blockrun/xclawrouter",
+                p !== "xclawrouter" &&
+                p !== "clawrouter" &&
+                p !== "XClawRouter" &&
+                p !== "@blockrun/xclawrouter",
             );
           }
 

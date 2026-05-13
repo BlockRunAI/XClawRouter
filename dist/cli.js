@@ -82069,6 +82069,13 @@ function printSetupSummary(address2, email) {
     lines.push(c(ANSI.dim, "Email   ") + email);
   }
   lines.push(c(ANSI.dim, "Signing ") + "OKX TEE  " + c(ANSI.dim, "(no local private key)"));
+  lines.push("");
+  lines.push(
+    c(ANSI.dim, "Fund    ") + "send " + c(ANSI.bold, "USDC on Base") + " to the address above"
+  );
+  lines.push(
+    c(ANSI.dim, "        ") + c(ANSI.dim, "(free models work at $0; $5 unlocks paid tier)")
+  );
   const width = Math.max(...lines.map((l2) => stripAnsi(l2).length));
   const horiz = "\u2500".repeat(width + 2);
   console.log("  \u250C" + horiz + "\u2510");
@@ -82452,9 +82459,7 @@ ClawRouter Partner APIs (v${VERSION})
           wallet = await resolveOrGenerateWalletKey();
         } catch (err2) {
           if (err2 instanceof OnchainOsRequiredError) {
-            console.error(
-              "[XClawRouter] Setup completed but the wallet still isn't detected."
-            );
+            console.error("[XClawRouter] Setup completed but the wallet still isn't detected.");
             console.error(
               "[XClawRouter] Diagnose with: onchainos wallet status   (and re-run setup if needed)"
             );
