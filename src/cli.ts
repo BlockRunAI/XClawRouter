@@ -221,8 +221,7 @@ const ANSI = {
   cyan: "\x1b[36m",
   magenta: "\x1b[35m",
 } as const;
-const useColor =
-  process.stdout.isTTY && !process.env.NO_COLOR && process.env.TERM !== "dumb";
+const useColor = process.stdout.isTTY && !process.env.NO_COLOR && process.env.TERM !== "dumb";
 const c = (color: string, s: string): string => (useColor ? `${color}${s}${ANSI.reset}` : s);
 // eslint-disable-next-line no-control-regex
 const ANSI_RE = /\x1b\[[0-9;]*m/g;
@@ -261,16 +260,13 @@ function printSetupSummary(address: string, email: string | undefined): void {
 async function cmdSetup(): Promise<void> {
   printSetupHeader();
 
-  const installerUrl =
-    "https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh";
+  const installerUrl = "https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh";
 
   // ── Step 1: onchainos binary ────────────────────────────────────────
   const adapter = new OnchainOsAdapter();
   if (!adapter.isInstalled()) {
     process.stdout.write("  " + c(ANSI.yellow, "⏳") + "  Installing onchainos binary…\n");
-    process.stdout.write(
-      "     " + c(ANSI.dim, `(via ${installerUrl})`) + "\n",
-    );
+    process.stdout.write("     " + c(ANSI.dim, `(via ${installerUrl})`) + "\n");
     try {
       execSync(`curl -sSL --max-time 60 ${installerUrl} | sh`, {
         stdio: ["ignore", "ignore", "inherit"],
@@ -357,7 +353,9 @@ async function cmdSetup(): Promise<void> {
     );
     process.exit(1);
   }
-  process.stdout.write("\r  " + c(ANSI.green, "✓") + "  Verified                                \n");
+  process.stdout.write(
+    "\r  " + c(ANSI.green, "✓") + "  Verified                                \n",
+  );
 
   // ── Step 7: re-detect + summary ─────────────────────────────────────
   const after = await detectOnchainosWallet();
