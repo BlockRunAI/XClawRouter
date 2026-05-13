@@ -82292,6 +82292,9 @@ function emitAgenticWalletStatusViaLogger(logger, wallet) {
     else logger.info(line.text);
   }
 }
+function logOnchainOsRequiredError(logger, err) {
+  for (const line of err.message.split("\n")) logger.warn(line);
+}
 function installSkillsToWorkspace(logger) {
   try {
     const packageRoot = getPackageRoot();
@@ -82695,7 +82698,7 @@ async function startProxyInBackground(api, startupGeneration) {
       wallet = await resolveOrGenerateWalletKey();
     } catch (err) {
       if (err instanceof OnchainOsRequiredError) {
-        for (const line of err.message.split("\n")) api.logger.warn(line);
+        logOnchainOsRequiredError(api.logger, err);
         return false;
       }
       throw err;
@@ -83646,7 +83649,7 @@ ${errText}`
           }
         }).catch((err) => {
           if (err instanceof OnchainOsRequiredError) {
-            for (const line of err.message.split("\n")) api.logger.warn(line);
+            logOnchainOsRequiredError(api.logger, err);
             return;
           }
           api.logger.warn(

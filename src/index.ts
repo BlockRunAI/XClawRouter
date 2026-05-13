@@ -122,6 +122,19 @@ function emitAgenticWalletStatusViaLogger(
 }
 
 /**
+ * Surface an `OnchainOsRequiredError` through OpenClaw's structured logger.
+ * The error's `message` is a multi-line guide (the same one the standalone
+ * CLI prints to stderr) — `api.logger.warn` doesn't split on newlines, so we
+ * route line-by-line. Used by both wallet-resolution sites in this file.
+ */
+function logOnchainOsRequiredError(
+  logger: { warn: (msg: string) => void },
+  err: OnchainOsRequiredError,
+): void {
+  for (const line of err.message.split("\n")) logger.warn(line);
+}
+
+/**
  * Install XClawRouter skills into OpenClaw's workspace skills directory.
  *
  * OpenClaw agents discover skills by scanning {workspaceDir}/skills/ for SKILL.md
@@ -743,7 +756,7 @@ async function startProxyInBackground(
       wallet = await resolveOrGenerateWalletKey();
     } catch (err) {
       if (err instanceof OnchainOsRequiredError) {
-        for (const line of err.message.split("\n")) api.logger.warn(line);
+        logOnchainOsRequiredError(api.logger, err);
         return false;
       }
       throw err;
@@ -1937,7 +1950,7 @@ const plugin: OpenClawPluginDefinition = {
           })
           .catch((err) => {
             if (err instanceof OnchainOsRequiredError) {
-              for (const line of err.message.split("\n")) api.logger.warn(line);
+              logOnchainOsRequiredError(api.logger, err);
               return;
             }
             api.logger.warn(
