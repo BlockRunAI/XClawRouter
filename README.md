@@ -18,8 +18,8 @@ Agents can only sign transactions.<br><br>
 <img src="https://img.shields.io/badge/💰_x402_USDC-purple?style=for-the-badge" alt="x402 USDC">&nbsp;
 <img src="https://img.shields.io/badge/🔓_Open_Source-green?style=for-the-badge" alt="Open source">
 
-[![npm version](https://img.shields.io/npm/v/@blockrun/clawrouter.svg?style=flat-square&color=cb3837)](https://npmjs.com/package/@blockrun/clawrouter)
-[![npm downloads](https://img.shields.io/npm/dm/@blockrun/clawrouter.svg?style=flat-square&color=blue)](https://npmjs.com/package/@blockrun/clawrouter)
+[![npm version](https://img.shields.io/npm/v/@blockrun/xclawrouter.svg?style=flat-square&color=cb3837)](https://npmjs.com/package/@blockrun/xclawrouter)
+[![npm downloads](https://img.shields.io/npm/dm/@blockrun/xclawrouter.svg?style=flat-square&color=blue)](https://npmjs.com/package/@blockrun/xclawrouter)
 [![GitHub stars](https://img.shields.io/github/stars/BlockRunAI/XClawRouter?style=flat-square&label=GitHub%20stars)](https://github.com/BlockRunAI/XClawRouter)
 [![CI](https://img.shields.io/github/actions/workflow/status/BlockRunAI/XClawRouter/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/BlockRunAI/XClawRouter/actions)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://typescriptlang.org)
@@ -456,7 +456,7 @@ Exclusions persist across restarts (`~/.openclaw/blockrun/exclude-models.json`).
 **When things go wrong, run the doctor:**
 
 ```bash
-npx @blockrun/clawrouter doctor
+npx @blockrun/xclawrouter doctor
 ```
 
 This collects diagnostics and sends them to Claude Sonnet for AI-powered analysis:
@@ -485,14 +485,14 @@ The local proxy isn't running. Run `openclaw gateway restart` to fix.
 **Use Opus for complex issues:**
 
 ```bash
-npx @blockrun/clawrouter doctor opus
+npx @blockrun/xclawrouter doctor opus
 ```
 
 **Ask a specific question:**
 
 ```bash
-npx @blockrun/clawrouter doctor "why is my request failing?"
-npx @blockrun/clawrouter doctor opus "深度分析我的配置"
+npx @blockrun/xclawrouter doctor "why is my request failing?"
+npx @blockrun/xclawrouter doctor opus "深度分析我的配置"
 ```
 
 **Cost:** Sonnet ~$0.003 (default) | Opus ~$0.01
