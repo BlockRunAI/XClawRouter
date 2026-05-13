@@ -97,6 +97,49 @@ echo ""
 # Pre-flight: fail fast if config is corrupt
 validate_config
 
+# ─────────────────────────────────────────────────────────────
+# OKX Agentic Wallet bootstrap
+#
+# Mirrors the same block in scripts/reinstall.sh. Keep them in sync —
+# users hit either script depending on which `curl … | bash` URL they
+# end up on.
+#
+# Ensures the onchainos binary is present BEFORE the plugin starts
+# trying to resolve a wallet, so the binary install isn't a surprise.
+# The actual email/OTP login still happens via `xclawrouter setup`
+# (interactive prompts can't be driven safely from a curl|bash pipe).
+# ─────────────────────────────────────────────────────────────
+
+OKX_INSTALL_URL="https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh"
+
+echo "→ Bootstrapping OKX Agentic Wallet (onchainos)..."
+if [ "${XCLAWROUTER_SKIP_OKX_INSTALL:-0}" = "1" ]; then
+  echo "  ⊘ XCLAWROUTER_SKIP_OKX_INSTALL=1 — skipping OKX install"
+elif command -v onchainos >/dev/null 2>&1; then
+  echo "  ✓ onchainos binary already present ($(command -v onchainos))"
+else
+  if [ -f "$WALLET_FILE" ]; then
+    echo "  ℹ Existing local wallet found at $WALLET_FILE — keeping it"
+    echo "    (to migrate to OKX Agentic Wallet later, rm wallet.key and re-run)"
+  elif [ "${XCLAWROUTER_USE_LOCAL_WALLET:-0}" = "1" ]; then
+    echo "  ⊘ XCLAWROUTER_USE_LOCAL_WALLET=1 — opting into legacy local key"
+  else
+    echo "  → Running OKX official installer: $OKX_INSTALL_URL"
+    if curl -sSL --max-time 60 "$OKX_INSTALL_URL" | sh; then
+      echo "  ✓ onchainos installed"
+      export PATH="$HOME/.local/bin:$PATH"
+    else
+      echo ""
+      echo "  ✗ OKX onchainos install failed. To proceed, you can:"
+      echo "    - Re-run this script (network hiccups are common)"
+      echo "    - Install manually: $OKX_INSTALL_URL"
+      echo "    - Opt into local wallet: export XCLAWROUTER_USE_LOCAL_WALLET=1"
+      exit 1
+    fi
+  fi
+fi
+echo ""
+
 echo "→ Checking wallet..."
 
 if [ -f "$WALLET_FILE" ]; then
@@ -538,7 +581,12 @@ else
     chmod 600 "$WALLET_FILE"
     echo "  ✓ Restored from backup: $WALLET_BACKUP"
   else
-    echo "  ℹ New wallet will be generated on next gateway start"
+    # No legacy local wallet here. Don't promise "wallet will be generated"
+    # — XClawRouter no longer generates a local key on fresh install. The
+    # actual onboarding happens via `xclawrouter setup` (email + OTP into
+    # OKX onchainos), which the user is prompted to run at the end of this
+    # script.
+    echo "  ℹ No local wallet present — will use OKX Agentic Wallet (see Next step below)"
   fi
 fi
 
@@ -767,6 +815,38 @@ try {
 echo ""
 echo "✓ XClawRouter updated successfully!"
 echo ""
+
+# ─────────────────────────────────────────────────────────────
+# Wallet onboarding hand-off — mirrors scripts/reinstall.sh.
+#
+# Plugin is installed and onchainos binary is on PATH, but the user
+# isn't logged in to OKX yet. Don't try to drive email+OTP from inside
+# this curl|bash pipeline (stdin redirection is brittle). Point them
+# at the dedicated `setup` command instead, which has correct stdio
+# handling and a polished interactive UI.
+#
+# Skip when: existing OKX session, legacy wallet.key, or explicit
+# local-wallet opt-in — they're already set up.
+# ─────────────────────────────────────────────────────────────
+WALLET_LOGGED_IN=false
+if command -v onchainos >/dev/null 2>&1; then
+  if onchainos wallet status 2>/dev/null | grep -q '"loggedIn": *true'; then
+    WALLET_LOGGED_IN=true
+  fi
+fi
+if [ -f "$WALLET_FILE" ] || [ "${XCLAWROUTER_USE_LOCAL_WALLET:-0}" = "1" ]; then
+  WALLET_LOGGED_IN=true  # legacy local wallet path — no OKX login needed
+fi
+if [ "$WALLET_LOGGED_IN" = false ]; then
+  echo "─────────────────────────────────────────────────────"
+  echo "  Next step — log in to your OKX Agentic Wallet:"
+  echo ""
+  echo "    npx @blockrun/xclawrouter setup"
+  echo ""
+  echo "  Two prompts — email + OTP code — then you're done."
+  echo "─────────────────────────────────────────────────────"
+  echo ""
+fi
 
 # Show final wallet address
 if [ -f "$WALLET_FILE" ]; then
