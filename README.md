@@ -96,6 +96,7 @@ npx @blockrun/xclawrouter setup        # email + OTP login to your OKX Agentic W
 
 ```bash
 openclaw plugins install @blockrun/xclawrouter
+openclaw plugins enable xclawrouter    # add to plugins.allow so the gateway loads it
 openclaw gateway restart
 npx @blockrun/xclawrouter setup        # email + OTP login to your OKX Agentic Wallet
 ```
@@ -104,6 +105,7 @@ npx @blockrun/xclawrouter setup        # email + OTP login to your OKX Agentic W
 
 ```bash
 npm install -g @blockrun/xclawrouter
+openclaw plugins enable xclawrouter    # add to plugins.allow so the gateway loads it
 openclaw gateway restart
 xclawrouter setup                      # email + OTP login to your OKX Agentic Wallet
 ```
