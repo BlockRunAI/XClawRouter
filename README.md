@@ -84,11 +84,12 @@ This is the stack that lets agents operate autonomously: **x402 + USDC + local r
 
 [OpenClaw](https://openclaw.ai) is an AI coding agent. If you're using it, XClawRouter installs as a plugin. Three install paths — pick whichever fits:
 
-**1. One-liner (recommended)** — bundles config injection, cleanup of legacy installs, and onchainos bootstrap:
+**1. One-liner (recommended)** — installs the plugin, bootstraps onchainos, and points you at the wallet login command:
 
 ```bash
 curl -fsSL https://blockrun.ai/XClawRouter-update | bash
 openclaw gateway restart
+npx @blockrun/xclawrouter setup        # email + OTP login to your OKX Agentic Wallet
 ```
 
 **2. Manual via OpenClaw plugin manager** — if you want to see each step:
@@ -96,6 +97,7 @@ openclaw gateway restart
 ```bash
 openclaw plugins install @blockrun/xclawrouter
 openclaw gateway restart
+npx @blockrun/xclawrouter setup        # email + OTP login to your OKX Agentic Wallet
 ```
 
 **3. Global npm install** — same effect as #2, useful for CI or pinned deployments:
@@ -103,9 +105,12 @@ openclaw gateway restart
 ```bash
 npm install -g @blockrun/xclawrouter
 openclaw gateway restart
+xclawrouter setup                      # email + OTP login to your OKX Agentic Wallet
 ```
 
-Done. Smart routing (`blockrun/auto`) is now your default model. On first run XClawRouter prompts you to log in to your OKX Agentic Wallet via email — no local private key, signing happens in OKX's TEE.
+`setup` walks you through two prompts (email, then the OTP it mails you) and is a no-op if you're already signed in — safe to re-run. Signing happens in OKX's TEE; no local private key is stored.
+
+Done. Smart routing (`blockrun/auto`) is now your default model.
 
 ### Option B — Standalone (continue.dev, Cursor, VS Code, any OpenAI-compatible client)
 
