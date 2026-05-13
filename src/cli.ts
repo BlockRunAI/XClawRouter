@@ -23,7 +23,9 @@ import {
   formatAgenticWalletStatus,
   detectOnchainosWallet,
   OnchainOsRequiredError,
+  ONCHAINOS_INSTALLER_URL,
 } from "./auth.js";
+import { basename } from "node:path";
 import { OnchainOsAdapter, resolveOnchainosBin } from "./onchainos-adapter.js";
 import { execSync, execFileSync } from "node:child_process";
 import { homedir } from "node:os";
@@ -227,6 +229,29 @@ const c = (color: string, s: string): string => (useColor ? `${color}${s}${ANSI.
 const ANSI_RE = /\x1b\[[0-9;]*m/g;
 const stripAnsi = (s: string): string => s.replace(ANSI_RE, "");
 
+/**
+ * Translate an `OnchainOsDetectionResult.kind` into a one-line plain-English
+ * description for end users. Surfacing the raw discriminant (e.g.
+ * `no-evm-address`) in CLI error output reads like an internal enum leak —
+ * use this whenever a detection failure is shown to a human.
+ */
+function humanizeDetectionKind(
+  kind: "no-binary" | "not-logged-in" | "status-error" | "no-evm-address" | "addresses-error",
+): string {
+  switch (kind) {
+    case "no-binary":
+      return "onchainos binary is missing from PATH";
+    case "not-logged-in":
+      return "onchainos is installed but reports `loggedIn: false`";
+    case "status-error":
+      return "`onchainos wallet status` returned an error";
+    case "no-evm-address":
+      return "no EVM address found — is this a Solana-only OKX account?";
+    case "addresses-error":
+      return "`onchainos wallet addresses` returned an error";
+  }
+}
+
 function printSetupHeader(): void {
   console.log();
   console.log("  " + c(ANSI.bold + ANSI.cyan, "🦞  XClawRouter — Wallet Setup"));
@@ -260,15 +285,13 @@ function printSetupSummary(address: string, email: string | undefined): void {
 async function cmdSetup(): Promise<void> {
   printSetupHeader();
 
-  const installerUrl = "https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh";
-
   // ── Step 1: onchainos binary ────────────────────────────────────────
   const adapter = new OnchainOsAdapter();
   if (!adapter.isInstalled()) {
     process.stdout.write("  " + c(ANSI.yellow, "⏳") + "  Installing onchainos binary…\n");
-    process.stdout.write("     " + c(ANSI.dim, `(via ${installerUrl})`) + "\n");
+    process.stdout.write("     " + c(ANSI.dim, `(via ${ONCHAINOS_INSTALLER_URL})`) + "\n");
     try {
-      execSync(`curl -sSL --max-time 60 ${installerUrl} | sh`, {
+      execSync(`curl -sSL --max-time 60 ${ONCHAINOS_INSTALLER_URL} | sh`, {
         stdio: ["ignore", "ignore", "inherit"],
         env: { ...process.env, PATH: `${homedir()}/.local/bin:${process.env.PATH ?? ""}` },
       });
@@ -277,7 +300,7 @@ async function cmdSetup(): Promise<void> {
     } catch {
       console.error("\n  " + c(ANSI.red, "✗") + "  onchainos install failed.");
       console.error("     Install manually then re-run setup:");
-      console.error("     " + c(ANSI.dim, `curl -sSL ${installerUrl} | sh`));
+      console.error("     " + c(ANSI.dim, `curl -sSL ${ONCHAINOS_INSTALLER_URL} | sh`));
       process.exit(1);
     }
   } else {
@@ -361,7 +384,9 @@ async function cmdSetup(): Promise<void> {
   const after = await detectOnchainosWallet();
   if (after.kind !== "ok") {
     console.error(
-      "\n  " + c(ANSI.red, "✗") + `  Login completed but status check failed: ${after.kind}`,
+      "\n  " +
+        c(ANSI.red, "✗") +
+        `  Login completed but the wallet still isn't detected (${humanizeDetectionKind(after.kind)}).`,
     );
     console.error("     Run `onchainos wallet status` to diagnose.");
     process.exit(1);
@@ -510,6 +535,19 @@ function parseArgs(args: string[]): {
 }
 
 async function main(): Promise<void> {
+  // Deprecation warning for the legacy `clawrouter` bin name. The package
+  // renamed itself to `@blockrun/xclawrouter` in v0.12.179 and the bin entry
+  // became `xclawrouter` in v0.12.180. We keep `clawrouter` as a no-op alias
+  // pointing at the same dist/cli.js for one release so users with shell
+  // aliases, pm2 processes, or shipped onboarding docs aren't broken on
+  // upgrade — but we tell them what to migrate to. Removed in v0.13.
+  const invokedAs = process.argv[1] ? basename(process.argv[1]) : "";
+  if (invokedAs === "clawrouter" && !process.env.XCLAW_SUPPRESS_RENAME_NOTICE) {
+    console.warn(
+      "[XClawRouter] `clawrouter` is deprecated — use `xclawrouter` (alias removed in v0.13).",
+    );
+  }
+
   const args = parseArgs(process.argv.slice(2));
 
   if (args.version) {
@@ -706,9 +744,23 @@ async function main(): Promise<void> {
       if (interactive) {
         console.log("\n[XClawRouter] No wallet detected — launching guided setup\n");
         await cmdSetup();
-        // cmdSetup either exits non-zero on failure or finishes the OKX
-        // login. Re-resolve and continue starting the proxy.
-        wallet = await resolveOrGenerateWalletKey();
+        // cmdSetup exits non-zero on its own failure paths, so if we got here
+        // it claims the OKX login completed. Guard the re-resolve anyway:
+        // a TEE blip or stale onchainos session could still leave us without
+        // a usable wallet, and we'd rather print a targeted hint than fall
+        // through to main()'s generic "Fatal error" handler.
+        try {
+          wallet = await resolveOrGenerateWalletKey();
+        } catch (err2) {
+          if (err2 instanceof OnchainOsRequiredError) {
+            console.error("[XClawRouter] Setup completed but the wallet still isn't detected.");
+            console.error(
+              "[XClawRouter] Diagnose with: onchainos wallet status   (and re-run setup if needed)",
+            );
+            process.exit(1);
+          }
+          throw err2;
+        }
       } else {
         console.error(`[XClawRouter] ${err.message}`);
         process.exit(2);

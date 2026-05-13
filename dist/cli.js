@@ -31883,6 +31883,7 @@ __export(auth_exports, {
   CHAIN_FILE: () => CHAIN_FILE,
   MNEMONIC_FILE: () => MNEMONIC_FILE,
   ONCHAINOS_DOWNLOAD_URL: () => ONCHAINOS_DOWNLOAD_URL,
+  ONCHAINOS_INSTALLER_URL: () => ONCHAINOS_INSTALLER_URL,
   OnchainOsRequiredError: () => OnchainOsRequiredError,
   WALLET_DIR: () => WALLET_DIR,
   WALLET_FILE: () => WALLET_FILE,
@@ -32140,7 +32141,7 @@ async function setupSolana() {
   await saveMnemonic(mnemonic);
   return { mnemonic, solanaPrivateKeyBytes: solanaKeyBytes };
 }
-var ONCHAINOS_DOWNLOAD_URL, OnchainOsRequiredError, WALLET_DIR, WALLET_FILE, MNEMONIC_FILE, CHAIN_FILE, walletKeyAuth, envKeyAuth;
+var ONCHAINOS_DOWNLOAD_URL, ONCHAINOS_INSTALLER_URL, OnchainOsRequiredError, WALLET_DIR, WALLET_FILE, MNEMONIC_FILE, CHAIN_FILE, walletKeyAuth, envKeyAuth;
 var init_auth = __esm({
   "src/auth.ts"() {
     "use strict";
@@ -32149,6 +32150,7 @@ var init_auth = __esm({
     init_wallet();
     init_onchainos_adapter();
     ONCHAINOS_DOWNLOAD_URL = "https://web3.okx.com/onchainos";
+    ONCHAINOS_INSTALLER_URL = "https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh";
     OnchainOsRequiredError = class extends Error {
       constructor(detection) {
         const notInstalled = detection.kind === "no-binary";
@@ -80899,6 +80901,7 @@ data: [DONE]
 init_auth();
 init_onchainos_adapter();
 init_wallet();
+import { basename } from "path";
 import { execSync, execFileSync as execFileSync2 } from "child_process";
 import { homedir as homedir7 } from "os";
 import { createInterface } from "readline/promises";
@@ -82034,6 +82037,20 @@ var useColor = process.stdout.isTTY && !process.env.NO_COLOR && process.env.TERM
 var c = (color, s3) => useColor ? `${color}${s3}${ANSI.reset}` : s3;
 var ANSI_RE = /\x1b\[[0-9;]*m/g;
 var stripAnsi = (s3) => s3.replace(ANSI_RE, "");
+function humanizeDetectionKind(kind) {
+  switch (kind) {
+    case "no-binary":
+      return "onchainos binary is missing from PATH";
+    case "not-logged-in":
+      return "onchainos is installed but reports `loggedIn: false`";
+    case "status-error":
+      return "`onchainos wallet status` returned an error";
+    case "no-evm-address":
+      return "no EVM address found \u2014 is this a Solana-only OKX account?";
+    case "addresses-error":
+      return "`onchainos wallet addresses` returned an error";
+  }
+}
 function printSetupHeader() {
   console.log();
   console.log("  " + c(ANSI.bold + ANSI.cyan, "\u{1F99E}  XClawRouter \u2014 Wallet Setup"));
@@ -82063,13 +82080,12 @@ function printSetupSummary(address2, email) {
 }
 async function cmdSetup() {
   printSetupHeader();
-  const installerUrl = "https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh";
   const adapter = new OnchainOsAdapter();
   if (!adapter.isInstalled()) {
     process.stdout.write("  " + c(ANSI.yellow, "\u23F3") + "  Installing onchainos binary\u2026\n");
-    process.stdout.write("     " + c(ANSI.dim, `(via ${installerUrl})`) + "\n");
+    process.stdout.write("     " + c(ANSI.dim, `(via ${ONCHAINOS_INSTALLER_URL})`) + "\n");
     try {
-      execSync(`curl -sSL --max-time 60 ${installerUrl} | sh`, {
+      execSync(`curl -sSL --max-time 60 ${ONCHAINOS_INSTALLER_URL} | sh`, {
         stdio: ["ignore", "ignore", "inherit"],
         env: { ...process.env, PATH: `${homedir7()}/.local/bin:${process.env.PATH ?? ""}` }
       });
@@ -82078,7 +82094,7 @@ async function cmdSetup() {
     } catch {
       console.error("\n  " + c(ANSI.red, "\u2717") + "  onchainos install failed.");
       console.error("     Install manually then re-run setup:");
-      console.error("     " + c(ANSI.dim, `curl -sSL ${installerUrl} | sh`));
+      console.error("     " + c(ANSI.dim, `curl -sSL ${ONCHAINOS_INSTALLER_URL} | sh`));
       process.exit(1);
     }
   } else {
@@ -82150,7 +82166,7 @@ async function cmdSetup() {
   const after = await detectOnchainosWallet();
   if (after.kind !== "ok") {
     console.error(
-      "\n  " + c(ANSI.red, "\u2717") + `  Login completed but status check failed: ${after.kind}`
+      "\n  " + c(ANSI.red, "\u2717") + `  Login completed but the wallet still isn't detected (${humanizeDetectionKind(after.kind)}).`
     );
     console.error("     Run `onchainos wallet status` to diagnose.");
     process.exit(1);
@@ -82270,6 +82286,12 @@ function parseArgs(args) {
   return result;
 }
 async function main() {
+  const invokedAs = process.argv[1] ? basename(process.argv[1]) : "";
+  if (invokedAs === "clawrouter" && !process.env.XCLAW_SUPPRESS_RENAME_NOTICE) {
+    console.warn(
+      "[XClawRouter] `clawrouter` is deprecated \u2014 use `xclawrouter` (alias removed in v0.13)."
+    );
+  }
   const args = parseArgs(process.argv.slice(2));
   if (args.version) {
     console.log(VERSION);
@@ -82426,7 +82448,20 @@ ClawRouter Partner APIs (v${VERSION})
       if (interactive) {
         console.log("\n[XClawRouter] No wallet detected \u2014 launching guided setup\n");
         await cmdSetup();
-        wallet = await resolveOrGenerateWalletKey();
+        try {
+          wallet = await resolveOrGenerateWalletKey();
+        } catch (err2) {
+          if (err2 instanceof OnchainOsRequiredError) {
+            console.error(
+              "[XClawRouter] Setup completed but the wallet still isn't detected."
+            );
+            console.error(
+              "[XClawRouter] Diagnose with: onchainos wallet status   (and re-run setup if needed)"
+            );
+            process.exit(1);
+          }
+          throw err2;
+        }
       } else {
         console.error(`[XClawRouter] ${err.message}`);
         process.exit(2);

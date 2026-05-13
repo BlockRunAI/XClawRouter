@@ -111,6 +111,18 @@ export async function detectOnchainosWallet(): Promise<OnchainOsDetectionResult>
 export const ONCHAINOS_DOWNLOAD_URL = "https://web3.okx.com/onchainos";
 
 /**
+ * Curl-able installer script for the onchainos binary. Hosted by OKX in the
+ * onchainos-skills repo. Shared between `xclawrouter setup` (auto-install on
+ * first launch) and `scripts/reinstall.sh` (curl-one-liner install path) so a
+ * URL move only needs to happen in one place on the TS side.
+ *
+ * NOTE: the shell installer (`scripts/reinstall.sh`) duplicates this URL as a
+ * bash variable because POSIX shell can't import TS. Keep them in sync.
+ */
+export const ONCHAINOS_INSTALLER_URL =
+  "https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh";
+
+/**
  * Thrown when a fresh install has no OKX wallet AND no legacy saved wallet,
  * AND the user has not explicitly opted into local-key generation via
  * `XCLAWROUTER_USE_LOCAL_WALLET=1`. Callers should surface the message
