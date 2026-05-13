@@ -2108,12 +2108,7 @@ const plugin: OpenClawPluginDefinition = {
           // Remove plugin entries (all case variants + legacy id "clawrouter"
           // from when this package shipped under that id, before the rename
           // to "xclawrouter" matching the npm package name).
-          for (const key of [
-            "xclawrouter",
-            "clawrouter",
-            "XClawRouter",
-            "@blockrun/xclawrouter",
-          ]) {
+          for (const key of ["xclawrouter", "clawrouter", "XClawRouter", "@blockrun/xclawrouter"]) {
             if (config.plugins?.entries?.[key]) delete config.plugins.entries[key];
             if (config.plugins?.installs?.[key]) delete config.plugins.installs[key];
           }

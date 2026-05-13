@@ -83754,12 +83754,7 @@ ${errText}`
             delete config.models.providers.blockrun;
           }
           removeManagedBlockrunMcpServerConfig(config);
-          for (const key of [
-            "xclawrouter",
-            "clawrouter",
-            "XClawRouter",
-            "@blockrun/xclawrouter"
-          ]) {
+          for (const key of ["xclawrouter", "clawrouter", "XClawRouter", "@blockrun/xclawrouter"]) {
             if (config.plugins?.entries?.[key]) delete config.plugins.entries[key];
             if (config.plugins?.installs?.[key]) delete config.plugins.installs[key];
           }
