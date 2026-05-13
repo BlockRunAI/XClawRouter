@@ -272,6 +272,19 @@ function printSetupSummary(address: string, email: string | undefined): void {
   }
   lines.push(c(ANSI.dim, "Signing ") + "OKX TEE  " + c(ANSI.dim, "(no local private key)"));
 
+  // Funding hint. OKX onchainos x402 signing currently only supports Base
+  // (Solana support hasn't shipped yet — see src/proxy.ts warning). USDC on
+  // Base is the only thing that actually unlocks paid models, so name the
+  // chain explicitly instead of saying "USDC" alone, which led users to
+  // bridge to the wrong network.
+  lines.push("");
+  lines.push(
+    c(ANSI.dim, "Fund    ") + "send " + c(ANSI.bold, "USDC on Base") + " to the address above",
+  );
+  lines.push(
+    c(ANSI.dim, "        ") + c(ANSI.dim, "(free models work at $0; $5 unlocks paid tier)"),
+  );
+
   const width = Math.max(...lines.map((l) => stripAnsi(l).length));
   const horiz = "─".repeat(width + 2);
   console.log("  ┌" + horiz + "┐");
