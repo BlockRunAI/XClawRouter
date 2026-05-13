@@ -82067,9 +82067,7 @@ async function cmdSetup() {
   const adapter = new OnchainOsAdapter();
   if (!adapter.isInstalled()) {
     process.stdout.write("  " + c(ANSI.yellow, "\u23F3") + "  Installing onchainos binary\u2026\n");
-    process.stdout.write(
-      "     " + c(ANSI.dim, `(via ${installerUrl})`) + "\n"
-    );
+    process.stdout.write("     " + c(ANSI.dim, `(via ${installerUrl})`) + "\n");
     try {
       execSync(`curl -sSL --max-time 60 ${installerUrl} | sh`, {
         stdio: ["ignore", "ignore", "inherit"],
@@ -82146,7 +82144,9 @@ async function cmdSetup() {
     );
     process.exit(1);
   }
-  process.stdout.write("\r  " + c(ANSI.green, "\u2713") + "  Verified                                \n");
+  process.stdout.write(
+    "\r  " + c(ANSI.green, "\u2713") + "  Verified                                \n"
+  );
   const after = await detectOnchainosWallet();
   if (after.kind !== "ok") {
     console.error(
