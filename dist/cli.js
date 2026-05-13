@@ -4550,11 +4550,11 @@ function setBigUint64(view, byteOffset, value, isLE2) {
   view.setUint32(byteOffset + h, wh, isLE2);
   view.setUint32(byteOffset + l2, wl, isLE2);
 }
-function Chi(a, b, c) {
-  return a & b ^ ~a & c;
+function Chi(a, b, c2) {
+  return a & b ^ ~a & c2;
 }
-function Maj(a, b, c) {
-  return a & b ^ a & c ^ b & c;
+function Maj(a, b, c2) {
+  return a & b ^ a & c2 ^ b & c2;
 }
 var HashMD, SHA256_IV, SHA512_IV;
 var init_md = __esm({
@@ -5410,7 +5410,7 @@ function tonelliShanks(P2) {
     if (FpLegendre(Fp, n) !== 1)
       throw new Error("Cannot find square root");
     let M = S;
-    let c = Fp.mul(Fp.ONE, cc);
+    let c2 = Fp.mul(Fp.ONE, cc);
     let t = Fp.pow(n, Q);
     let R = Fp.pow(n, Q1div2);
     while (!Fp.eql(t, Fp.ONE)) {
@@ -5425,10 +5425,10 @@ function tonelliShanks(P2) {
           throw new Error("Cannot find square root");
       }
       const exponent = _1n3 << BigInt(M - i - 1);
-      const b = Fp.pow(c, exponent);
+      const b = Fp.pow(c2, exponent);
       M = i;
-      c = Fp.sqr(b);
-      t = Fp.mul(t, c);
+      c2 = Fp.sqr(b);
+      t = Fp.mul(t, c2);
       R = Fp.mul(R, b);
     }
     return R;
@@ -5557,7 +5557,7 @@ function Field(ORDER, bitLen4, isLE2 = false, redef = {}) {
     invertBatch: (lst) => FpInvertBatch(f, lst),
     // We can't move this out because Fp6, Fp12 implement it
     // and it's unclear what to return in there.
-    cmov: (a, b, c) => c ? b : a
+    cmov: (a, b, c2) => c2 ? b : a
   });
   return Object.freeze(f);
 }
@@ -5650,11 +5650,11 @@ function calcOffsets(n, window, wOpts) {
   const offsetF = offsetStart;
   return { nextN, offset, isZero, isNeg, isNegF, offsetF };
 }
-function validateMSMPoints(points, c) {
+function validateMSMPoints(points, c2) {
   if (!Array.isArray(points))
     throw new Error("array expected");
   points.forEach((p, i) => {
-    if (!(p instanceof c))
+    if (!(p instanceof c2))
       throw new Error("invalid point at index " + i);
   });
 }
@@ -5669,14 +5669,14 @@ function validateMSMScalars(scalars, field) {
 function getW(P2) {
   return pointWindowSizes.get(P2) || 1;
 }
-function wNAF(c, bits) {
+function wNAF(c2, bits) {
   return {
     constTimeNegate,
     hasPrecomputes(elm) {
       return getW(elm) !== 1;
     },
     // non-const time multiplication ladder
-    unsafeLadder(elm, n, p = c.ZERO) {
+    unsafeLadder(elm, n, p = c2.ZERO) {
       let d = elm;
       while (n > _0n4) {
         if (n & _1n4)
@@ -5722,8 +5722,8 @@ function wNAF(c, bits) {
      * @returns real and fake (for const-time) points
      */
     wNAF(W, precomputes, n) {
-      let p = c.ZERO;
-      let f = c.BASE;
+      let p = c2.ZERO;
+      let f = c2.BASE;
       const wo = calcWOpts(W, bits);
       for (let window = 0; window < wo.windows; window++) {
         const { nextN, offset, isZero, isNeg, isNegF, offsetF } = calcOffsets(n, window, wo);
@@ -5744,7 +5744,7 @@ function wNAF(c, bits) {
      * @param acc accumulator point to add result of multiplication
      * @returns point
      */
-    wNAFUnsafe(W, precomputes, n, acc = c.ZERO) {
+    wNAFUnsafe(W, precomputes, n, acc = c2.ZERO) {
       const wo = calcWOpts(W, bits);
       for (let window = 0; window < wo.windows; window++) {
         if (n === _0n4)
@@ -5789,14 +5789,14 @@ function wNAF(c, bits) {
     }
   };
 }
-function pippenger(c, fieldN, points, scalars) {
-  validateMSMPoints(points, c);
+function pippenger(c2, fieldN, points, scalars) {
+  validateMSMPoints(points, c2);
   validateMSMScalars(scalars, fieldN);
   const plength = points.length;
   const slength = scalars.length;
   if (plength !== slength)
     throw new Error("arrays of points and scalars must have equal length");
-  const zero = c.ZERO;
+  const zero = c2.ZERO;
   const wbits = bitLen(BigInt(plength));
   let windowSize = 1;
   if (wbits > 12)
@@ -7064,7 +7064,7 @@ function sqrtMod(y) {
 function taggedHash(tag, ...messages) {
   let tagP = TAGGED_HASH_PREFIXES[tag];
   if (tagP === void 0) {
-    const tagH = sha256(Uint8Array.from(tag, (c) => c.charCodeAt(0)));
+    const tagH = sha256(Uint8Array.from(tag, (c2) => c2.charCodeAt(0)));
     tagP = concatBytes3(tagH, tagH);
     TAGGED_HASH_PREFIXES[tag] = tagP;
   }
@@ -7079,8 +7079,8 @@ function schnorrGetExtPubKey(priv) {
 function lift_x(x) {
   aInRange("x", x, _1n6, secp256k1P);
   const xx = modP(x * x);
-  const c = modP(xx * x + BigInt(7));
-  let y = sqrtMod(c);
+  const c2 = modP(xx * x + BigInt(7));
+  let y = sqrtMod(c2);
   if (y % _2n4 !== _0n6)
     y = modP(-y);
   const p = new Point(x, y, _1n6);
@@ -11265,7 +11265,7 @@ function anumArr(label, input) {
 // @__NO_SIDE_EFFECTS__
 function chain(...args) {
   const id = (a) => a;
-  const wrap3 = (a, b) => (c) => a(b(c));
+  const wrap3 = (a, b) => (c2) => a(b(c2));
   const encode4 = args.map((x) => x.encode).reduceRight(wrap3, id);
   const decode2 = args.map((x) => x.decode).reduce(wrap3, id);
   return { encode: encode4, decode: decode2 };
@@ -11514,18 +11514,18 @@ var init_esm = __esm({
 function pbkdf2Init(hash3, _password, _salt, _opts) {
   ahash(hash3);
   const opts = checkOpts({ dkLen: 32, asyncTick: 10 }, _opts);
-  const { c, dkLen, asyncTick } = opts;
-  anumber(c);
+  const { c: c2, dkLen, asyncTick } = opts;
+  anumber(c2);
   anumber(dkLen);
   anumber(asyncTick);
-  if (c < 1)
+  if (c2 < 1)
     throw new Error("iterations (c) should be >= 1");
   const password = kdfInputToBytes(_password);
   const salt = kdfInputToBytes(_salt);
   const DK = new Uint8Array(dkLen);
   const PRF = hmac.create(hash3, password);
   const PRFSalt = PRF._cloneInto().update(salt);
-  return { c, dkLen, asyncTick, DK, PRF, PRFSalt };
+  return { c: c2, dkLen, asyncTick, DK, PRF, PRFSalt };
 }
 function pbkdf2Output(PRF, PRFSalt, DK, prfW, u) {
   PRF.destroy();
@@ -11536,7 +11536,7 @@ function pbkdf2Output(PRF, PRFSalt, DK, prfW, u) {
   return DK;
 }
 function pbkdf2(hash3, password, salt, opts) {
-  const { c, dkLen, DK, PRF, PRFSalt } = pbkdf2Init(hash3, password, salt, opts);
+  const { c: c2, dkLen, DK, PRF, PRFSalt } = pbkdf2Init(hash3, password, salt, opts);
   let prfW;
   const arr = new Uint8Array(4);
   const view = createView(arr);
@@ -11546,7 +11546,7 @@ function pbkdf2(hash3, password, salt, opts) {
     view.setInt32(0, ti, false);
     (prfW = PRFSalt._cloneInto(prfW)).update(arr).digestInto(u);
     Ti.set(u.subarray(0, Ti.length));
-    for (let ui = 1; ui < c; ui++) {
+    for (let ui = 1; ui < c2; ui++) {
       PRF._cloneInto(prfW).update(u).digestInto(u);
       for (let i = 0; i < Ti.length; i++)
         Ti[i] ^= u[i];
@@ -14049,11 +14049,11 @@ var init_utils6 = __esm({
 });
 
 // node_modules/@noble/curves/node_modules/@noble/hashes/_md.js
-function Chi2(a, b, c) {
-  return a & b ^ ~a & c;
+function Chi2(a, b, c2) {
+  return a & b ^ ~a & c2;
 }
-function Maj2(a, b, c) {
-  return a & b ^ a & c ^ b & c;
+function Maj2(a, b, c2) {
+  return a & b ^ a & c2 ^ b & c2;
 }
 var HashMD2, SHA256_IV2;
 var init_md2 = __esm({
@@ -14574,7 +14574,7 @@ function tonelliShanks3(P2) {
     if (FpLegendre3(Fp, n) !== 1)
       throw new Error("Cannot find square root");
     let M = S;
-    let c = Fp.mul(Fp.ONE, cc);
+    let c2 = Fp.mul(Fp.ONE, cc);
     let t = Fp.pow(n, Q);
     let R = Fp.pow(n, Q1div2);
     while (!Fp.eql(t, Fp.ONE)) {
@@ -14589,10 +14589,10 @@ function tonelliShanks3(P2) {
           throw new Error("Cannot find square root");
       }
       const exponent = _1n13 << BigInt(M - i - 1);
-      const b = Fp.pow(c, exponent);
+      const b = Fp.pow(c2, exponent);
       M = i;
-      c = Fp.sqr(b);
-      t = Fp.mul(t, c);
+      c2 = Fp.sqr(b);
+      t = Fp.mul(t, c2);
       R = Fp.mul(R, b);
     }
     return R;
@@ -14872,9 +14872,9 @@ function negateCt(condition, item) {
   const neg = item.negate();
   return condition ? neg : item;
 }
-function normalizeZ(c, points) {
-  const invertedZs = FpInvertBatch3(c.Fp, points.map((p) => p.Z));
-  return points.map((p, i) => c.fromAffine(p.toAffine(invertedZs[i])));
+function normalizeZ(c2, points) {
+  const invertedZs = FpInvertBatch3(c2.Fp, points.map((p) => p.Z));
+  return points.map((p, i) => c2.fromAffine(p.toAffine(invertedZs[i])));
 }
 function validateW3(W, bits) {
   if (!Number.isSafeInteger(W) || W <= 0 || W > bits)
@@ -16293,11 +16293,11 @@ var init_hmac3 = __esm({
 });
 
 // node_modules/@scure/bip32/node_modules/@noble/hashes/_md.js
-function Chi3(a, b, c) {
-  return a & b ^ ~a & c;
+function Chi3(a, b, c2) {
+  return a & b ^ ~a & c2;
 }
-function Maj3(a, b, c) {
-  return a & b ^ a & c ^ b & c;
+function Maj3(a, b, c2) {
+  return a & b ^ a & c2 ^ b & c2;
 }
 var HashMD3, SHA256_IV3, SHA512_IV3;
 var init_md3 = __esm({
@@ -17006,7 +17006,7 @@ function anumArr2(label, input) {
 // @__NO_SIDE_EFFECTS__
 function chain2(...args) {
   const id = (a) => a;
-  const wrap3 = (a, b) => (c) => a(b(c));
+  const wrap3 = (a, b) => (c2) => a(b(c2));
   const encode4 = args.map((x) => x.encode).reduceRight(wrap3, id);
   const decode2 = args.map((x) => x.decode).reduce(wrap3, id);
   return { encode: encode4, decode: decode2 };
@@ -17295,11 +17295,11 @@ var init_bip32 = __esm({
         }
         const parts = path.replace(/^[mM]'?\//, "").split("/");
         let child = this;
-        for (const c of parts) {
-          const m = /^(\d+)('?)$/.exec(c);
+        for (const c2 of parts) {
+          const m = /^(\d+)('?)$/.exec(c2);
           const m1 = m && m[1];
           if (!m || m.length !== 3 || typeof m1 !== "string")
-            throw new Error("invalid child index: " + c);
+            throw new Error("invalid child index: " + c2);
           let idx = +m1;
           if (!Number.isSafeInteger(idx) || idx >= HARDENED_OFFSET) {
             throw new Error("Invalid index");
@@ -18942,8 +18942,8 @@ var init_index_node3 = __esm({
         const len = value.length;
         const al = len / 2;
         if (len === 1) {
-          const c = value.charCodeAt(0);
-          const n = charCodeToBase163(c);
+          const c2 = value.charCodeAt(0);
+          const n = charCodeToBase163(c2);
           if (n === void 0) {
             throw new SolanaError(SOLANA_ERROR__CODECS__INVALID_STRING_FOR_BASE, {
               ...INVALID_STRING_ERROR_BASE_CONFIG,
@@ -18987,7 +18987,7 @@ var init_index_node3 = __esm({
       write(value, bytes, offset) {
         assertValidBaseString(alphabet4, value);
         if (value === "") return offset;
-        const charIndices = [...value].map((c) => alphabet4.indexOf(c));
+        const charIndices = [...value].map((c2) => alphabet4.indexOf(c2));
         const reslicedBytes = reslice(charIndices, bits, 8, false);
         bytes.set(reslicedBytes, offset);
         return reslicedBytes.length + offset;
@@ -24461,8 +24461,8 @@ function getResultResponseTransformer() {
 function getSimulateTransactionAllowedNumericKeypaths() {
   return [
     ["loadedAccountsDataSize"],
-    ...jsonParsedAccountsConfigs.map((c) => ["accounts", KEYPATH_WILDCARD, ...c]),
-    ...innerInstructionsConfigs.map((c) => ["innerInstructions", KEYPATH_WILDCARD, ...c])
+    ...jsonParsedAccountsConfigs.map((c2) => ["accounts", KEYPATH_WILDCARD, ...c2]),
+    ...innerInstructionsConfigs.map((c2) => ["innerInstructions", KEYPATH_WILDCARD, ...c2])
   ];
 }
 function getThrowSolanaErrorResponseTransformer() {
@@ -24617,7 +24617,7 @@ function createSolanaRpcApi(config) {
 function getAllowedNumericKeypaths() {
   if (!memoizedKeypaths) {
     memoizedKeypaths = {
-      getAccountInfo: jsonParsedAccountsConfigs.map((c) => ["value", ...c]),
+      getAccountInfo: jsonParsedAccountsConfigs.map((c2) => ["value", ...c2]),
       getBlock: [
         ["transactions", KEYPATH_WILDCARD, "meta", "preTokenBalances", KEYPATH_WILDCARD, "accountIndex"],
         [
@@ -24640,15 +24640,15 @@ function getAllowedNumericKeypaths() {
           "decimals"
         ],
         ["transactions", KEYPATH_WILDCARD, "meta", "rewards", KEYPATH_WILDCARD, "commission"],
-        ...innerInstructionsConfigs.map((c) => [
+        ...innerInstructionsConfigs.map((c2) => [
           "transactions",
           KEYPATH_WILDCARD,
           "meta",
           "innerInstructions",
           KEYPATH_WILDCARD,
-          ...c
+          ...c2
         ]),
-        ...messageConfig.map((c) => ["transactions", KEYPATH_WILDCARD, "transaction", "message", ...c]),
+        ...messageConfig.map((c2) => ["transactions", KEYPATH_WILDCARD, "transaction", "message", ...c2]),
         ["rewards", KEYPATH_WILDCARD, "commission"]
       ],
       getClusterNodes: [
@@ -24658,27 +24658,27 @@ function getAllowedNumericKeypaths() {
       getInflationGovernor: [["initial"], ["foundation"], ["foundationTerm"], ["taper"], ["terminal"]],
       getInflationRate: [["foundation"], ["total"], ["validator"]],
       getInflationReward: [[KEYPATH_WILDCARD, "commission"]],
-      getMultipleAccounts: jsonParsedAccountsConfigs.map((c) => ["value", KEYPATH_WILDCARD, ...c]),
-      getProgramAccounts: jsonParsedAccountsConfigs.flatMap((c) => [
-        ["value", KEYPATH_WILDCARD, "account", ...c],
-        [KEYPATH_WILDCARD, "account", ...c]
+      getMultipleAccounts: jsonParsedAccountsConfigs.map((c2) => ["value", KEYPATH_WILDCARD, ...c2]),
+      getProgramAccounts: jsonParsedAccountsConfigs.flatMap((c2) => [
+        ["value", KEYPATH_WILDCARD, "account", ...c2],
+        [KEYPATH_WILDCARD, "account", ...c2]
       ]),
       getRecentPerformanceSamples: [[KEYPATH_WILDCARD, "samplePeriodSecs"]],
       getTokenAccountBalance: [
         ["value", "decimals"],
         ["value", "uiAmount"]
       ],
-      getTokenAccountsByDelegate: jsonParsedTokenAccountsConfigs.map((c) => [
+      getTokenAccountsByDelegate: jsonParsedTokenAccountsConfigs.map((c2) => [
         "value",
         KEYPATH_WILDCARD,
         "account",
-        ...c
+        ...c2
       ]),
-      getTokenAccountsByOwner: jsonParsedTokenAccountsConfigs.map((c) => [
+      getTokenAccountsByOwner: jsonParsedTokenAccountsConfigs.map((c2) => [
         "value",
         KEYPATH_WILDCARD,
         "account",
-        ...c
+        ...c2
       ]),
       getTokenLargestAccounts: [
         ["value", KEYPATH_WILDCARD, "decimals"],
@@ -24694,8 +24694,8 @@ function getAllowedNumericKeypaths() {
         ["meta", "postTokenBalances", KEYPATH_WILDCARD, "accountIndex"],
         ["meta", "postTokenBalances", KEYPATH_WILDCARD, "uiTokenAmount", "decimals"],
         ["meta", "rewards", KEYPATH_WILDCARD, "commission"],
-        ...innerInstructionsConfigs.map((c) => ["meta", "innerInstructions", KEYPATH_WILDCARD, ...c]),
-        ...messageConfig.map((c) => ["transaction", "message", ...c])
+        ...innerInstructionsConfigs.map((c2) => ["meta", "innerInstructions", KEYPATH_WILDCARD, ...c2]),
+        ...messageConfig.map((c2) => ["transaction", "message", ...c2])
       ],
       getVersion: [["feature-set"]],
       getVoteAccounts: [
@@ -24704,8 +24704,8 @@ function getAllowedNumericKeypaths() {
       ],
       simulateTransaction: [
         ["value", "loadedAccountsDataSize"],
-        ...jsonParsedAccountsConfigs.map((c) => ["value", "accounts", KEYPATH_WILDCARD, ...c]),
-        ...innerInstructionsConfigs.map((c) => ["value", "innerInstructions", KEYPATH_WILDCARD, ...c])
+        ...jsonParsedAccountsConfigs.map((c2) => ["value", "accounts", KEYPATH_WILDCARD, ...c2]),
+        ...innerInstructionsConfigs.map((c2) => ["value", "innerInstructions", KEYPATH_WILDCARD, ...c2])
       ]
     };
   }
@@ -25633,7 +25633,7 @@ function createSolanaRpcSubscriptionsApi_UNSTABLE(config) {
 function getAllowedNumericKeypaths2() {
   if (!memoizedKeypaths2) {
     memoizedKeypaths2 = {
-      accountNotifications: jsonParsedAccountsConfigs.map((c) => ["value", ...c]),
+      accountNotifications: jsonParsedAccountsConfigs.map((c2) => ["value", ...c2]),
       blockNotifications: [
         [
           "value",
@@ -25792,9 +25792,9 @@ function getAllowedNumericKeypaths2() {
         ],
         ["value", "block", "rewards", KEYPATH_WILDCARD, "commission"]
       ],
-      programNotifications: jsonParsedAccountsConfigs.flatMap((c) => [
-        ["value", KEYPATH_WILDCARD, "account", ...c],
-        [KEYPATH_WILDCARD, "account", ...c]
+      programNotifications: jsonParsedAccountsConfigs.flatMap((c2) => [
+        ["value", KEYPATH_WILDCARD, "account", ...c2],
+        [KEYPATH_WILDCARD, "account", ...c2]
       ])
     };
   }
@@ -29737,15 +29737,15 @@ function getChannelPoolingChannelCreator(createChannel, { maxSubscriptionsPerCha
 function getRpcSubscriptionsChannelWithJSONSerialization(channel) {
   return pipe(
     channel,
-    (c) => transformChannelInboundMessages(c, JSON.parse),
-    (c) => transformChannelOutboundMessages(c, JSON.stringify)
+    (c2) => transformChannelInboundMessages(c2, JSON.parse),
+    (c2) => transformChannelOutboundMessages(c2, JSON.stringify)
   );
 }
 function getRpcSubscriptionsChannelWithBigIntJSONSerialization(channel) {
   return pipe(
     channel,
-    (c) => transformChannelInboundMessages(c, parseJsonWithBigInts),
-    (c) => transformChannelOutboundMessages(c, stringifyJsonWithBigInts)
+    (c2) => transformChannelInboundMessages(c2, parseJsonWithBigInts),
+    (c2) => transformChannelOutboundMessages(c2, stringifyJsonWithBigInts)
   );
 }
 function createDefaultSolanaRpcSubscriptionsChannelCreator(config) {
@@ -33834,8 +33834,8 @@ var require_util = __commonJS({
       0
       // 240-255
     ]);
-    function isTokenCharCode(c) {
-      return validTokenChars[c] === 1;
+    function isTokenCharCode(c2) {
+      return validTokenChars[c2] === 1;
     }
     var tokenRegExp = /^[\^_`a-zA-Z\-0-9!#$%&'*+.|~]+$/;
     function isValidHTTPToken(characters) {
@@ -35570,7 +35570,7 @@ var require_constants3 = __commonJS({
         exports.HEADER_CHARS.push(i);
       }
     }
-    exports.CONNECTION_TOKEN_CHARS = exports.HEADER_CHARS.filter((c) => c !== 44);
+    exports.CONNECTION_TOKEN_CHARS = exports.HEADER_CHARS.filter((c2) => c2 !== 44);
     exports.QUOTED_STRING = ["	", " "];
     for (let i = 33; i <= 255; i++) {
       if (i !== 34 && i !== 92) {
@@ -36379,7 +36379,7 @@ var require_webidl = __commonJS({
       }
     };
     webidl.brandCheckMultiple = function(List) {
-      const prototypes = List.map((c) => webidl.util.MakeTypeAssertion(c));
+      const prototypes = List.map((c2) => webidl.util.MakeTypeAssertion(c2));
       return (V) => {
         if (prototypes.every((typeCheck) => !typeCheck(V))) {
           const err = new TypeError("Illegal invocation");
@@ -36997,10 +36997,10 @@ var require_util2 = __commonJS({
     }
     function isValidReasonPhrase(statusText) {
       for (let i = 0; i < statusText.length; ++i) {
-        const c = statusText.charCodeAt(i);
-        if (!(c === 9 || // HTAB
-        c >= 32 && c <= 126 || // SP / VCHAR
-        c >= 128 && c <= 255)) {
+        const c2 = statusText.charCodeAt(i);
+        if (!(c2 === 9 || // HTAB
+        c2 >= 32 && c2 <= 126 || // SP / VCHAR
+        c2 >= 128 && c2 <= 255)) {
           return false;
         }
       }
@@ -38303,8 +38303,8 @@ var require_body = __commonJS({
         stream = new ReadableStream({
           pull() {
           },
-          start(c) {
-            controller = c;
+          start(c2) {
+            controller = c2;
           },
           cancel() {
           },
@@ -62739,7 +62739,7 @@ function tonelliShanks2(P2) {
     if (FpLegendre2(Fp, n) !== 1)
       throw new Error("Cannot find square root");
     let M = S;
-    let c = Fp.mul(Fp.ONE, cc);
+    let c2 = Fp.mul(Fp.ONE, cc);
     let t = Fp.pow(n, Q);
     let R = Fp.pow(n, Q1div2);
     while (!Fp.eql(t, Fp.ONE)) {
@@ -62754,10 +62754,10 @@ function tonelliShanks2(P2) {
           throw new Error("Cannot find square root");
       }
       const exponent = _1n8 << BigInt(M - i - 1);
-      const b = Fp.pow(c, exponent);
+      const b = Fp.pow(c2, exponent);
       M = i;
-      c = Fp.sqr(b);
-      t = Fp.mul(t, c);
+      c2 = Fp.sqr(b);
+      t = Fp.mul(t, c2);
       R = Fp.mul(R, b);
     }
     return R;
@@ -62905,7 +62905,7 @@ function Field2(ORDER, bitLen4, isLE2 = false, redef = {}) {
     invertBatch: (lst) => FpInvertBatch2(f, lst),
     // We can't move this out because Fp6, Fp12 implement it
     // and it's unclear what to return in there.
-    cmov: (a, b, c) => c ? b : a
+    cmov: (a, b, c2) => c2 ? b : a
   });
   return Object.freeze(f);
 }
@@ -62967,11 +62967,11 @@ function calcOffsets2(n, window, wOpts) {
   const offsetF = offsetStart;
   return { nextN, offset, isZero, isNeg, isNegF, offsetF };
 }
-function validateMSMPoints2(points, c) {
+function validateMSMPoints2(points, c2) {
   if (!Array.isArray(points))
     throw new Error("array expected");
   points.forEach((p, i) => {
-    if (!(p instanceof c))
+    if (!(p instanceof c2))
       throw new Error("invalid point at index " + i);
   });
 }
@@ -62988,14 +62988,14 @@ var pointWindowSizes2 = /* @__PURE__ */ new WeakMap();
 function getW2(P2) {
   return pointWindowSizes2.get(P2) || 1;
 }
-function wNAF2(c, bits) {
+function wNAF2(c2, bits) {
   return {
     constTimeNegate: constTimeNegate2,
     hasPrecomputes(elm) {
       return getW2(elm) !== 1;
     },
     // non-const time multiplication ladder
-    unsafeLadder(elm, n, p = c.ZERO) {
+    unsafeLadder(elm, n, p = c2.ZERO) {
       let d = elm;
       while (n > _0n9) {
         if (n & _1n9)
@@ -63041,8 +63041,8 @@ function wNAF2(c, bits) {
      * @returns real and fake (for const-time) points
      */
     wNAF(W, precomputes, n) {
-      let p = c.ZERO;
-      let f = c.BASE;
+      let p = c2.ZERO;
+      let f = c2.BASE;
       const wo = calcWOpts2(W, bits);
       for (let window = 0; window < wo.windows; window++) {
         const { nextN, offset, isZero, isNeg, isNegF, offsetF } = calcOffsets2(n, window, wo);
@@ -63063,7 +63063,7 @@ function wNAF2(c, bits) {
      * @param acc accumulator point to add result of multiplication
      * @returns point
      */
-    wNAFUnsafe(W, precomputes, n, acc = c.ZERO) {
+    wNAFUnsafe(W, precomputes, n, acc = c2.ZERO) {
       const wo = calcWOpts2(W, bits);
       for (let window = 0; window < wo.windows; window++) {
         if (n === _0n9)
@@ -63108,14 +63108,14 @@ function wNAF2(c, bits) {
     }
   };
 }
-function pippenger2(c, fieldN, points, scalars) {
-  validateMSMPoints2(points, c);
+function pippenger2(c2, fieldN, points, scalars) {
+  validateMSMPoints2(points, c2);
   validateMSMScalars2(scalars, fieldN);
   const plength = points.length;
   const slength = scalars.length;
   if (plength !== slength)
     throw new Error("arrays of points and scalars must have equal length");
-  const zero = c.ZERO;
+  const zero = c2.ZERO;
   const wbits = bitLen2(BigInt(plength));
   let windowSize = 1;
   if (wbits > 12)
@@ -76227,9 +76227,9 @@ function buildDynamicCodebook(messages) {
   candidates.sort((a, b) => b.savings - a.savings);
   const topCandidates = candidates.slice(0, MAX_ENTRIES);
   const codebook = {};
-  topCandidates.forEach((c, i) => {
+  topCandidates.forEach((c2, i) => {
     const code = `${CODE_PREFIX}${String(i + 1).padStart(2, "0")}`;
-    codebook[code] = c.phrase;
+    codebook[code] = c2.phrase;
   });
   return codebook;
 }
@@ -78882,7 +78882,7 @@ function isDegenerateCompletion(bodyBuf) {
     const tailChars = [...tail];
     const firstChar = tailChars[0];
     if (!/[^\p{L}\p{N}\s]/u.test(firstChar)) return false;
-    const sameCount = tailChars.filter((c) => c === firstChar).length;
+    const sameCount = tailChars.filter((c2) => c2 === firstChar).length;
     return sameCount >= 60;
   } catch {
     return false;
@@ -80811,7 +80811,7 @@ data: [DONE]
       const tailChars = [...tail];
       const firstChar = tailChars[0];
       const isPunct = /[^\p{L}\p{N}\s]/u.test(firstChar);
-      const sameCount = tailChars.filter((c) => c === firstChar).length;
+      const sameCount = tailChars.filter((c2) => c2 === firstChar).length;
       if (isPunct && sameCount >= 60) {
         console.warn(
           `[XClawRouter] \u26A0\uFE0F  Degenerate output detected \u2014 model=${actualModelUsed || "unknown"} len=${accumulatedContent.length} head=${JSON.stringify(accumulatedContent.slice(0, 40))} tail_repeats_${JSON.stringify(firstChar)}=${sameCount}/80`
@@ -82020,90 +82020,148 @@ Usage Stats (last ${days} days)
     process.exit(1);
   }
 }
+var ANSI = {
+  reset: "\x1B[0m",
+  bold: "\x1B[1m",
+  dim: "\x1B[2m",
+  green: "\x1B[32m",
+  red: "\x1B[31m",
+  yellow: "\x1B[33m",
+  cyan: "\x1B[36m",
+  magenta: "\x1B[35m"
+};
+var useColor = process.stdout.isTTY && !process.env.NO_COLOR && process.env.TERM !== "dumb";
+var c = (color, s3) => useColor ? `${color}${s3}${ANSI.reset}` : s3;
+var ANSI_RE = /\x1b\[[0-9;]*m/g;
+var stripAnsi = (s3) => s3.replace(ANSI_RE, "");
+function printSetupHeader() {
+  console.log();
+  console.log("  " + c(ANSI.bold + ANSI.cyan, "\u{1F99E}  XClawRouter \u2014 Wallet Setup"));
+  console.log("  " + c(ANSI.dim, "OKX Agentic Wallet (onchainos)"));
+  console.log();
+}
+function printSetupSummary(address2, email) {
+  const lines = [
+    c(ANSI.bold + ANSI.green, "\u2713  Wallet ready"),
+    "",
+    c(ANSI.dim, "EVM address"),
+    c(ANSI.bold, address2)
+  ];
+  if (email) {
+    lines.push("");
+    lines.push(c(ANSI.dim, "Email   ") + email);
+  }
+  lines.push(c(ANSI.dim, "Signing ") + "OKX TEE  " + c(ANSI.dim, "(no local private key)"));
+  const width = Math.max(...lines.map((l2) => stripAnsi(l2).length));
+  const horiz = "\u2500".repeat(width + 2);
+  console.log("  \u250C" + horiz + "\u2510");
+  for (const line of lines) {
+    const pad4 = " ".repeat(width - stripAnsi(line).length);
+    console.log("  \u2502 " + line + pad4 + " \u2502");
+  }
+  console.log("  \u2514" + horiz + "\u2518");
+}
 async function cmdSetup() {
-  console.log("\n\u{1F99E} XClawRouter \u2014 OKX Agentic Wallet setup\n");
+  printSetupHeader();
   const installerUrl = "https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh";
   const adapter = new OnchainOsAdapter();
   if (!adapter.isInstalled()) {
-    console.log("\u2192 onchainos binary not found \u2014 running OKX official installer");
-    console.log(`  ${installerUrl}`);
+    process.stdout.write("  " + c(ANSI.yellow, "\u23F3") + "  Installing onchainos binary\u2026\n");
+    process.stdout.write(
+      "     " + c(ANSI.dim, `(via ${installerUrl})`) + "\n"
+    );
     try {
       execSync(`curl -sSL --max-time 60 ${installerUrl} | sh`, {
-        stdio: "inherit",
+        stdio: ["ignore", "ignore", "inherit"],
         env: { ...process.env, PATH: `${homedir7()}/.local/bin:${process.env.PATH ?? ""}` }
       });
       process.env.PATH = `${homedir7()}/.local/bin:${process.env.PATH ?? ""}`;
-      console.log("\u2713 onchainos installed");
+      console.log("  " + c(ANSI.green, "\u2713") + "  onchainos installed");
     } catch {
-      console.error("\n\u2717 onchainos install failed.");
-      console.error("  Try installing manually, then re-run setup:");
-      console.error(`    curl -sSL ${installerUrl} | sh`);
-      console.error("  Or opt into a local wallet: export XCLAWROUTER_USE_LOCAL_WALLET=1");
+      console.error("\n  " + c(ANSI.red, "\u2717") + "  onchainos install failed.");
+      console.error("     Install manually then re-run setup:");
+      console.error("     " + c(ANSI.dim, `curl -sSL ${installerUrl} | sh`));
       process.exit(1);
     }
   } else {
-    console.log("\u2713 onchainos binary detected");
+    console.log("  " + c(ANSI.green, "\u2713") + "  onchainos detected");
   }
   const detection = await detectOnchainosWallet();
   if (detection.kind === "ok") {
+    console.log("  " + c(ANSI.green, "\u2713") + "  Already signed in");
+    console.log();
+    printSetupSummary(detection.address, detection.email);
+    console.log();
     console.log(
-      `\u2713 Already logged in: ${detection.address}` + (detection.email ? ` (${detection.email})` : "")
+      "  " + c(ANSI.cyan, "\u2192") + "  Restart OpenClaw: " + c(ANSI.bold, "openclaw gateway restart")
     );
-    console.log("\nDone. Restart the gateway to pick it up: openclaw gateway restart");
+    console.log();
     return;
   }
+  console.log();
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   let email;
   try {
-    email = (await rl.question("Email: ")).trim();
+    email = (await rl.question("  " + c(ANSI.cyan, "\u2192") + "  Email: ")).trim();
   } finally {
     rl.close();
   }
   if (!email.includes("@")) {
-    console.error(`\u2717 "${email}" doesn't look like an email address.`);
+    console.error("  " + c(ANSI.red, "\u2717") + `  "${email}" doesn't look like an email address.`);
     process.exit(1);
   }
   const bin = resolveOnchainosBin();
-  console.log(`\u2192 Sending OTP: ${bin} wallet login ${email}`);
+  process.stdout.write("  " + c(ANSI.yellow, "\u23F3") + "  Sending login code to " + email + "\u2026");
   try {
-    execFileSync2(bin, ["wallet", "login", email], { stdio: "inherit" });
+    execFileSync2(bin, ["wallet", "login", email], { stdio: ["ignore", "pipe", "pipe"] });
   } catch {
-    console.error("\n\u2717 Could not send OTP. Check the email address and try again.");
+    process.stdout.write(
+      "\r  " + c(ANSI.red, "\u2717") + "  Could not send code. Check the address and try again.\n"
+    );
     process.exit(1);
   }
-  console.log(`  \u2713 OTP sent to ${email}
-`);
+  process.stdout.write(
+    "\r  " + c(ANSI.green, "\u2713") + "  Code sent \u2014 check your inbox at " + c(ANSI.bold, email) + "\n"
+  );
+  console.log();
   const rlOtp = createInterface({ input: process.stdin, output: process.stdout });
   let otp;
   try {
-    otp = (await rlOtp.question("OTP from your inbox: ")).trim();
+    otp = (await rlOtp.question("  " + c(ANSI.cyan, "\u2192") + "  Login code: ")).trim();
   } finally {
     rlOtp.close();
   }
   if (!/^\d{4,8}$/.test(otp)) {
-    console.error(`\u2717 "${otp}" doesn't look like an OTP code (expected 4-8 digits).`);
+    console.error(
+      "  " + c(ANSI.red, "\u2717") + `  "${otp}" doesn't look like a code (expected 4-8 digits).`
+    );
     process.exit(1);
   }
-  console.log(`\u2192 Verifying: ${bin} wallet verify ${otp.replace(/./g, "*")}`);
+  process.stdout.write("  " + c(ANSI.yellow, "\u23F3") + "  Verifying code\u2026");
   try {
-    execFileSync2(bin, ["wallet", "verify", otp], { stdio: "inherit" });
+    execFileSync2(bin, ["wallet", "verify", otp], { stdio: ["ignore", "pipe", "pipe"] });
   } catch {
-    console.error("\n\u2717 OTP verification failed.");
-    console.error("  Re-run `npx @blockrun/xclawrouter setup` to request a new code.");
+    process.stdout.write(
+      "\r  " + c(ANSI.red, "\u2717") + "  Verification failed. Re-run setup for a new code.\n"
+    );
     process.exit(1);
   }
+  process.stdout.write("\r  " + c(ANSI.green, "\u2713") + "  Verified                                \n");
   const after = await detectOnchainosWallet();
   if (after.kind !== "ok") {
-    console.error(`
-\u2717 Verify completed but detection still reports: ${after.kind}`);
-    console.error("  Run `onchainos wallet status` to diagnose.");
+    console.error(
+      "\n  " + c(ANSI.red, "\u2717") + `  Login completed but status check failed: ${after.kind}`
+    );
+    console.error("     Run `onchainos wallet status` to diagnose.");
     process.exit(1);
   }
+  console.log();
+  printSetupSummary(after.address, after.email);
+  console.log();
   console.log(
-    `
-\u2713 OKX wallet ready: ${after.address}` + (after.email ? ` (${after.email})` : "")
+    "  " + c(ANSI.cyan, "\u2192") + "  Restart OpenClaw: " + c(ANSI.bold, "openclaw gateway restart")
   );
-  console.log("\nNext: openclaw gateway restart");
+  console.log();
 }
 async function cmdCache(port) {
   try {

@@ -203,124 +203,179 @@ async function cmdStats(port: number, days: number): Promise<void> {
 }
 
 /**
- * Bootstrap OKX Agentic Wallet for XClawRouter — minimal direct flow.
+ * Bootstrap OKX Agentic Wallet for XClawRouter — minimal direct flow,
+ * polished CLI presentation.
  *
- * Steps:
- *   1. Install the `onchainos` binary via OKX's official installer if it
- *      isn't already on PATH.
- *   2. If already logged in, confirm and exit.
- *   3. Prompt for email, then exec `onchainos wallet login <email>` and
- *      let the binary handle OTP interactively (stdio inherit so the user
- *      sees and types into the binary's own prompts).
- *
- * Deliberately no agent / skill detour — the user runs one command, types
- * email + OTP, and is done. The skill-driven OpenClaw flow remains an
- * option (see error message in auth.ts), but `setup` is the direct path.
+ * The binary outputs raw JSON for every command (`{"ok":true,...}`). We
+ * capture stdio (not inherit) so users don't see the JSON, then surface
+ * a clean status line per step. ANSI escapes only — no extra deps.
  */
+
+const ANSI = {
+  reset: "\x1b[0m",
+  bold: "\x1b[1m",
+  dim: "\x1b[2m",
+  green: "\x1b[32m",
+  red: "\x1b[31m",
+  yellow: "\x1b[33m",
+  cyan: "\x1b[36m",
+  magenta: "\x1b[35m",
+} as const;
+const useColor =
+  process.stdout.isTTY && !process.env.NO_COLOR && process.env.TERM !== "dumb";
+const c = (color: string, s: string): string => (useColor ? `${color}${s}${ANSI.reset}` : s);
+// eslint-disable-next-line no-control-regex
+const ANSI_RE = /\x1b\[[0-9;]*m/g;
+const stripAnsi = (s: string): string => s.replace(ANSI_RE, "");
+
+function printSetupHeader(): void {
+  console.log();
+  console.log("  " + c(ANSI.bold + ANSI.cyan, "🦞  XClawRouter — Wallet Setup"));
+  console.log("  " + c(ANSI.dim, "OKX Agentic Wallet (onchainos)"));
+  console.log();
+}
+
+function printSetupSummary(address: string, email: string | undefined): void {
+  const lines = [
+    c(ANSI.bold + ANSI.green, "✓  Wallet ready"),
+    "",
+    c(ANSI.dim, "EVM address"),
+    c(ANSI.bold, address),
+  ];
+  if (email) {
+    lines.push("");
+    lines.push(c(ANSI.dim, "Email   ") + email);
+  }
+  lines.push(c(ANSI.dim, "Signing ") + "OKX TEE  " + c(ANSI.dim, "(no local private key)"));
+
+  const width = Math.max(...lines.map((l) => stripAnsi(l).length));
+  const horiz = "─".repeat(width + 2);
+  console.log("  ┌" + horiz + "┐");
+  for (const line of lines) {
+    const pad = " ".repeat(width - stripAnsi(line).length);
+    console.log("  │ " + line + pad + " │");
+  }
+  console.log("  └" + horiz + "┘");
+}
+
 async function cmdSetup(): Promise<void> {
-  console.log("\n🦞 XClawRouter — OKX Agentic Wallet setup\n");
+  printSetupHeader();
 
   const installerUrl =
     "https://raw.githubusercontent.com/okx/onchainos-skills/main/install.sh";
 
+  // ── Step 1: onchainos binary ────────────────────────────────────────
   const adapter = new OnchainOsAdapter();
   if (!adapter.isInstalled()) {
-    console.log("→ onchainos binary not found — running OKX official installer");
-    console.log(`  ${installerUrl}`);
+    process.stdout.write("  " + c(ANSI.yellow, "⏳") + "  Installing onchainos binary…\n");
+    process.stdout.write(
+      "     " + c(ANSI.dim, `(via ${installerUrl})`) + "\n",
+    );
     try {
       execSync(`curl -sSL --max-time 60 ${installerUrl} | sh`, {
-        stdio: "inherit",
+        stdio: ["ignore", "ignore", "inherit"],
         env: { ...process.env, PATH: `${homedir()}/.local/bin:${process.env.PATH ?? ""}` },
       });
-      // OKX installer drops the binary at ~/.local/bin; ensure that's on PATH
-      // for any subprocess we spawn below.
       process.env.PATH = `${homedir()}/.local/bin:${process.env.PATH ?? ""}`;
-      console.log("✓ onchainos installed");
+      console.log("  " + c(ANSI.green, "✓") + "  onchainos installed");
     } catch {
-      console.error("\n✗ onchainos install failed.");
-      console.error("  Try installing manually, then re-run setup:");
-      console.error(`    curl -sSL ${installerUrl} | sh`);
-      console.error("  Or opt into a local wallet: export XCLAWROUTER_USE_LOCAL_WALLET=1");
+      console.error("\n  " + c(ANSI.red, "✗") + "  onchainos install failed.");
+      console.error("     Install manually then re-run setup:");
+      console.error("     " + c(ANSI.dim, `curl -sSL ${installerUrl} | sh`));
       process.exit(1);
     }
   } else {
-    console.log("✓ onchainos binary detected");
+    console.log("  " + c(ANSI.green, "✓") + "  onchainos detected");
   }
 
-  // Already logged in? Bail early.
+  // ── Step 2: already logged in? ──────────────────────────────────────
   const detection = await detectOnchainosWallet();
   if (detection.kind === "ok") {
+    console.log("  " + c(ANSI.green, "✓") + "  Already signed in");
+    console.log();
+    printSetupSummary(detection.address, detection.email);
+    console.log();
     console.log(
-      `✓ Already logged in: ${detection.address}` +
-        (detection.email ? ` (${detection.email})` : ""),
+      "  " + c(ANSI.cyan, "→") + "  Restart OpenClaw: " + c(ANSI.bold, "openclaw gateway restart"),
     );
-    console.log("\nDone. Restart the gateway to pick it up: openclaw gateway restart");
+    console.log();
     return;
   }
+  console.log();
 
-  // Email prompt.
+  // ── Step 3: collect email ───────────────────────────────────────────
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   let email: string;
   try {
-    email = (await rl.question("Email: ")).trim();
+    email = (await rl.question("  " + c(ANSI.cyan, "→") + "  Email: ")).trim();
   } finally {
     rl.close();
   }
   if (!email.includes("@")) {
-    console.error(`✗ "${email}" doesn't look like an email address.`);
+    console.error("  " + c(ANSI.red, "✗") + `  "${email}" doesn't look like an email address.`);
     process.exit(1);
   }
 
-  // OKX onchainos auth is a two-step CLI flow:
-  //   1. `wallet login <email>` — sends OTP to inbox, returns immediately
-  //   2. `wallet verify <otp>`  — completes login with the code from inbox
-  // The binary does NOT prompt for OTP itself, so we collect it and run
-  // verify as a separate call. Earlier versions of this command stopped
-  // after step 1 and left users confused about why detection still
-  // reported `not-logged-in`.
+  // ── Step 4: send OTP (capture JSON output) ──────────────────────────
   const bin = resolveOnchainosBin();
-  console.log(`→ Sending OTP: ${bin} wallet login ${email}`);
+  process.stdout.write("  " + c(ANSI.yellow, "⏳") + "  Sending login code to " + email + "…");
   try {
-    execFileSync(bin, ["wallet", "login", email], { stdio: "inherit" });
+    execFileSync(bin, ["wallet", "login", email], { stdio: ["ignore", "pipe", "pipe"] });
   } catch {
-    console.error("\n✗ Could not send OTP. Check the email address and try again.");
+    process.stdout.write(
+      "\r  " + c(ANSI.red, "✗") + "  Could not send code. Check the address and try again.\n",
+    );
     process.exit(1);
   }
-  console.log(`  ✓ OTP sent to ${email}\n`);
+  process.stdout.write(
+    "\r  " + c(ANSI.green, "✓") + "  Code sent — check your inbox at " + c(ANSI.bold, email) + "\n",
+  );
+  console.log();
 
-  // Collect OTP. Read again from stdin (the previous readline already closed).
+  // ── Step 5: collect OTP ─────────────────────────────────────────────
   const rlOtp = createInterface({ input: process.stdin, output: process.stdout });
   let otp: string;
   try {
-    otp = (await rlOtp.question("OTP from your inbox: ")).trim();
+    otp = (await rlOtp.question("  " + c(ANSI.cyan, "→") + "  Login code: ")).trim();
   } finally {
     rlOtp.close();
   }
   if (!/^\d{4,8}$/.test(otp)) {
-    console.error(`✗ "${otp}" doesn't look like an OTP code (expected 4-8 digits).`);
+    console.error(
+      "  " + c(ANSI.red, "✗") + `  "${otp}" doesn't look like a code (expected 4-8 digits).`,
+    );
     process.exit(1);
   }
 
-  console.log(`→ Verifying: ${bin} wallet verify ${otp.replace(/./g, "*")}`);
+  // ── Step 6: verify ──────────────────────────────────────────────────
+  process.stdout.write("  " + c(ANSI.yellow, "⏳") + "  Verifying code…");
   try {
-    execFileSync(bin, ["wallet", "verify", otp], { stdio: "inherit" });
+    execFileSync(bin, ["wallet", "verify", otp], { stdio: ["ignore", "pipe", "pipe"] });
   } catch {
-    console.error("\n✗ OTP verification failed.");
-    console.error("  Re-run `npx @blockrun/xclawrouter setup` to request a new code.");
+    process.stdout.write(
+      "\r  " + c(ANSI.red, "✗") + "  Verification failed. Re-run setup for a new code.\n",
+    );
     process.exit(1);
   }
+  process.stdout.write("\r  " + c(ANSI.green, "✓") + "  Verified                                \n");
 
+  // ── Step 7: re-detect + summary ─────────────────────────────────────
   const after = await detectOnchainosWallet();
   if (after.kind !== "ok") {
-    console.error(`\n✗ Verify completed but detection still reports: ${after.kind}`);
-    console.error("  Run `onchainos wallet status` to diagnose.");
+    console.error(
+      "\n  " + c(ANSI.red, "✗") + `  Login completed but status check failed: ${after.kind}`,
+    );
+    console.error("     Run `onchainos wallet status` to diagnose.");
     process.exit(1);
   }
 
+  console.log();
+  printSetupSummary(after.address, after.email);
+  console.log();
   console.log(
-    `\n✓ OKX wallet ready: ${after.address}` + (after.email ? ` (${after.email})` : ""),
+    "  " + c(ANSI.cyan, "→") + "  Restart OpenClaw: " + c(ANSI.bold, "openclaw gateway restart"),
   );
-  console.log("\nNext: openclaw gateway restart");
+  console.log();
 }
 
 async function cmdCache(port: number): Promise<void> {
