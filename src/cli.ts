@@ -259,7 +259,22 @@ function printSetupHeader(): void {
   console.log();
 }
 
-function printSetupSummary(address: string, email: string | undefined): void {
+/**
+ * Live USDC balance on Base for the wallet — queried via BalanceMonitor.
+ * Optional: if the network is unavailable we render the box without it
+ * rather than blocking setup completion.
+ */
+type SetupBalanceSnapshot = {
+  balanceUSD: string;
+  isLow: boolean;
+  isEmpty: boolean;
+};
+
+function printSetupSummary(
+  address: string,
+  email: string | undefined,
+  balance: SetupBalanceSnapshot | undefined,
+): void {
   const lines = [
     c(ANSI.bold + ANSI.green, "✓  Wallet ready"),
     "",
@@ -272,18 +287,53 @@ function printSetupSummary(address: string, email: string | undefined): void {
   }
   lines.push(c(ANSI.dim, "Signing ") + "OKX TEE  " + c(ANSI.dim, "(no local private key)"));
 
-  // Funding hint. OKX onchainos x402 signing currently only supports Base
-  // (Solana support hasn't shipped yet — see src/proxy.ts warning). USDC on
-  // Base is the only thing that actually unlocks paid models, so name the
-  // chain explicitly instead of saying "USDC" alone, which led users to
-  // bridge to the wrong network.
+  // Live balance row, severity-tagged. Three buckets:
+  //   empty (< $0.0001)  →  red ⚠, explicit "fund to unlock paid models"
+  //   low ($0.0001..$1)  →  yellow ⚠, suggested top-up
+  //   ok (≥ $1)          →  green ✓
+  // Solana support isn't shipped yet on OKX onchainos (see src/proxy.ts),
+  // so the balance shown is the Base-chain USDC only — name the chain
+  // explicitly so users don't bridge USDC to the wrong network.
   lines.push("");
-  lines.push(
-    c(ANSI.dim, "Fund    ") + "send " + c(ANSI.bold, "USDC on Base") + " to the address above",
-  );
-  lines.push(
-    c(ANSI.dim, "        ") + c(ANSI.dim, "(free models work at $0; $5 unlocks paid tier)"),
-  );
+  if (!balance) {
+    lines.push(
+      c(ANSI.dim, "Balance ") + c(ANSI.dim, "(could not query Base RPC — check your network)"),
+    );
+  } else if (balance.isEmpty) {
+    lines.push(
+      c(ANSI.dim, "Balance ") +
+        c(ANSI.bold, "$0.00 USDC on Base") +
+        "  " +
+        c(ANSI.yellow, "⚠ empty — fund to unlock paid models"),
+    );
+  } else if (balance.isLow) {
+    lines.push(
+      c(ANSI.dim, "Balance ") +
+        c(ANSI.bold, balance.balanceUSD + " USDC on Base") +
+        "  " +
+        c(ANSI.yellow, "⚠ low (recommend $5+ for stable paid usage)"),
+    );
+  } else {
+    lines.push(
+      c(ANSI.dim, "Balance ") +
+        c(ANSI.bold, balance.balanceUSD + " USDC on Base") +
+        "  " +
+        c(ANSI.green, "✓ ready for paid models"),
+    );
+  }
+
+  // Only show the funding walkthrough when the user actually needs to fund.
+  // Avoids cluttering the box for already-funded users on every setup run.
+  const needsFunding = !balance || balance.isEmpty || balance.isLow;
+  if (needsFunding) {
+    lines.push("");
+    lines.push(c(ANSI.dim, "Fund via OKX (Base network, USDC):"));
+    lines.push(c(ANSI.dim, "  1. ") + "Open the OKX app → Wallet");
+    lines.push(
+      c(ANSI.dim, "  2. ") + "Send USDC on " + c(ANSI.bold, "Base") + " to the address above",
+    );
+    lines.push(c(ANSI.dim, "  3. ") + c(ANSI.dim, "~$5 covers thousands of paid requests"));
+  }
 
   const width = Math.max(...lines.map((l) => stripAnsi(l).length));
   const horiz = "─".repeat(width + 2);
@@ -293,6 +343,30 @@ function printSetupSummary(address: string, email: string | undefined): void {
     console.log("  │ " + line + pad + " │");
   }
   console.log("  └" + horiz + "┘");
+}
+
+/**
+ * Query the wallet's Base-chain USDC balance via BalanceMonitor. Returns
+ * undefined on any failure (network, RPC, contract read) so the caller can
+ * fall back to a "could not query" notice rather than aborting setup.
+ *
+ * Imported lazily to keep the cli.ts import graph slim and avoid loading
+ * viem until we actually need it.
+ */
+async function fetchSetupBalanceSnapshot(
+  address: string,
+): Promise<SetupBalanceSnapshot | undefined> {
+  try {
+    const { BalanceMonitor } = await import("./balance.js");
+    const info = await new BalanceMonitor(address).checkBalance();
+    return {
+      balanceUSD: info.balanceUSD,
+      isLow: info.isLow,
+      isEmpty: info.isEmpty,
+    };
+  } catch {
+    return undefined;
+  }
 }
 
 async function cmdSetup(): Promise<void> {
@@ -324,8 +398,13 @@ async function cmdSetup(): Promise<void> {
   const detection = await detectOnchainosWallet();
   if (detection.kind === "ok") {
     console.log("  " + c(ANSI.green, "✓") + "  Already signed in");
+    process.stdout.write("  " + c(ANSI.yellow, "⏳") + "  Checking USDC balance on Base…");
+    const bal = await fetchSetupBalanceSnapshot(detection.address);
+    process.stdout.write(
+      "\r  " + c(ANSI.green, "✓") + "  Balance checked                       \n",
+    );
     console.log();
-    printSetupSummary(detection.address, detection.email);
+    printSetupSummary(detection.address, detection.email, bal);
     console.log();
     console.log(
       "  " + c(ANSI.cyan, "→") + "  Restart OpenClaw: " + c(ANSI.bold, "openclaw gateway restart"),
@@ -405,8 +484,11 @@ async function cmdSetup(): Promise<void> {
     process.exit(1);
   }
 
+  process.stdout.write("  " + c(ANSI.yellow, "⏳") + "  Checking USDC balance on Base…");
+  const balanceAfter = await fetchSetupBalanceSnapshot(after.address);
+  process.stdout.write("\r  " + c(ANSI.green, "✓") + "  Balance checked                       \n");
   console.log();
-  printSetupSummary(after.address, after.email);
+  printSetupSummary(after.address, after.email, balanceAfter);
   console.log();
   console.log(
     "  " + c(ANSI.cyan, "→") + "  Restart OpenClaw: " + c(ANSI.bold, "openclaw gateway restart"),
