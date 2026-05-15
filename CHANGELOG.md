@@ -4,6 +4,12 @@ All notable changes to XClawRouter.
 
 ---
 
+## v0.12.184 — May 14, 2026
+
+- **Remove `free/deepseek-v4-pro` (NVIDIA upstream down).** NVIDIA no longer serves `deepseek-v4-pro` via NIM. The model has been removed from `BLOCKRUN_MODELS` and the `FREE_MODELS` rotation. All aliases that previously resolved to it (`nvidia/deepseek-v4-pro`, `nvidia/deepseek-v3.2`, `free/deepseek-v3.2`, `deepseek-free`, `deepseek-v4-pro`, `v4-pro`, `free/deepseek-v4-pro`) now redirect to `free/deepseek-v4-flash`, which NVIDIA still serves. No user-visible breakage — requests continue to route to the best available free DeepSeek model.
+
+---
+
 ## v0.12.183 — May 13, 2026
 
 - **`src/router/config.ts`: add `deepseek/deepseek-v4-pro` to the reasoning route's fallback chain.** The reasoning tier already lists `deepseek/deepseek-reasoner` (V4 Flash thinking, $0.20/$0.40, 1M ctx) as a cheap fallback; V4 Pro is the flagship sibling at $0.50/$1.00 during the promo window through 2026-05-31 (list pricing $2/$4 post-promo). Adding it alongside Flash gives the router a higher-capability option before falling out of the DeepSeek family entirely. Updated both the candidates list and the explicit `fallback: [...]` array. No scoring/ranking changes — pure registry addition.

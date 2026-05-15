@@ -119,8 +119,7 @@ const FREE_MODELS = new Set([
   "free/gpt-oss-120b",
   "free/gpt-oss-20b",
   "free/mistral-small-4-119b", // 114 tok/s — fastest free chat
-  "free/deepseek-v4-pro", // 1M ctx, MMLU-Pro 87.5 — strongest free reasoning
-  "free/deepseek-v4-flash", // 1M ctx, ~5x faster than v4-pro
+  "free/deepseek-v4-flash", // 1M ctx, 1M ctx — NVIDIA v4-pro down 2026-05-14
   "free/qwen3-next-80b-a3b-thinking", // 116 tok/s reasoning
   "free/qwen3-coder-480b",
   "free/glm-4.7",

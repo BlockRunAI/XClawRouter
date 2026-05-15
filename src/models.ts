@@ -106,9 +106,10 @@ export const MODEL_ALIASES: Record<string, string> = {
   "gpt-20b": "free/gpt-oss-20b",
   "nvidia/gpt-oss-120b": "free/gpt-oss-120b",
   "nvidia/gpt-oss-20b": "free/gpt-oss-20b",
-  "nvidia/deepseek-v3.2": "free/deepseek-v4-pro", // v3.2 phased out 2026-04-29 → v4-pro
-  "free/deepseek-v3.2": "free/deepseek-v4-pro", // local pin redirect
-  "nvidia/deepseek-v4-pro": "free/deepseek-v4-pro",
+  "nvidia/deepseek-v3.2": "free/deepseek-v4-flash", // v3.2 phased out 2026-04-29; v4-pro also down → v4-flash
+  "free/deepseek-v3.2": "free/deepseek-v4-flash", // local pin redirect
+  "nvidia/deepseek-v4-pro": "free/deepseek-v4-flash", // NVIDIA v4-pro down → v4-flash
+  "free/deepseek-v4-pro": "free/deepseek-v4-flash", // NVIDIA upstream down 2026-05-14
   "nvidia/deepseek-v4-flash": "free/deepseek-v4-flash",
   "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning": "free/nemotron-3-nano-omni-30b-a3b-reasoning",
   "nvidia/qwen3-coder-480b": "free/qwen3-coder-480b",
@@ -129,10 +130,10 @@ export const MODEL_ALIASES: Record<string, string> = {
   "free/mistral-large-3-675b": "free/mistral-small-4-119b",
   "free/devstral-2-123b": "free/qwen3-coder-480b",
   // Free model shorthand aliases
-  "deepseek-free": "free/deepseek-v4-pro", // upgraded from v3.2 (2026-04-29)
-  "deepseek-v4-pro": "free/deepseek-v4-pro",
+  "deepseek-free": "free/deepseek-v4-flash", // was v4-pro; NVIDIA v4-pro down 2026-05-14
+  "deepseek-v4-pro": "free/deepseek-v4-flash", // NVIDIA v4-pro down → v4-flash
   "deepseek-v4-flash": "free/deepseek-v4-flash",
-  "v4-pro": "free/deepseek-v4-pro",
+  "v4-pro": "free/deepseek-v4-flash", // NVIDIA v4-pro down → v4-flash
   "v4-flash": "free/deepseek-v4-flash",
   "mistral-free": "free/mistral-small-4-119b",
   "glm-free": "free/glm-4.7",
@@ -974,19 +975,6 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     outputPrice: 0,
     contextWindow: 128000,
     maxOutput: 16384,
-  },
-  {
-    // V4 Pro: 1.6T MoE / 49B active, 1M context. MMLU-Pro 87.5, GPQA 90.1,
-    // SWE-bench 80.6, LiveCodeBench 93.5. NIM ~150 tok/s on Blackwell.
-    // Strongest free reasoning model — phases out free/deepseek-v3.2.
-    id: "free/deepseek-v4-pro",
-    name: "[Free] DeepSeek V4 Pro",
-    version: "v4-pro",
-    inputPrice: 0,
-    outputPrice: 0,
-    contextWindow: 1000000,
-    maxOutput: 16384,
-    reasoning: true,
   },
   {
     // V4 Flash: 284B / 13B active MoE, 1M context. ~5x faster than V4 Pro.
