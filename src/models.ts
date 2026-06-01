@@ -159,8 +159,9 @@ export const MODEL_ALIASES: Record<string, string> = {
   maverick: "free/llama-4-maverick",
   free: "free/gpt-oss-120b",
 
-  // MiniMax
-  minimax: "minimax/minimax-m2.7",
+  // MiniMax (minimax → current flagship: M3)
+  minimax: "minimax/minimax-m3",
+  "minimax-m3": "minimax/minimax-m3",
   "minimax-m2.7": "minimax/minimax-m2.7",
   "minimax-m2.5": "minimax/minimax-m2.5",
 
@@ -917,6 +918,18 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
   },
 
   // MiniMax
+  {
+    id: "minimax/minimax-m3",
+    name: "MiniMax M3",
+    version: "m3",
+    inputPrice: 0.3,
+    outputPrice: 1.2,
+    contextWindow: 1048576,
+    maxOutput: 65536,
+    reasoning: true,
+    agentic: true,
+    toolCalling: true,
+  },
   {
     id: "minimax/minimax-m2.7",
     name: "MiniMax M2.7",

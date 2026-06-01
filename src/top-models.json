@@ -35,6 +35,7 @@
   "xai/grok-3",
   "xai/grok-4-0709",
   "xai/grok-4-1-fast-reasoning",
+  "minimax/minimax-m3",
   "minimax/minimax-m2.7",
   "free/gpt-oss-120b",
   "free/gpt-oss-20b",
