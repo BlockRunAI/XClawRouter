@@ -73757,15 +73757,16 @@ var DEFAULT_ROUTING_CONFIG = {
       ]
     },
     COMPLEX: {
-      primary: "anthropic/claude-opus-4.7",
-      // Best quality for complex tasks
+      primary: "anthropic/claude-opus-4.8",
+      // Anthropic flagship (promoted 2026-06-05, same $5/$25 as 4.7)
       // Fallback chain de-Gemini'd 2026-04-22: when Anthropic 503s, Gemini is
       // also prone to "high demand" 503s (correlated failure — everyone falls
       // back to Google at the same time). Prefer xAI Grok → Moonshot → OpenAI
       // flagship → DeepSeek → NVIDIA free instead.
       fallback: [
-        "anthropic/claude-opus-4.6",
+        "anthropic/claude-opus-4.7",
         // in-family hot swap first
+        "anthropic/claude-opus-4.6",
         "anthropic/claude-sonnet-4.6",
         "xai/grok-4-0709",
         // 503-resistant flagship
@@ -73787,8 +73788,9 @@ var DEFAULT_ROUTING_CONFIG = {
       primary: "anthropic/claude-sonnet-4.6",
       // 2,110ms, $3/$15 - best for reasoning/instructions
       fallback: [
-        "anthropic/claude-opus-4.7",
+        "anthropic/claude-opus-4.8",
         // Flagship Opus w/ adaptive thinking
+        "anthropic/claude-opus-4.7",
         "anthropic/claude-opus-4.6",
         // 2,139ms
         "xai/grok-4-1-fast-reasoning",
@@ -73835,8 +73837,9 @@ var DEFAULT_ROUTING_CONFIG = {
       // correlate with Anthropic outages (everyone falls back together).
       // Prefer 503-resistant providers first.
       fallback: [
-        "anthropic/claude-opus-4.7",
+        "anthropic/claude-opus-4.8",
         // Flagship Opus — in-family hot swap
+        "anthropic/claude-opus-4.7",
         "anthropic/claude-opus-4.6",
         // 2,139ms
         "xai/grok-4-0709",
@@ -73857,8 +73860,9 @@ var DEFAULT_ROUTING_CONFIG = {
       primary: "anthropic/claude-sonnet-4.6",
       // 2,110ms — strong tool use + reasoning
       fallback: [
-        "anthropic/claude-opus-4.7",
+        "anthropic/claude-opus-4.8",
         // Flagship Opus w/ adaptive thinking
+        "anthropic/claude-opus-4.7",
         "anthropic/claude-opus-4.6",
         // 2,139ms
         "xai/grok-4-1-fast-reasoning",
@@ -73905,8 +73909,11 @@ var MODEL_ALIASES = {
   "sonnet-4": "anthropic/claude-sonnet-4.6",
   "sonnet-4.6": "anthropic/claude-sonnet-4.6",
   "sonnet-4-6": "anthropic/claude-sonnet-4.6",
-  opus: "anthropic/claude-opus-4.7",
-  "opus-4": "anthropic/claude-opus-4.7",
+  opus: "anthropic/claude-opus-4.8",
+  "opus-4": "anthropic/claude-opus-4.8",
+  "opus-4.8": "anthropic/claude-opus-4.8",
+  "opus-4-8": "anthropic/claude-opus-4.8",
+  "anthropic/claude-opus-4-8": "anthropic/claude-opus-4.8",
   "opus-4.7": "anthropic/claude-opus-4.7",
   "opus-4-7": "anthropic/claude-opus-4.7",
   "opus-4.6": "anthropic/claude-opus-4.6",
@@ -73914,14 +73921,14 @@ var MODEL_ALIASES = {
   haiku: "anthropic/claude-haiku-4.5",
   // Claude - provider/shortname patterns (common in agent frameworks)
   "anthropic/sonnet": "anthropic/claude-sonnet-4.6",
-  "anthropic/opus": "anthropic/claude-opus-4.7",
+  "anthropic/opus": "anthropic/claude-opus-4.8",
   "anthropic/haiku": "anthropic/claude-haiku-4.5",
   "anthropic/claude": "anthropic/claude-sonnet-4.6",
   // Backward compatibility - generic opus-4 and older flagships point at 4.7;
   // explicit version pins (claude-opus-4-6) stay on 4.6 since server still routes it.
   "anthropic/claude-sonnet-4": "anthropic/claude-sonnet-4.6",
   "anthropic/claude-sonnet-4-6": "anthropic/claude-sonnet-4.6",
-  "anthropic/claude-opus-4": "anthropic/claude-opus-4.7",
+  "anthropic/claude-opus-4": "anthropic/claude-opus-4.8",
   "anthropic/claude-opus-4-7": "anthropic/claude-opus-4.7",
   "anthropic/claude-opus-4-6": "anthropic/claude-opus-4.6",
   "anthropic/claude-opus-4-5": "anthropic/claude-opus-4.5",
@@ -73963,13 +73970,18 @@ var MODEL_ALIASES = {
   flash: "google/gemini-2.5-flash",
   "gemini-3.1-pro-preview": "google/gemini-3.1-pro",
   "google/gemini-3.1-pro-preview": "google/gemini-3.1-pro",
+  "gemini-3.5-flash": "google/gemini-3.5-flash",
   "gemini-3.1-flash-lite": "google/gemini-3.1-flash-lite",
   "gemini-2.5-flash-lite": "google/gemini-2.5-flash-lite",
-  // xAI
-  grok: "xai/grok-3",
+  // xAI — grok-4.3 is the public flagship since 2026-06-04 (grok-3 and the
+  // 4-fast/4-1-fast families are hidden in the backend catalog; direct full
+  // IDs still resolve for pinned users).
+  grok: "xai/grok-4.3",
+  "grok-4.3": "xai/grok-4.3",
   "grok-fast": "xai/grok-4-fast-reasoning",
-  "grok-code": "deepseek/deepseek-chat",
-  // was grok-code-fast-1, delisted due to poor retention
+  "grok-build": "xai/grok-build-0.1",
+  "grok-code": "xai/grok-build-0.1",
+  // xAI's agentic coding model (Build 0.1, 2026-06-04)
   // Delisted model redirects — full model IDs that were previously valid but removed
   "grok-code-fast-1": "deepseek/deepseek-chat",
   // bare alias
@@ -74443,6 +74455,21 @@ var BLOCKRUN_MODELS = [
     toolCalling: true
   },
   {
+    // Anthropic's current flagship (backend FEATURED since 2026-05-28).
+    // Same $5/$25 as 4.7 — 1M ctx, 128K out, adaptive thinking.
+    id: "anthropic/claude-opus-4.8",
+    name: "Claude Opus 4.8",
+    version: "4.8",
+    inputPrice: 5,
+    outputPrice: 25,
+    contextWindow: 1e6,
+    maxOutput: 128e3,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true
+  },
+  {
     id: "anthropic/claude-opus-4.7",
     name: "Claude Opus 4.7",
     version: "4.7",
@@ -74475,6 +74502,20 @@ var BLOCKRUN_MODELS = [
     inputPrice: 2,
     outputPrice: 12,
     contextWindow: 105e4,
+    maxOutput: 65536,
+    reasoning: true,
+    vision: true,
+    toolCalling: true
+  },
+  {
+    // Latest-generation Flash with built-in thinking mode (backend
+    // 2026-05-19) — frontier-class quality at Flash pricing.
+    id: "google/gemini-3.5-flash",
+    name: "Gemini 3.5 Flash",
+    version: "3.5",
+    inputPrice: 0.5,
+    outputPrice: 3,
+    contextWindow: 1048576,
     maxOutput: 65536,
     reasoning: true,
     vision: true,
@@ -74536,23 +74577,38 @@ var BLOCKRUN_MODELS = [
   // DeepSeek
   {
     id: "deepseek/deepseek-chat",
-    name: "DeepSeek V3.2 Chat",
-    version: "3.2",
-    inputPrice: 0.28,
-    outputPrice: 0.42,
-    contextWindow: 128e3,
+    name: "DeepSeek V4 Flash Chat",
+    version: "4-flash",
+    inputPrice: 0.2,
+    outputPrice: 0.4,
+    contextWindow: 1e6,
     maxOutput: 8192,
     toolCalling: true
   },
   {
     id: "deepseek/deepseek-reasoner",
-    name: "DeepSeek V3.2 Reasoner",
-    version: "3.2",
-    inputPrice: 0.28,
-    outputPrice: 0.42,
-    contextWindow: 128e3,
+    name: "DeepSeek V4 Flash Reasoner",
+    version: "4-flash",
+    inputPrice: 0.2,
+    outputPrice: 0.4,
+    contextWindow: 1e6,
     maxOutput: 8192,
     reasoning: true,
+    toolCalling: true
+  },
+  {
+    // V4 flagship — strongest open-weight reasoner. The 75% launch promo
+    // became DeepSeek's permanent list price after 2026-05-31. Resold via
+    // BlockRun's OpenRouter credit pool.
+    id: "deepseek/deepseek-v4-pro",
+    name: "DeepSeek V4 Pro",
+    version: "4-pro",
+    inputPrice: 0.435,
+    outputPrice: 0.87,
+    contextWindow: 1048576,
+    maxOutput: 65536,
+    reasoning: true,
+    agentic: true,
     toolCalling: true
   },
   // Kimi K2.6 — Moonshot's current flagship (256K context, vision + reasoning). Only served via Moonshot direct API.
@@ -74722,6 +74778,32 @@ var BLOCKRUN_MODELS = [
     reasoning: true,
     toolCalling: true
   },
+  // xAI via BlockRun's OpenRouter credit pool (public in backend catalog,
+  // added 2026-06-04). Picker-visible — listed in top-models.json.
+  {
+    id: "xai/grok-4.3",
+    name: "Grok 4.3",
+    version: "4.3",
+    inputPrice: 1.5,
+    outputPrice: 4,
+    contextWindow: 1e6,
+    maxOutput: 16384,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true
+  },
+  {
+    id: "xai/grok-build-0.1",
+    name: "Grok Build 0.1",
+    version: "0.1",
+    inputPrice: 1.5,
+    outputPrice: 3,
+    contextWindow: 256e3,
+    maxOutput: 16384,
+    agentic: true,
+    toolCalling: true
+  },
   // MiniMax
   {
     id: "minimax/minimax-m3",
@@ -74870,6 +74952,8 @@ var BLOCKRUN_MODELS = [
   },
   // Z.AI GLM-5 Models
   {
+    // Launch promo (flat $0.001/call) ended 2026-06-05 — backend now bills
+    // glm-5.1 per-token at $1.40/$4.40 (billingMode: "paid").
     id: "zai/glm-5.1",
     name: "GLM-5.1",
     version: "5.1",
@@ -74878,9 +74962,10 @@ var BLOCKRUN_MODELS = [
     contextWindow: 2e5,
     maxOutput: 128e3,
     toolCalling: true,
-    promo: { flatPrice: 1e-3, startDate: "2026-04-01", endDate: "2026-04-15" }
+    promo: { flatPrice: 1e-3, startDate: "2026-04-01", endDate: "2026-06-05" }
   },
   {
+    // Backend billingMode: "flat" — permanent $0.001/call, not a promo.
     id: "zai/glm-5",
     name: "GLM-5",
     version: "5",
@@ -74889,9 +74974,10 @@ var BLOCKRUN_MODELS = [
     contextWindow: 2e5,
     maxOutput: 128e3,
     toolCalling: true,
-    promo: { flatPrice: 1e-3, startDate: "2026-04-01", endDate: "2026-04-15" }
+    flatPrice: 1e-3
   },
   {
+    // Backend billingMode: "flat" — permanent $0.001/call, not a promo.
     id: "zai/glm-5-turbo",
     name: "GLM-5 Turbo",
     version: "5-turbo",
@@ -74900,10 +74986,11 @@ var BLOCKRUN_MODELS = [
     contextWindow: 2e5,
     maxOutput: 128e3,
     toolCalling: true,
-    promo: { flatPrice: 1e-3, startDate: "2026-04-01", endDate: "2026-04-15" }
+    flatPrice: 1e-3
   }
 ];
 function getActivePromoPrice(model, now = /* @__PURE__ */ new Date()) {
+  if (model.flatPrice !== void 0) return model.flatPrice;
   if (!model.promo) return void 0;
   const start = new Date(model.promo.startDate);
   const end = new Date(model.promo.endDate);
@@ -81220,7 +81307,7 @@ var DOCTOR_MODELS = {
     cost: "~$0.003"
   },
   opus: {
-    id: "anthropic/claude-opus-4.7",
+    id: "anthropic/claude-opus-4.8",
     name: "Claude Opus 4.7",
     cost: "~$0.01"
   }

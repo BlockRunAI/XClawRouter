@@ -8,7 +8,7 @@ describe("resolveModelAlias", () => {
     expect(resolveModelAlias("claude")).toBe("anthropic/claude-sonnet-4.6");
     expect(resolveModelAlias("br-sonnet")).toBe("anthropic/claude-sonnet-4.6");
     expect(resolveModelAlias("sonnet")).toBe("anthropic/claude-sonnet-4.6");
-    expect(resolveModelAlias("opus")).toBe("anthropic/claude-opus-4.7");
+    expect(resolveModelAlias("opus")).toBe("anthropic/claude-opus-4.8");
     expect(resolveModelAlias("haiku")).toBe("anthropic/claude-haiku-4.5");
   });
 
@@ -19,12 +19,12 @@ describe("resolveModelAlias", () => {
   it("resolves aliases even when sent with blockrun/ prefix", () => {
     expect(resolveModelAlias("blockrun/claude")).toBe("anthropic/claude-sonnet-4.6");
     expect(resolveModelAlias("blockrun/sonnet-4.6")).toBe("anthropic/claude-sonnet-4.6");
-    expect(resolveModelAlias("blockrun/opus")).toBe("anthropic/claude-opus-4.7");
+    expect(resolveModelAlias("blockrun/opus")).toBe("anthropic/claude-opus-4.8");
   });
 
-  it("keeps explicit version pins routable, promotes generic opus-4 to flagship 4.7", () => {
+  it("keeps explicit version pins routable, promotes generic opus-4 to flagship 4.8", () => {
     expect(resolveModelAlias("anthropic/claude-sonnet-4")).toBe("anthropic/claude-sonnet-4.6");
-    expect(resolveModelAlias("anthropic/claude-opus-4")).toBe("anthropic/claude-opus-4.7");
+    expect(resolveModelAlias("anthropic/claude-opus-4")).toBe("anthropic/claude-opus-4.8");
     // 4.5 is a distinct model in blockrun (200K context, smaller than 4.6/4.7's 1M);
     // the explicit pin must be preserved end-to-end, not silently upgraded.
     expect(resolveModelAlias("anthropic/claude-opus-4.5")).toBe("anthropic/claude-opus-4.5");

@@ -4,6 +4,18 @@ All notable changes to XClawRouter.
 
 ---
 
+## v0.12.186 — June 5, 2026
+
+- **Catalog sync with BlockRun backend (flagship catch-up + 2026-06-04/05 model drops).**
+  - **Claude Opus 4.8 is now the Anthropic flagship** (`src/models.ts`, `src/router/config.ts`, `src/doctor.ts`, `src/top-models.json`): catalog entry added (same $5/$25 as 4.7 — 1M ctx, 128K out, adaptive thinking); bare `opus` / `opus-4` / `anthropic/opus` / `anthropic/claude-opus-4` aliases promoted to 4.8 (explicit 4.7/4.6/4.5 pins stay routable); `premiumTiers.COMPLEX` primary promoted 4.7 → 4.8 with 4.7 as first in-family fallback, and 4.8 inserted ahead of 4.7 in the premium REASONING + agentic COMPLEX/REASONING chains; `doctor` deep-analysis model bumped. Picker adds 4.8 and drops 4.6 (hidden on BlockRun).
+  - **Gemini 3.5 Flash added** ($0.50/$3.00, 1M ctx, built-in thinking; backend 2026-05-19) with `gemini-3.5-flash` alias and picker row.
+  - **New xAI models:** `xai/grok-4.3` ($1.50/$4.00, 1M ctx, reasoning + vision + agentic) and `xai/grok-build-0.1` ($1.50/$3.00, 256K, agentic coding) — OpenRouter credit-pool resale, picker-visible. Bare `grok` promoted `xai/grok-3` → `xai/grok-4.3` (grok-3 and the 4-fast/4-1-fast families are now hidden on BlockRun); `grok-code` repointed to `xai/grok-build-0.1`; new pins `grok-4.3`, `grok-build`.
+  - **`deepseek/deepseek-v4-pro` added to the catalog** ($0.435/$0.87 — the 75% launch promo became DeepSeek's permanent list price after 2026-05-31; 1M ctx). `deepseek-chat`/`deepseek-reasoner` refreshed from stale V3.2 ($0.28/$0.42, 128K) to V4 Flash ($0.20/$0.40, 1M). Picker swaps the hung `free/deepseek-v4-pro` row (redirect-only since v0.12.184) for the paid `deepseek/deepseek-v4-pro`.
+  - **GLM flat pricing modeled correctly:** new permanent `flatPrice` field (backend `billingMode: "flat"`); `zai/glm-5` and `zai/glm-5-turbo` move off an expired promo back to flat $0.001/request; `zai/glm-5.1`'s promo end corrected to 2026-06-05 (per-token $1.40/$4.40 now).
+  - **Docs:** README pricing tables and `skills/xclawrouter/SKILL.md` refreshed (the SKILL list still named the retired nemotron-ultra/v3.2/mistral-large free fleet).
+
+---
+
 ## v0.12.184 — May 14, 2026
 
 - **Remove `free/deepseek-v4-pro` (NVIDIA upstream down).** NVIDIA no longer serves `deepseek-v4-pro` via NIM. The model has been removed from `BLOCKRUN_MODELS` and the `FREE_MODELS` rotation. All aliases that previously resolved to it (`nvidia/deepseek-v4-pro`, `nvidia/deepseek-v3.2`, `free/deepseek-v3.2`, `deepseek-free`, `deepseek-v4-pro`, `v4-pro`, `free/deepseek-v4-pro`) now redirect to `free/deepseek-v4-flash`, which NVIDIA still serves. No user-visible breakage — requests continue to route to the best available free DeepSeek model.

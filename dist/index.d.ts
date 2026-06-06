@@ -1296,6 +1296,11 @@ type BlockRunModel = {
         /** ISO date, promo ends (exclusive). e.g. "2026-04-15" */
         endDate: string;
     };
+    /**
+     * Permanent flat per-request price in USD (backend billingMode: "flat").
+     * Unlike promo, this never expires. Takes precedence over promo.
+     */
+    flatPrice?: number;
 };
 declare const BLOCKRUN_MODELS: BlockRunModel[];
 /**
