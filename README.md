@@ -328,8 +328,8 @@ Edit existing images with `/img2img`:
 | deepseek/deepseek-chat                        |     $0.20 |      $0.40 |    $0.0003 | 1M      | tools (V4 Flash chat)                        |
 | deepseek/deepseek-reasoner                    |     $0.20 |      $0.40 |    $0.0003 | 1M      | reasoning, tools (V4 Flash thinking)         |
 | deepseek/deepseek-v4-pro                      |    $0.435 |      $0.87 |    $0.0007 | 1M      | reasoning, agentic, tools (V4 flagship)      |
-| zai/glm-5                                     | flat $0.001/request | | $0.0010 | 200K  | tools                                        |
-| zai/glm-5-turbo                               | flat $0.001/request | | $0.0010 | 200K  | tools                                        |
+| zai/glm-5                                     |     $0.60 |      $1.92 |    $0.0013 | 200K    | tools                                        |
+| zai/glm-5-turbo                               |     $1.20 |      $4.00 |    $0.0026 | 200K    | tools                                        |
 | xai/grok-3-mini                               |     $0.30 |      $0.50 |    $0.0004 | 131K    | tools                                        |
 | minimax/minimax-m3                            |     $0.30 |      $1.20 |    $0.0008 | 1M      | reasoning, agentic, tools                    |
 | minimax/minimax-m2.7                          |     $0.30 |      $1.20 |    $0.0008 | 205K    | reasoning, agentic, tools                    |

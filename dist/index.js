@@ -58755,19 +58755,18 @@ var BLOCKRUN_MODELS = [
     promo: { flatPrice: 1e-3, startDate: "2026-04-01", endDate: "2026-06-05" }
   },
   {
-    // Backend billingMode: "flat" — permanent $0.001/call, not a promo.
+    // Flat-rate launch promo ended 2026-06-06 — backend bills per-token now.
     id: "zai/glm-5",
     name: "GLM-5",
     version: "5",
-    inputPrice: 1,
-    outputPrice: 3.2,
+    inputPrice: 0.6,
+    outputPrice: 1.92,
     contextWindow: 2e5,
     maxOutput: 128e3,
-    toolCalling: true,
-    flatPrice: 1e-3
+    toolCalling: true
   },
   {
-    // Backend billingMode: "flat" — permanent $0.001/call, not a promo.
+    // Flat-rate launch promo ended 2026-06-06 — backend bills per-token now.
     id: "zai/glm-5-turbo",
     name: "GLM-5 Turbo",
     version: "5-turbo",
@@ -58775,8 +58774,7 @@ var BLOCKRUN_MODELS = [
     outputPrice: 4,
     contextWindow: 2e5,
     maxOutput: 128e3,
-    toolCalling: true,
-    flatPrice: 1e-3
+    toolCalling: true
   }
 ];
 function getActivePromoPrice(model, now = /* @__PURE__ */ new Date()) {

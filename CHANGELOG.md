@@ -4,6 +4,12 @@ All notable changes to XClawRouter.
 
 ---
 
+## v0.12.188 — June 6, 2026
+
+- **GLM flat pricing fully retired (backend d840de7).** Z.AI's remaining flat $0.001/call promos ended 2026-06-06: `zai/glm-5` now bills per-token at $0.60/$1.92 and `zai/glm-5-turbo` at $1.20/$4.00 (glm-5.1 stays $1.40/$4.40). Permanent `flatPrice` fields removed; glm-5 base price corrected to match the gateway. README pricing rows updated.
+
+---
+
 ## v0.12.187 — June 6, 2026
 
 - **Upstream delistings mirrored (gateway health probe 2026-06-06).** `openai/o1-mini` 404s at OpenAI and `google/gemini-3-pro-preview` 404s at Google; the gateway hid both and redirects them (`o1-mini` → `o4-mini`, `gemini-3-pro-preview` → `gemini-3.1-pro`). Redirects mirrored in `MODEL_ALIASES`, gemini-3-pro-preview dropped from the picker and the AUTO COMPLEX fallback chain.
