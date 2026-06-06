@@ -4,6 +4,12 @@ All notable changes to XClawRouter.
 
 ---
 
+## v0.12.187 — June 6, 2026
+
+- **Upstream delistings mirrored (gateway health probe 2026-06-06).** `openai/o1-mini` 404s at OpenAI and `google/gemini-3-pro-preview` 404s at Google; the gateway hid both and redirects them (`o1-mini` → `o4-mini`, `gemini-3-pro-preview` → `gemini-3.1-pro`). Redirects mirrored in `MODEL_ALIASES`, gemini-3-pro-preview dropped from the picker and the AUTO COMPLEX fallback chain.
+
+---
+
 ## v0.12.186 — June 5, 2026
 
 - **Catalog sync with BlockRun backend (flagship catch-up + 2026-06-04/05 model drops).**

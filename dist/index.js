@@ -57730,6 +57730,9 @@ var MODEL_ALIASES = {
   codex: "openai/gpt-5.3-codex",
   mini: "openai/gpt-4o-mini",
   o1: "openai/o1",
+  // o1-mini delisted by OpenAI 2026-06-06 — mirror the gateway redirect.
+  "openai/o1-mini": "openai/o4-mini",
+  "o1-mini": "openai/o4-mini",
   o3: "openai/o3",
   // OpenAI Codex prefix aliases (OpenClaw v2026.4.5 openai-codex/ model ID format)
   "openai-codex/gpt-5.4-mini": "openai/gpt-5.4-mini",
@@ -57749,6 +57752,10 @@ var MODEL_ALIASES = {
   "kimi-k2.5": "moonshot/kimi-k2.5",
   "nvidia/kimi-k2.5": "moonshot/kimi-k2.5",
   // Google
+  // gemini-3-pro-preview delisted by Google 2026-06-06 — mirror the gateway
+  // redirect to its successor so pinned callers land on 3.1-pro, not an error.
+  "google/gemini-3-pro-preview": "google/gemini-3.1-pro",
+  "gemini-3-pro-preview": "google/gemini-3.1-pro",
   gemini: "google/gemini-2.5-pro",
   flash: "google/gemini-2.5-flash",
   "gemini-3.1-pro-preview": "google/gemini-3.1-pro",
@@ -74177,8 +74184,6 @@ var DEFAULT_ROUTING_CONFIG = {
       primary: "google/gemini-3.1-pro",
       // 1,609ms, IQ 57 — fast flagship quality
       fallback: [
-        "google/gemini-3-pro-preview",
-        // 1,352ms, IQ 48 — quality-first fallback
         "google/gemini-3-flash-preview",
         // 1,398ms, IQ 46 — fast + smart
         "xai/grok-4-0709",
@@ -81241,7 +81246,6 @@ var top_models_default = [
   "google/gemini-3.1-pro",
   "google/gemini-3.1-flash-lite",
   "google/gemini-3.5-flash",
-  "google/gemini-3-pro-preview",
   "google/gemini-3-flash-preview",
   "google/gemini-2.5-pro",
   "google/gemini-2.5-flash",

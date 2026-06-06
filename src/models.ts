@@ -61,6 +61,9 @@ export const MODEL_ALIASES: Record<string, string> = {
   codex: "openai/gpt-5.3-codex",
   mini: "openai/gpt-4o-mini",
   o1: "openai/o1",
+  // o1-mini delisted by OpenAI 2026-06-06 — mirror the gateway redirect.
+  "openai/o1-mini": "openai/o4-mini",
+  "o1-mini": "openai/o4-mini",
   o3: "openai/o3",
   // OpenAI Codex prefix aliases (OpenClaw v2026.4.5 openai-codex/ model ID format)
   "openai-codex/gpt-5.4-mini": "openai/gpt-5.4-mini",
@@ -83,6 +86,10 @@ export const MODEL_ALIASES: Record<string, string> = {
   "nvidia/kimi-k2.5": "moonshot/kimi-k2.5",
 
   // Google
+  // gemini-3-pro-preview delisted by Google 2026-06-06 — mirror the gateway
+  // redirect to its successor so pinned callers land on 3.1-pro, not an error.
+  "google/gemini-3-pro-preview": "google/gemini-3.1-pro",
+  "gemini-3-pro-preview": "google/gemini-3.1-pro",
   gemini: "google/gemini-2.5-pro",
   flash: "google/gemini-2.5-flash",
   "gemini-3.1-pro-preview": "google/gemini-3.1-pro",

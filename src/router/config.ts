@@ -1069,7 +1069,6 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
     COMPLEX: {
       primary: "google/gemini-3.1-pro", // 1,609ms, IQ 57 — fast flagship quality
       fallback: [
-        "google/gemini-3-pro-preview", // 1,352ms, IQ 48 — quality-first fallback
         "google/gemini-3-flash-preview", // 1,398ms, IQ 46 — fast + smart
         "xai/grok-4-0709", // 1,348ms, IQ 41
         "google/gemini-2.5-pro", // 1,294ms
