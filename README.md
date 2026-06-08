@@ -307,7 +307,6 @@ Edit existing images with `/img2img`:
 | --------------------------------------------- | --------: | ---------: | ---------: | ------- | -------------------------------------------- |
 | nvidia/gpt-oss-120b                           |  **FREE** |   **FREE** |     **$0** | 128K    | default free model                           |
 | nvidia/gpt-oss-20b                            |  **FREE** |   **FREE** |     **$0** | 128K    | smaller, faster                              |
-| nvidia/mistral-small-4-119b                   |  **FREE** |   **FREE** |     **$0** | 131K    | ⚠ upstream timing out (2026-06-07)           |
 | nvidia/deepseek-v4-flash                      |  **FREE** |   **FREE** |     **$0** | 1M      | reasoning, ~5x faster than v4-pro            |
 | nvidia/qwen3-coder-480b                       |  **FREE** |   **FREE** |     **$0** | 131K    | coding                                       |
 | nvidia/llama-4-maverick                       |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                                    |

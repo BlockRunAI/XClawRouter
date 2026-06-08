@@ -4,6 +4,12 @@ All notable changes to XClawRouter.
 
 ---
 
+## v0.12.190 — June 8, 2026
+
+Finished de-listing `nvidia/mistral-small-4-119b` after the gateway hid + redirected it (2026-06-08; mirrors ClawRouter v0.12.205).
+
+- **`nvidia/mistral-small-4-119b` fully de-listed** — the gateway now marks it `hidden` and server-redirects it to `nvidia/llama-4-maverick` (NVIDIA upstream timing out, 3/3 probes >60s). All five alias targets that still resolved to `free/mistral-small-4-119b` (`nvidia/mistral-small-4-119b`, `nvidia/mistral-large-3-675b`, `free/mistral-large-3-675b`, `mistral-free`, `mistral-small`) now resolve to `free/llama-4-maverick`, matching the gateway. Removed from the model catalog and the `/model` picker (`top-models.json`); README budget row dropped. (Test pricing fixture kept as a generic $0 entry.)
+
 ## v0.12.189 — June 8, 2026
 
 Free-tier routing realigned to the backend's 2026-06-07 model sweep (mirrors ClawRouter v0.12.204).

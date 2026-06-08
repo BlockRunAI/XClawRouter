@@ -42,7 +42,6 @@
   "minimax/minimax-m2.7",
   "free/gpt-oss-120b",
   "free/gpt-oss-20b",
-  "free/mistral-small-4-119b",
   "free/deepseek-v4-flash",
   "free/qwen3-coder-480b",
   "free/llama-4-maverick",
