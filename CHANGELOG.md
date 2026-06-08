@@ -4,6 +4,14 @@ All notable changes to XClawRouter.
 
 ---
 
+## v0.12.189 — June 8, 2026
+
+Free-tier routing realigned to the backend's 2026-06-07 model sweep (mirrors ClawRouter v0.12.204).
+
+- **`nvidia/qwen3-next-80b-a3b-thinking` removed** — NVIDIA end-of-life 2026-05-21 (HTTP 410; gateway redirects to `nvidia/llama-4-maverick`). Dropped from auto-pick, the `/model` picker, the eco-tier fallback chain, and the catalog. Its 15 alias/redirect targets (nemotron family, `qwen-thinking`, `qwen3-next`, the `nvidia/qwen3-next…` identity) now resolve to `free/llama-4-maverick`.
+- **`nvidia/glm-4.7` de-listed from auto-pick + picker** — NIM deployment hung; gateway redirects it to `nvidia/qwen3-coder-480b`. Aliases (`nvidia/glm-4.7`, `glm-free`) now resolve to `free/qwen3-coder-480b`. Catalog entry kept for direct $0 calls.
+- **`nvidia/mistral-small-4-119b` dropped from auto-pick + eco fallback** — upstream timing out (3/3 probes >60s). Still directly callable; just not a smart-routing target. README annotated.
+
 ## v0.12.188 — June 6, 2026
 
 - **GLM flat pricing fully retired (backend d840de7).** Z.AI's remaining flat $0.001/call promos ended 2026-06-06: `zai/glm-5` now bills per-token at $0.60/$1.92 and `zai/glm-5-turbo` at $1.20/$4.00 (glm-5.1 stays $1.40/$4.40). Permanent `flatPrice` fields removed; glm-5 base price corrected to match the gateway. README pricing rows updated.

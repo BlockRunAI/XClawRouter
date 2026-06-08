@@ -307,12 +307,9 @@ Edit existing images with `/img2img`:
 | --------------------------------------------- | --------: | ---------: | ---------: | ------- | -------------------------------------------- |
 | nvidia/gpt-oss-120b                           |  **FREE** |   **FREE** |     **$0** | 128K    | default free model                           |
 | nvidia/gpt-oss-20b                            |  **FREE** |   **FREE** |     **$0** | 128K    | smaller, faster                              |
-| nvidia/mistral-small-4-119b                   |  **FREE** |   **FREE** |     **$0** | 131K    | fastest free chat (114 tok/s)                |
-| nvidia/deepseek-v4-pro                        |  **FREE** |   **FREE** |     **$0** | 1M      | reasoning, MMLU-Pro 87.5                     |
+| nvidia/mistral-small-4-119b                   |  **FREE** |   **FREE** |     **$0** | 131K    | ⚠ upstream timing out (2026-06-07)           |
 | nvidia/deepseek-v4-flash                      |  **FREE** |   **FREE** |     **$0** | 1M      | reasoning, ~5x faster than v4-pro            |
-| nvidia/qwen3-next-80b-a3b-thinking            |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                                    |
 | nvidia/qwen3-coder-480b                       |  **FREE** |   **FREE** |     **$0** | 131K    | coding                                       |
-| nvidia/glm-4.7                                |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                                    |
 | nvidia/llama-4-maverick                       |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                                    |
 | nvidia/nemotron-3-nano-omni-30b-a3b-reasoning |  **FREE** |   **FREE** |     **$0** | 256K    | reasoning, **vision** (text+img+video+audio) |
 | openai/gpt-5-nano                             |     $0.05 |      $0.40 |    $0.0002 | 128K    | tools                                        |
@@ -617,7 +614,7 @@ ClawRouter works with any tool that makes OpenAI-compatible API calls — point 
 
 ### Is ClawRouter free?
 
-ClawRouter itself is free and MIT licensed. You pay only for the LLM API calls routed through it — and 10 NVIDIA-hosted models (`gpt-oss-120b`, `gpt-oss-20b`, `mistral-small-4-119b`, `deepseek-v4-pro`, `deepseek-v4-flash`, `qwen3-next-80b-a3b-thinking`, `qwen3-coder-480b`, `glm-4.7`, `llama-4-maverick`, `nemotron-3-nano-omni-30b-a3b-reasoning`) are completely free. Use `/model free` to smart-route across them, or pick any by name.
+ClawRouter itself is free and MIT licensed. You pay only for the LLM API calls routed through it — and several NVIDIA-hosted models (`gpt-oss-120b`, `gpt-oss-20b`, `deepseek-v4-flash`, `qwen3-coder-480b`, `llama-4-maverick`, `nemotron-3-nano-omni-30b-a3b-reasoning`) are completely free. Use `/model free` to smart-route across them, or pick any by name.
 
 ---
 

@@ -113,16 +113,16 @@ const ROUTING_PROFILES = new Set([
   "blockrun/premium",
   "premium",
 ]);
-// Default free model first (auto-pick order). gpt-oss-120b is the historical
+// Default free model first (auto-pick order). 2026-06-07 sweep dropped
+// qwen3-next (NVIDIA EOL 2026-05-21, HTTP 410), glm-4.7 (NIM hung —
+// server-redirected to qwen3-coder), and mistral-small-4-119b (upstream
+// timing out, 3/3 probes >60s). gpt-oss-120b is the historical
 // default — heavy users rely on it. New entries appended in chain order.
 const FREE_MODELS = new Set([
   "free/gpt-oss-120b",
   "free/gpt-oss-20b",
-  "free/mistral-small-4-119b", // 114 tok/s — fastest free chat
   "free/deepseek-v4-flash", // 1M ctx, 1M ctx — NVIDIA v4-pro down 2026-05-14
-  "free/qwen3-next-80b-a3b-thinking", // 116 tok/s reasoning
   "free/qwen3-coder-480b",
-  "free/glm-4.7",
   "free/llama-4-maverick",
   "free/nemotron-3-nano-omni-30b-a3b-reasoning", // first vision-capable free
 ]);

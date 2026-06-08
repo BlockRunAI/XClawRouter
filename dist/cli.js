@@ -73674,12 +73674,8 @@ var DEFAULT_ROUTING_CONFIG = {
       fallback: [
         "free/gpt-oss-20b",
         // FREE — smaller, faster
-        "free/mistral-small-4-119b",
-        // FREE — 114 tok/s, fastest free chat
         "free/deepseek-v4-flash",
         // FREE — 1M context, ~5x faster than v4-pro
-        "free/qwen3-next-80b-a3b-thinking",
-        // FREE — 116 tok/s reasoning
         "google/gemini-3.1-flash-lite",
         // $0.25/$1.50 — newest flash-lite
         "openai/gpt-5.4-nano",
@@ -74016,19 +74012,19 @@ var MODEL_ALIASES = {
   "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning": "free/nemotron-3-nano-omni-30b-a3b-reasoning",
   "nvidia/qwen3-coder-480b": "free/qwen3-coder-480b",
   "qwen/qwen3-coder-480b-a35b-instruct": "free/qwen3-coder-480b",
-  "nvidia/glm-4.7": "free/glm-4.7",
+  "nvidia/glm-4.7": "free/qwen3-coder-480b",
   "nvidia/llama-4-maverick": "free/llama-4-maverick",
-  "nvidia/qwen3-next-80b-a3b-thinking": "free/qwen3-next-80b-a3b-thinking",
+  "nvidia/qwen3-next-80b-a3b-thinking": "free/llama-4-maverick",
   "nvidia/mistral-small-4-119b": "free/mistral-small-4-119b",
   // Retired free IDs → successors (mirror server-side redirects)
-  "nvidia/nemotron-ultra-253b": "free/qwen3-next-80b-a3b-thinking",
-  "nvidia/nemotron-3-super-120b": "free/qwen3-next-80b-a3b-thinking",
-  "nvidia/nemotron-super-49b": "free/qwen3-next-80b-a3b-thinking",
+  "nvidia/nemotron-ultra-253b": "free/llama-4-maverick",
+  "nvidia/nemotron-3-super-120b": "free/llama-4-maverick",
+  "nvidia/nemotron-super-49b": "free/llama-4-maverick",
   "nvidia/mistral-large-3-675b": "free/mistral-small-4-119b",
   "nvidia/devstral-2-123b": "free/qwen3-coder-480b",
-  "free/nemotron-ultra-253b": "free/qwen3-next-80b-a3b-thinking",
-  "free/nemotron-3-super-120b": "free/qwen3-next-80b-a3b-thinking",
-  "free/nemotron-super-49b": "free/qwen3-next-80b-a3b-thinking",
+  "free/nemotron-ultra-253b": "free/llama-4-maverick",
+  "free/nemotron-3-super-120b": "free/llama-4-maverick",
+  "free/nemotron-super-49b": "free/llama-4-maverick",
   "free/mistral-large-3-675b": "free/mistral-small-4-119b",
   "free/devstral-2-123b": "free/qwen3-coder-480b",
   // Free model shorthand aliases
@@ -74041,24 +74037,24 @@ var MODEL_ALIASES = {
   // NVIDIA v4-pro down → v4-flash
   "v4-flash": "free/deepseek-v4-flash",
   "mistral-free": "free/mistral-small-4-119b",
-  "glm-free": "free/glm-4.7",
+  "glm-free": "free/qwen3-coder-480b",
   "llama-free": "free/llama-4-maverick",
   "qwen-coder": "free/qwen3-coder-480b",
   "qwen-coder-free": "free/qwen3-coder-480b",
-  "qwen-thinking": "free/qwen3-next-80b-a3b-thinking",
-  "qwen3-next": "free/qwen3-next-80b-a3b-thinking",
+  "qwen-thinking": "free/llama-4-maverick",
+  "qwen3-next": "free/llama-4-maverick",
   "mistral-small": "free/mistral-small-4-119b",
   // Vision-capable free model — BlockRun's first
   "nemotron-omni": "free/nemotron-3-nano-omni-30b-a3b-reasoning",
   "nano-omni": "free/nemotron-3-nano-omni-30b-a3b-reasoning",
   "vision-free": "free/nemotron-3-nano-omni-30b-a3b-reasoning",
   // Retired shorthand aliases redirect to successors
-  nemotron: "free/qwen3-next-80b-a3b-thinking",
-  "nemotron-ultra": "free/qwen3-next-80b-a3b-thinking",
-  "nemotron-253b": "free/qwen3-next-80b-a3b-thinking",
-  "nemotron-super": "free/qwen3-next-80b-a3b-thinking",
-  "nemotron-49b": "free/qwen3-next-80b-a3b-thinking",
-  "nemotron-120b": "free/qwen3-next-80b-a3b-thinking",
+  nemotron: "free/llama-4-maverick",
+  "nemotron-ultra": "free/llama-4-maverick",
+  "nemotron-253b": "free/llama-4-maverick",
+  "nemotron-super": "free/llama-4-maverick",
+  "nemotron-49b": "free/llama-4-maverick",
+  "nemotron-120b": "free/llama-4-maverick",
   devstral: "free/qwen3-coder-480b",
   "devstral-2": "free/qwen3-coder-480b",
   maverick: "free/llama-4-maverick",
@@ -74916,16 +74912,6 @@ var BLOCKRUN_MODELS = [
     id: "free/llama-4-maverick",
     name: "[Free] Llama 4 Maverick",
     version: "4-maverick",
-    inputPrice: 0,
-    outputPrice: 0,
-    contextWindow: 131072,
-    maxOutput: 16384,
-    reasoning: true
-  },
-  {
-    id: "free/qwen3-next-80b-a3b-thinking",
-    name: "[Free] Qwen3-Next 80B Thinking",
-    version: "80b-a3b-thinking",
     inputPrice: 0,
     outputPrice: 0,
     contextWindow: 131072,
@@ -77190,14 +77176,9 @@ var ROUTING_PROFILES = /* @__PURE__ */ new Set([
 var FREE_MODELS = /* @__PURE__ */ new Set([
   "free/gpt-oss-120b",
   "free/gpt-oss-20b",
-  "free/mistral-small-4-119b",
-  // 114 tok/s — fastest free chat
   "free/deepseek-v4-flash",
   // 1M ctx, 1M ctx — NVIDIA v4-pro down 2026-05-14
-  "free/qwen3-next-80b-a3b-thinking",
-  // 116 tok/s reasoning
   "free/qwen3-coder-480b",
-  "free/glm-4.7",
   "free/llama-4-maverick",
   "free/nemotron-3-nano-omni-30b-a3b-reasoning"
   // first vision-capable free
