@@ -75306,19 +75306,19 @@ var OnchainOsAdapter = class {
    */
   async signX402Payment(accepts) {
     const acceptsJson = JSON.stringify(accepts);
-    const stdout = await runCli(this.bin, ["payment", "x402-pay", "--accepts", acceptsJson], {
+    const stdout = await runCli(this.bin, ["payment", "pay", "--accepts", acceptsJson], {
       timeoutMs: PAYMENT_TIMEOUT_MS
     });
-    const parsed = parseJson(stdout, "payment x402-pay");
+    const parsed = parseJson(stdout, "payment pay");
     const result = unwrapData(parsed);
     if (!result.signature || typeof result.signature !== "string") {
       throw new OnchainOsCliError(
-        `onchainos payment x402-pay returned no signature: ${JSON.stringify(parsed).slice(0, 500)}`
+        `onchainos payment pay returned no signature: ${JSON.stringify(parsed).slice(0, 500)}`
       );
     }
     if (!result.authorization || typeof result.authorization !== "object") {
       throw new OnchainOsCliError(
-        `onchainos payment x402-pay returned no authorization: ${JSON.stringify(parsed).slice(0, 500)}`
+        `onchainos payment pay returned no authorization: ${JSON.stringify(parsed).slice(0, 500)}`
       );
     }
     return {
@@ -83377,7 +83377,7 @@ var plugin = {
   // declares "xclawrouter", so this must too.
   id: "xclawrouter",
   name: "XClawRouter",
-  description: "Smart LLM router \u2014 55+ models, x402 micropayments, 78% cost savings",
+  description: "Smart LLM router \u2014 60+ models, x402 micropayments, 78% cost savings",
   version: VERSION,
   // OpenClaw 2026.5.7+ requires plugins to declare upfront every tool name
   // they will register via `api.registerTool()`. The gateway's
@@ -83468,7 +83468,7 @@ var plugin = {
     const shouldLogRegistration = !proc.__clawrouterRegistrationLogged;
     proc.__clawrouterRegistrationLogged = true;
     if (shouldLogRegistration) {
-      api.logger.info("BlockRun provider registered (55+ models via x402)");
+      api.logger.info("BlockRun provider registered (60+ models via x402)");
       if (typeof api.registerWebSearchProvider === "function") {
         api.logger.info(`Registered BlockRun web_search provider (${BLOCKRUN_EXA_PROVIDER_ID})`);
       }

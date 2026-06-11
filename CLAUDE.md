@@ -1,6 +1,6 @@
 # XClawRouter
 
-Smart LLM router for autonomous agents. 55+ models. Wallet-based auth. USDC micropayments via x402.
+Smart LLM router for autonomous agents. 60+ models. Wallet-based auth. USDC micropayments via x402.
 
 ## Commands
 
