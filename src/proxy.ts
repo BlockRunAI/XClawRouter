@@ -1790,7 +1790,7 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
 
   // Create x402 payment client. Two signing backends:
   //   - OKX onchainos (when wallet source is "okx") — payments signed via the
-  //     `onchainos payment x402-pay` CLI, no private keys in this process.
+  //     `onchainos payment pay` CLI, no private keys in this process.
   //   - Local viem account (default) — derived from BIP-39 / env private key.
   const useOnchainos = !!okxAdapter;
   const evmPublicClient = createPublicClient({ chain: base, transport: http() });
@@ -1842,7 +1842,7 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
   });
 
   // OKX mode: bypass @x402/fetch — onchainos exposes only the high-level
-  // `payment x402-pay` command, not raw typed-data signing, so we hand-roll
+  // `payment pay` command, not raw typed-data signing, so we hand-roll
   // 402-handling in createOnchainosPayFetch.
   const payFetch = useOnchainos
     ? createOnchainosPayFetch(fetch, okxAdapter!)

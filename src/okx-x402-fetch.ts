@@ -2,7 +2,7 @@
  * Custom payFetch for OKX onchainos mode.
  *
  * onchainos exposes payment signing as a single high-level command
- * (`payment x402-pay --accepts <json>`), not raw EIP-712 typed-data signing.
+ * (`payment pay --accepts <json>`), not raw EIP-712 typed-data signing.
  * We therefore can't plug it into the @x402/fetch signer plumbing — instead
  * we hand-roll the 402 → sign → replay loop that the official x402 spec
  * describes, mirroring okxclawrouter's reference handler.

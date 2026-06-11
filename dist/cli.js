@@ -41397,19 +41397,19 @@ var init_onchainos_adapter = __esm({
        */
       async signX402Payment(accepts) {
         const acceptsJson = JSON.stringify(accepts);
-        const stdout = await runCli(this.bin, ["payment", "x402-pay", "--accepts", acceptsJson], {
+        const stdout = await runCli(this.bin, ["payment", "pay", "--accepts", acceptsJson], {
           timeoutMs: PAYMENT_TIMEOUT_MS
         });
-        const parsed = parseJson(stdout, "payment x402-pay");
+        const parsed = parseJson(stdout, "payment pay");
         const result = unwrapData(parsed);
         if (!result.signature || typeof result.signature !== "string") {
           throw new OnchainOsCliError(
-            `onchainos payment x402-pay returned no signature: ${JSON.stringify(parsed).slice(0, 500)}`
+            `onchainos payment pay returned no signature: ${JSON.stringify(parsed).slice(0, 500)}`
           );
         }
         if (!result.authorization || typeof result.authorization !== "object") {
           throw new OnchainOsCliError(
-            `onchainos payment x402-pay returned no authorization: ${JSON.stringify(parsed).slice(0, 500)}`
+            `onchainos payment pay returned no authorization: ${JSON.stringify(parsed).slice(0, 500)}`
           );
         }
         return {
@@ -81889,9 +81889,44 @@ data: [DONE]
 
 // src/cli.ts
 init_auth();
+import { basename } from "path";
+
+// src/cli-startup.ts
+function enableBlockingStdout(stream = process.stdout) {
+  if (stream.isTTY) return false;
+  try {
+    if (!stream._handle) return false;
+    stream._handle.setBlocking(true);
+    return true;
+  } catch {
+    return false;
+  }
+}
+function resolveAutoBaseChain(opts) {
+  if (opts.walletSource !== "okx") return null;
+  if (opts.pinnedChain) return null;
+  return opts.currentChain === "base" ? null : "base";
+}
+function formatFundingHint(walletSource, address2) {
+  if (walletSource !== "okx") {
+    return [`Fund wallet for premium models: ${address2}`];
+  }
+  const heading = "Fund your OKX Agentic Wallet for premium models";
+  const instruction = "Send USDC on Base to your EVM address:";
+  const inner = Math.max(heading.length, instruction.length, address2.length) + 2;
+  const pad4 = (s3) => ` ${s3}${" ".repeat(inner - s3.length - 1)}`;
+  return [
+    `\u250C${"\u2500".repeat(inner)}\u2510`,
+    `\u2502${pad4(heading)}\u2502`,
+    `\u2502${pad4(instruction)}\u2502`,
+    `\u2502${pad4(address2)}\u2502`,
+    `\u2514${"\u2500".repeat(inner)}\u2518`
+  ];
+}
+
+// src/cli.ts
 init_onchainos_adapter();
 init_wallet();
-import { basename } from "path";
 import { execSync, execFileSync as execFileSync2 } from "child_process";
 import { homedir as homedir7 } from "os";
 import { createInterface } from "readline/promises";
@@ -83328,6 +83363,7 @@ function parseArgs(args) {
   return result;
 }
 async function main() {
+  enableBlockingStdout();
   const invokedAs = process.argv[1] ? basename(process.argv[1]) : "";
   if (invokedAs === "clawrouter" && !process.env.XCLAW_SUPPRESS_RENAME_NOTICE) {
     console.warn(
@@ -83536,6 +83572,18 @@ ClawRouter Partner APIs (v${VERSION})
   if (printedStatus) {
     console.log(`[XClawRouter]   (set XCLAW_QUIET=1 to suppress this block)`);
   }
+  if (wallet.source === "okx") {
+    const pinnedChain = process.env.XCLAWROUTER_PAYMENT_CHAIN ?? process.env.CLAWROUTER_PAYMENT_CHAIN;
+    const autoChain = resolveAutoBaseChain({
+      walletSource: wallet.source,
+      currentChain: await loadPaymentChain(),
+      pinnedChain
+    });
+    if (autoChain) {
+      await savePaymentChain(autoChain);
+      console.log(`[XClawRouter] OKX wallet detected \u2014 payment chain \u2192 Base (EVM)`);
+    }
+  }
   if (wallet.solanaPrivateKeyBytes) {
     try {
       const solAddr = await getSolanaAddress(wallet.solanaPrivateKeyBytes);
@@ -83574,7 +83622,9 @@ ClawRouter Partner APIs (v${VERSION})
     const balance = await proxy.balanceMonitor.checkBalance();
     if (balance.isEmpty) {
       console.log(`[XClawRouter] Wallet balance: $0.00 (using FREE model)`);
-      console.log(`[XClawRouter] Fund wallet for premium models: ${displayAddress}`);
+      for (const line of formatFundingHint(wallet.source, displayAddress)) {
+        console.log(`[XClawRouter] ${line}`);
+      }
     } else if (balance.isLow) {
       console.log(`[XClawRouter] Wallet balance: ${balance.balanceUSD} (low)`);
     } else {

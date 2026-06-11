@@ -18,6 +18,7 @@ import { VERSION } from "./version.js";
 import {
   resolveOrGenerateWalletKey,
   resolvePaymentChain,
+  loadPaymentChain,
   recoverWalletFromMnemonic,
   savePaymentChain,
   formatAgenticWalletStatus,
@@ -26,6 +27,7 @@ import {
   ONCHAINOS_INSTALLER_URL,
 } from "./auth.js";
 import { basename } from "node:path";
+import { enableBlockingStdout, resolveAutoBaseChain, formatFundingHint } from "./cli-startup.js";
 import { OnchainOsAdapter, resolveOnchainosBin } from "./onchainos-adapter.js";
 import { execSync, execFileSync } from "node:child_process";
 import { homedir } from "node:os";
@@ -630,6 +632,11 @@ function parseArgs(args: string[]): {
 }
 
 async function main(): Promise<void> {
+  // Force blocking stdout in non-TTY contexts so small status blocks/funding
+  // hints actually flush under process managers (systemd, Docker, PM2, pipes).
+  // See cli-startup.ts for the why.
+  enableBlockingStdout();
+
   // Deprecation warning for the legacy `clawrouter` bin name. The package
   // renamed itself to `@blockrun/xclawrouter` in v0.12.179 and the bin entry
   // became `xclawrouter` in v0.12.180. We keep `clawrouter` as a no-op alias
@@ -906,6 +913,26 @@ async function main(): Promise<void> {
     console.log(`[XClawRouter]   (set XCLAW_QUIET=1 to suppress this block)`);
   }
 
+  // OKX Agentic Wallet is EVM-only (Base). A prior local-wallet setup may have
+  // persisted the payment chain as Solana; signing via `onchainos payment pay`
+  // would then target the wrong chain and fail. Auto-correct to Base whenever
+  // we're on an OKX wallet — unless the user explicitly pinned a chain via env
+  // var (XCLAWROUTER_PAYMENT_CHAIN / legacy CLAWROUTER_PAYMENT_CHAIN), which we
+  // always honour.
+  if (wallet.source === "okx") {
+    const pinnedChain =
+      process.env.XCLAWROUTER_PAYMENT_CHAIN ?? process.env.CLAWROUTER_PAYMENT_CHAIN;
+    const autoChain = resolveAutoBaseChain({
+      walletSource: wallet.source,
+      currentChain: await loadPaymentChain(),
+      pinnedChain,
+    });
+    if (autoChain) {
+      await savePaymentChain(autoChain);
+      console.log(`[XClawRouter] OKX wallet detected — payment chain → Base (EVM)`);
+    }
+  }
+
   // Show Solana address if available
   if (wallet.solanaPrivateKeyBytes) {
     try {
@@ -951,7 +978,9 @@ async function main(): Promise<void> {
     const balance = await proxy.balanceMonitor.checkBalance();
     if (balance.isEmpty) {
       console.log(`[XClawRouter] Wallet balance: $0.00 (using FREE model)`);
-      console.log(`[XClawRouter] Fund wallet for premium models: ${displayAddress}`);
+      for (const line of formatFundingHint(wallet.source, displayAddress)) {
+        console.log(`[XClawRouter] ${line}`);
+      }
     } else if (balance.isLow) {
       console.log(`[XClawRouter] Wallet balance: ${balance.balanceUSD} (low)`);
     } else {
