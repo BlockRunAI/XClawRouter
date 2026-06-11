@@ -7,11 +7,11 @@
 <p>Agents can't sign up for accounts. Agents can't enter credit cards.<br>
 Agents can only sign transactions.<br><br>
 <strong>ClawRouter is the only LLM router that lets agents operate independently.</strong><br><br>
-<em>10 models free, no crypto required. No signup. No API key. No credit card.</em></p>
+<em>7 models free, no crypto required. No signup. No API key. No credit card.</em></p>
 
 <br>
 
-<img src="https://img.shields.io/badge/🆓_10_Free_Models-success?style=for-the-badge" alt="10 free models">&nbsp;
+<img src="https://img.shields.io/badge/🆓_7_Free_Models-success?style=for-the-badge" alt="7 free models">&nbsp;
 <img src="https://img.shields.io/badge/🤖_Agent--Native-black?style=for-the-badge" alt="Agent native">&nbsp;
 <img src="https://img.shields.io/badge/🔑_Zero_API_Keys-blue?style=for-the-badge" alt="No API keys">&nbsp;
 <img src="https://img.shields.io/badge/⚡_Local_Routing-yellow?style=for-the-badge" alt="Local routing">&nbsp;
@@ -34,7 +34,7 @@ Agents can only sign transactions.<br><br>
 
 </div>
 
-> **ClawRouter** is an open-source smart LLM router that reduces AI API costs by up to 92%. It analyzes each request across 15 dimensions and routes to the cheapest capable model in under 1ms, entirely locally. ClawRouter is the only LLM router built for autonomous AI agents — it uses wallet signatures for authentication (no API keys) and USDC micropayments via the x402 protocol (no credit cards). 55+ models from OpenAI, Anthropic, Google, xAI, DeepSeek, and more. MIT licensed.
+> **ClawRouter** is an open-source smart LLM router that reduces AI API costs by up to 92%. It analyzes each request across 15 dimensions and routes to the cheapest capable model in under 1ms, entirely locally. ClawRouter is the only LLM router built for autonomous AI agents — it uses wallet signatures for authentication (no API keys) and USDC micropayments via the x402 protocol (no credit cards). 60+ models from OpenAI, Anthropic, Google, xAI, DeepSeek, and more. MIT licensed.
 
 ---
 
@@ -46,7 +46,7 @@ Every other LLM router was built for **human developers** — create an account,
 
 ClawRouter is built for the agent-first world:
 
-- **Starts at $0** — 10 NVIDIA models are free forever (incl. 1M-context DeepSeek V4 + a vision-capable Nemotron Omni)
+- **Starts at $0** — 7 NVIDIA models are free forever (incl. 1M-context DeepSeek V4 + a vision-capable Nemotron Omni)
 - **No accounts** — a wallet is generated locally, no signup
 - **No API keys** — your wallet signature IS authentication
 - **No model selection** — 15-dimension scoring picks the right model automatically
@@ -61,8 +61,8 @@ This is the stack that lets agents operate autonomously: **x402 + USDC + local r
 
 |                  | OpenRouter        | LiteLLM          | Martian           | Portkey           | **ClawRouter**          |
 | ---------------- | ----------------- | ---------------- | ----------------- | ----------------- | ----------------------- |
-| **Models**       | 200+              | 100+             | Smart routing     | Gateway           | **55+**                 |
-| **Free tier**    | Rate-limited      | BYO keys         | No                | No                | **8 models, no signup** |
+| **Models**       | 200+              | 100+             | Smart routing     | Gateway           | **60+**                 |
+| **Free tier**    | Rate-limited      | BYO keys         | No                | No                | **7 models, no signup** |
 | **Routing**      | Manual selection  | Manual selection | Smart (closed)    | Observability     | **Smart (open source)** |
 | **Auth**         | Account + API key | Your API keys    | Account + API key | Account + API key | **Wallet signature**    |
 | **Payment**      | Credit card       | BYO keys         | Credit card       | $49-499/mo        | **USDC per-request**    |
@@ -78,7 +78,7 @@ This is the stack that lets agents operate autonomously: **x402 + USDC + local r
 
 ## Quick Start
 
-> **No wallet? 10 models work free out of the box.** Install, run, and pin `nvidia/gpt-oss-120b` (or any of the 10) — no crypto, no signup, no balance required. Add USDC later when you want paid models.
+> **No wallet? 7 models work free out of the box.** Install, run, and pin `free/gpt-oss-120b` (or any of the 7) — no crypto, no signup, no balance required. Add USDC later when you want paid models.
 
 ### Option A — OpenClaw Agent
 
@@ -127,7 +127,7 @@ npx @blockrun/xclawrouter
 ```
 
 **2. Fund your wallet** — optional, skip for free tier
-Your wallet address is printed on first run. For paid models, send a few USDC on Base or Solana — $5 covers thousands of requests. To stay at $0, pin any of the 10 free models (e.g. `nvidia/gpt-oss-120b`) or use `/model free` inside OpenClaw.
+Your wallet address is printed on first run. For paid models, send a few USDC on Base or Solana — $5 covers thousands of requests. To stay at $0, pin any of the 7 free models (e.g. `free/gpt-oss-120b`) or use `/model free` inside OpenClaw.
 
 **3. Point your client at `http://localhost:8402`**
 
@@ -218,7 +218,7 @@ Request → Weighted Scorer (15 dimensions) → Tier → Best Model → Response
 
 | Tier      | ECO Model                           | AUTO Model                            | PREMIUM Model                |
 | --------- | ----------------------------------- | ------------------------------------- | ---------------------------- |
-| SIMPLE    | nvidia/gpt-oss-120b (**FREE**)      | gemini-2.5-flash ($0.30/$2.50)        | kimi-k2.6                    |
+| SIMPLE    | free/gpt-oss-120b (**FREE**)        | gemini-2.5-flash ($0.30/$2.50)        | kimi-k2.6                    |
 | MEDIUM    | gemini-3.1-flash-lite ($0.25/$1.50) | kimi-k2.5 ($0.60/$3.00)               | gpt-5.3-codex ($1.75/$14.00) |
 | COMPLEX   | gemini-3.1-flash-lite ($0.25/$1.50) | gemini-3.1-pro ($2/$12)               | claude-opus-4.6 ($5/$25)     |
 | REASONING | grok-4-1-fast ($0.20/$0.50)         | grok-4-1-fast-reasoning ($0.20/$0.50) | claude-sonnet-4.6 ($3/$15)   |
@@ -297,68 +297,76 @@ Edit existing images with `/img2img`:
 
 ## Models & Pricing
 
-55+ models across 9 providers, one wallet. **Starting at $0.0002/request.**
+60+ models across 9 providers, one wallet. **Starting at $0.0002/request.**
 
 > **💡 "Cost per request"** = estimated cost for a typical chat message (~500 input + 500 output tokens).
 
 ### Budget Models (under $0.001/request)
 
-| Model                                         | Input $/M | Output $/M | ~$/request | Context | Features                                     |
-| --------------------------------------------- | --------: | ---------: | ---------: | ------- | -------------------------------------------- |
-| nvidia/gpt-oss-120b                           |  **FREE** |   **FREE** |     **$0** | 128K    | default free model                           |
-| nvidia/gpt-oss-20b                            |  **FREE** |   **FREE** |     **$0** | 128K    | smaller, faster                              |
-| nvidia/deepseek-v4-flash                      |  **FREE** |   **FREE** |     **$0** | 1M      | reasoning, ~5x faster than v4-pro            |
-| nvidia/qwen3-coder-480b                       |  **FREE** |   **FREE** |     **$0** | 131K    | coding                                       |
-| nvidia/llama-4-maverick                       |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                                    |
-| nvidia/nemotron-3-nano-omni-30b-a3b-reasoning |  **FREE** |   **FREE** |     **$0** | 256K    | reasoning, **vision** (text+img+video+audio) |
-| openai/gpt-5-nano                             |     $0.05 |      $0.40 |    $0.0002 | 128K    | tools                                        |
-| openai/gpt-4.1-nano                           |     $0.10 |      $0.40 |    $0.0003 | 128K    | tools                                        |
-| google/gemini-2.5-flash-lite                  |     $0.10 |      $0.40 |    $0.0003 | 1M      | tools                                        |
-| openai/gpt-4o-mini                            |     $0.15 |      $0.60 |    $0.0004 | 128K    | tools                                        |
-| xai/grok-4-fast                               |     $0.20 |      $0.50 |    $0.0004 | 131K    | tools                                        |
-| xai/grok-4-fast-reasoning                     |     $0.20 |      $0.50 |    $0.0004 | 131K    | reasoning, tools                             |
-| xai/grok-4-1-fast                             |     $0.20 |      $0.50 |    $0.0004 | 131K    | tools                                        |
-| xai/grok-4-1-fast-reasoning                   |     $0.20 |      $0.50 |    $0.0004 | 131K    | reasoning, tools                             |
-| xai/grok-4-0709                               |     $0.20 |      $1.50 |    $0.0009 | 131K    | reasoning, tools                             |
-| openai/gpt-5-mini                             |     $0.25 |      $2.00 |    $0.0011 | 200K    | tools                                        |
-| deepseek/deepseek-chat                        |     $0.20 |      $0.40 |    $0.0003 | 1M      | tools (V4 Flash chat)                        |
-| deepseek/deepseek-reasoner                    |     $0.20 |      $0.40 |    $0.0003 | 1M      | reasoning, tools (V4 Flash thinking)         |
-| deepseek/deepseek-v4-pro                      |    $0.435 |      $0.87 |    $0.0007 | 1M      | reasoning, agentic, tools (V4 flagship)      |
-| zai/glm-5                                     |     $0.60 |      $1.92 |    $0.0013 | 200K    | tools                                        |
-| zai/glm-5-turbo                               |     $1.20 |      $4.00 |    $0.0026 | 200K    | tools                                        |
-| xai/grok-3-mini                               |     $0.30 |      $0.50 |    $0.0004 | 131K    | tools                                        |
-| minimax/minimax-m3                            |     $0.30 |      $1.20 |    $0.0008 | 1M      | reasoning, agentic, tools                    |
-| minimax/minimax-m2.7                          |     $0.30 |      $1.20 |    $0.0008 | 205K    | reasoning, agentic, tools                    |
-| minimax/minimax-m2.5                          |     $0.30 |      $1.20 |    $0.0008 | 205K    | reasoning, agentic, tools                    |
-| google/gemini-2.5-flash                       |     $0.30 |      $2.50 |    $0.0014 | 1M      | vision, tools                                |
-| openai/gpt-4.1-mini                           |     $0.40 |      $1.60 |    $0.0010 | 128K    | tools                                        |
-| google/gemini-3.5-flash                       |     $0.50 |      $3.00 |    $0.0018 | 1M      | reasoning, vision, tools (thinking built-in) |
-| google/gemini-3-flash-preview                 |     $0.50 |      $3.00 |    $0.0018 | 1M      | vision                                       |
-| moonshot/kimi-k2.5                            |     $0.60 |      $3.00 |    $0.0018 | 262K    | reasoning, vision, agentic, tools            |
-| moonshot/kimi-k2.6                            |     $0.95 |      $4.00 |    $0.0025 | 262K    | reasoning, vision, agentic, tools            |
+| Model                                       | Input $/M | Output $/M | ~$/request | Context | Features                                     |
+| ------------------------------------------- | --------: | ---------: | ---------: | ------- | -------------------------------------------- |
+| free/gpt-oss-120b                           |  **FREE** |   **FREE** |     **$0** | 128K    | default free model                           |
+| free/gpt-oss-20b                            |  **FREE** |   **FREE** |     **$0** | 128K    | smaller, faster                              |
+| free/deepseek-v4-flash                      |  **FREE** |   **FREE** |     **$0** | 1M      | reasoning, ~5x faster than v4-pro            |
+| free/qwen3-coder-480b                       |  **FREE** |   **FREE** |     **$0** | 131K    | coding                                       |
+| free/llama-4-maverick                       |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                                    |
+| free/nemotron-3-nano-omni-30b-a3b-reasoning |  **FREE** |   **FREE** |     **$0** | 256K    | reasoning, **vision** (text+img+video+audio) |
+| free/glm-4.7                                |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                                    |
+| openai/gpt-5-nano                           |     $0.05 |      $0.40 |    $0.0002 | 128K    | tools                                        |
+| openai/gpt-4.1-nano                         |     $0.10 |      $0.40 |    $0.0003 | 128K    | tools                                        |
+| google/gemini-2.5-flash-lite                |     $0.10 |      $0.40 |    $0.0003 | 1M      | tools                                        |
+| openai/gpt-4o-mini                          |     $0.15 |      $0.60 |    $0.0004 | 128K    | tools                                        |
+| xai/grok-4-fast                             |     $0.20 |      $0.50 |    $0.0004 | 131K    | tools                                        |
+| xai/grok-4-fast-reasoning                   |     $0.20 |      $0.50 |    $0.0004 | 131K    | reasoning, tools                             |
+| xai/grok-4-fast-non-reasoning               |     $0.20 |      $0.50 |    $0.0003 | 131K    | tools                                        |
+| xai/grok-4-1-fast                           |     $0.20 |      $0.50 |    $0.0004 | 131K    | tools                                        |
+| xai/grok-4-1-fast-reasoning                 |     $0.20 |      $0.50 |    $0.0004 | 131K    | reasoning, tools                             |
+| xai/grok-4-1-fast-non-reasoning             |     $0.20 |      $0.50 |    $0.0003 | 131K    | tools                                        |
+| openai/gpt-5.4-nano                         |     $0.20 |      $1.25 |    $0.0007 | 1M      | tools                                        |
+| openai/gpt-5-mini                           |     $0.25 |      $2.00 |    $0.0011 | 200K    | tools                                        |
+| google/gemini-3.1-flash-lite                |     $0.25 |      $1.50 |    $0.0009 | 1M      | tools                                        |
+| deepseek/deepseek-chat                      |     $0.20 |      $0.40 |    $0.0003 | 1M      | tools (V4 Flash chat)                        |
+| deepseek/deepseek-reasoner                  |     $0.20 |      $0.40 |    $0.0003 | 1M      | reasoning, tools (V4 Flash thinking)         |
+| deepseek/deepseek-v4-pro                    |    $0.435 |      $0.87 |    $0.0007 | 1M      | reasoning, agentic, tools (V4 flagship)      |
+| zai/glm-5                                   |     $0.60 |      $1.92 |    $0.0013 | 200K    | tools                                        |
+| zai/glm-5-turbo                             |     $1.20 |      $4.00 |    $0.0026 | 200K    | tools                                        |
+| xai/grok-3-mini                             |     $0.30 |      $0.50 |    $0.0004 | 131K    | tools                                        |
+| minimax/minimax-m3                          |     $0.30 |      $1.20 |    $0.0008 | 1M      | reasoning, agentic, tools                    |
+| minimax/minimax-m2.7                        |     $0.30 |      $1.20 |    $0.0008 | 205K    | reasoning, agentic, tools                    |
+| minimax/minimax-m2.5                        |     $0.30 |      $1.20 |    $0.0008 | 205K    | reasoning, agentic, tools                    |
+| google/gemini-2.5-flash                     |     $0.30 |      $2.50 |    $0.0014 | 1M      | vision, tools                                |
+| openai/gpt-4.1-mini                         |     $0.40 |      $1.60 |    $0.0010 | 128K    | tools                                        |
+| google/gemini-3.5-flash                     |     $0.50 |      $3.00 |    $0.0018 | 1M      | reasoning, vision, tools (thinking built-in) |
+| google/gemini-3-flash-preview               |     $0.50 |      $3.00 |    $0.0018 | 1M      | vision                                       |
+| moonshot/kimi-k2.5                          |     $0.60 |      $3.00 |    $0.0018 | 262K    | reasoning, vision, agentic, tools            |
+| moonshot/kimi-k2.6                          |     $0.95 |      $4.00 |    $0.0025 | 262K    | reasoning, vision, agentic, tools            |
 
 ### Mid-Range Models ($0.001–$0.01/request)
 
-| Model                       | Input $/M | Output $/M | ~$/request | Context | Features                          |
-| --------------------------- | --------: | ---------: | ---------: | ------- | --------------------------------- |
-| anthropic/claude-haiku-4.5  |     $1.00 |      $5.00 |    $0.0030 | 200K    | vision, agentic, tools            |
-| openai/o1-mini              |     $1.10 |      $4.40 |    $0.0028 | 128K    | reasoning, tools                  |
-| openai/o3-mini              |     $1.10 |      $4.40 |    $0.0028 | 128K    | reasoning, tools                  |
-| openai/o4-mini              |     $1.10 |      $4.40 |    $0.0028 | 128K    | reasoning, tools                  |
-| google/gemini-2.5-pro       |     $1.25 |     $10.00 |    $0.0056 | 1M      | reasoning, vision, tools          |
+| Model                       | Input $/M | Output $/M | ~$/request | Context | Features                                  |
+| --------------------------- | --------: | ---------: | ---------: | ------- | ----------------------------------------- |
+| openai/gpt-5.4-mini         |     $0.75 |      $4.50 |    $0.0026 | 400K    | vision, agentic, tools                    |
+| anthropic/claude-haiku-4.5  |     $1.00 |      $5.00 |    $0.0030 | 200K    | vision, agentic, tools                    |
+| openai/o1-mini              |     $1.10 |      $4.40 |    $0.0028 | 128K    | reasoning, tools                          |
+| openai/o3-mini              |     $1.10 |      $4.40 |    $0.0028 | 128K    | reasoning, tools                          |
+| openai/o4-mini              |     $1.10 |      $4.40 |    $0.0028 | 128K    | reasoning, tools                          |
+| google/gemini-2.5-pro       |     $1.25 |     $10.00 |    $0.0056 | 1M      | reasoning, vision, tools                  |
 | zai/glm-5.1                 |     $1.40 |      $4.40 |    $0.0029 | 200K    | reasoning, tools (promo ended 2026-06-05) |
-| xai/grok-4.3                |     $1.50 |      $4.00 |    $0.0028 | 1M      | reasoning, vision, agentic, tools |
-| xai/grok-build-0.1          |     $1.50 |      $3.00 |    $0.0023 | 256K    | agentic coding, tools             |
-| openai/gpt-5.2              |     $1.75 |     $14.00 |    $0.0079 | 400K    | reasoning, vision, agentic, tools |
-| openai/gpt-5.3              |     $1.75 |     $14.00 |    $0.0079 | 128K    | reasoning, vision, agentic, tools |
-| openai/gpt-5.3-codex        |     $1.75 |     $14.00 |    $0.0079 | 400K    | agentic, tools                    |
-| openai/gpt-4.1              |     $2.00 |      $8.00 |    $0.0050 | 128K    | vision, tools                     |
-| openai/o3                   |     $2.00 |      $8.00 |    $0.0050 | 200K    | reasoning, tools                  |
-| google/gemini-3-pro-preview |     $2.00 |     $12.00 |    $0.0070 | 1M      | reasoning, vision, tools          |
-| google/gemini-3.1-pro       |     $2.00 |     $12.00 |    $0.0070 | 1M      | reasoning, vision, tools          |
-| xai/grok-2-vision           |     $2.00 |     $10.00 |    $0.0060 | 131K    | vision, tools                     |
-| openai/gpt-4o               |     $2.50 |     $10.00 |    $0.0063 | 128K    | vision, agentic, tools            |
-| openai/gpt-5.4              |     $2.50 |     $15.00 |    $0.0088 | 400K    | reasoning, vision, agentic, tools |
+| xai/grok-4.3                |     $1.50 |      $4.00 |    $0.0028 | 1M      | reasoning, vision, agentic, tools         |
+| xai/grok-build-0.1          |     $1.50 |      $3.00 |    $0.0023 | 256K    | agentic coding, tools                     |
+| openai/gpt-5.2              |     $1.75 |     $14.00 |    $0.0079 | 400K    | reasoning, vision, agentic, tools         |
+| openai/gpt-5.3              |     $1.75 |     $14.00 |    $0.0079 | 128K    | reasoning, vision, agentic, tools         |
+| openai/gpt-5.3-codex        |     $1.75 |     $14.00 |    $0.0079 | 400K    | agentic, tools                            |
+| openai/gpt-4.1              |     $2.00 |      $8.00 |    $0.0050 | 128K    | vision, tools                             |
+| openai/o3                   |     $2.00 |      $8.00 |    $0.0050 | 200K    | reasoning, tools                          |
+| google/gemini-3-pro-preview |     $2.00 |     $12.00 |    $0.0070 | 1M      | reasoning, vision, tools                  |
+| google/gemini-3.1-pro       |     $2.00 |     $12.00 |    $0.0070 | 1M      | reasoning, vision, tools                  |
+| xai/grok-2-vision           |     $2.00 |     $10.00 |    $0.0060 | 131K    | vision, tools                             |
+| xai/grok-4.20-reasoning     |     $2.00 |      $6.00 |    $0.0040 | 2M      | reasoning, tools                          |
+| xai/grok-4.20-non-reasoning |     $2.00 |      $6.00 |    $0.0040 | 2M      | tools                                     |
+| xai/grok-4.20-multi-agent   |     $2.00 |      $6.00 |    $0.0040 | 2M      | reasoning, tools                          |
+| openai/gpt-4o               |     $2.50 |     $10.00 |    $0.0063 | 128K    | vision, agentic, tools                    |
+| openai/gpt-5.4              |     $2.50 |     $15.00 |    $0.0088 | 400K    | reasoning, vision, agentic, tools         |
 
 ### Premium Models ($0.01+/request)
 
@@ -366,6 +374,7 @@ Edit existing images with `/img2img`:
 | --------------------------- | --------: | ---------: | ---------: | ------- | --------------------------------- |
 | anthropic/claude-sonnet-4.6 |     $3.00 |     $15.00 |    $0.0090 | 200K    | reasoning, vision, agentic, tools |
 | xai/grok-3                  |     $3.00 |     $15.00 |    $0.0090 | 131K    | reasoning, tools                  |
+| xai/grok-4-0709             |     $3.00 |     $15.00 |    $0.0090 | 131K    | reasoning, tools                  |
 | anthropic/claude-opus-4.8   |     $5.00 |     $25.00 |    $0.0150 | 1M      | reasoning, vision, agentic, tools |
 | anthropic/claude-opus-4.7   |     $5.00 |     $25.00 |    $0.0150 | 1M      | reasoning, vision, agentic, tools |
 | openai/gpt-5.5              |     $5.00 |     $30.00 |    $0.0175 | 1M      | reasoning, vision, agentic, tools |
@@ -373,7 +382,7 @@ Edit existing images with `/img2img`:
 | openai/gpt-5.2-pro          |    $21.00 |    $168.00 |    $0.0945 | 400K    | reasoning, tools                  |
 | openai/gpt-5.4-pro          |    $30.00 |    $180.00 |    $0.1050 | 400K    | reasoning, tools                  |
 
-> **Free tier:** 10 models cost nothing — `/model free` points to gpt-oss-120b, or pick any free model directly (e.g., `/model deepseek-v4-pro` for reasoning, `/model nemotron-omni` for vision, `/model qwen-thinking`, `/model deepseek-v4-flash` for 1M context, `/model mistral-small`).
+> **Free tier:** 7 models cost nothing — `/model free` points to gpt-oss-120b, or pick any free model directly (e.g., `/model nemotron-omni` for vision, `/model qwen-coder` for coding, `/model deepseek-v4-flash` for reasoning + 1M context, `/model maverick` for general chat).
 > **Best value:** `gpt-5-nano` and `gemini-2.5-flash-lite` deliver strong results at ~$0.0003/request.
 
 ---
@@ -449,7 +458,7 @@ For basic usage, no configuration needed. For advanced options:
 Block specific models from being routed to. Useful if a model doesn't follow your agent instructions or you want to control costs.
 
 ```bash
-/exclude add nvidia/gpt-oss-120b   # Block the default free model
+/exclude add free/gpt-oss-120b   # Block the default free model
 /exclude add grok-4                # Aliases work — blocks all grok-4 variants
 /exclude add gpt-5.4               # Skip expensive models
 /exclude                           # Show current exclusions
@@ -543,7 +552,7 @@ npm test
 
 **The LLM router built for autonomous agents**
 
-You're here. 55+ models, local smart routing, x402 USDC payments — the only stack that lets agents operate independently.
+You're here. 60+ models, local smart routing, x402 USDC payments — the only stack that lets agents operate independently.
 
 `curl -fsSL https://blockrun.ai/XClawRouter-update | bash`
 

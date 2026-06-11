@@ -1,7 +1,7 @@
 {
   "id": "xclawrouter",
   "name": "XClawRouter",
-  "description": "Smart LLM router for OKX — agentic wallet, 55+ models, x402 micropayments on Base + Solana",
+  "description": "Smart LLM router for OKX — agentic wallet, 60+ models, x402 micropayments on Base + Solana",
   "skills": ["./skills"],
   "contracts": {
     "tools": [
