@@ -106,12 +106,12 @@ describe("OnchainOsAdapter.status", () => {
 });
 
 describe("OnchainOsAdapter.signX402Payment", () => {
-  it("invokes `payment x402-pay --accepts <json>` and unwraps the result", async () => {
+  it("invokes `payment pay --accepts <json>` and unwraps the result", async () => {
     const bin = await writeFakeCli(
-      "x402-pay-ok",
+      "pay-ok",
       `
       const args = process.argv.slice(2);
-      if (args[0] === "payment" && args[1] === "x402-pay" && args[2] === "--accepts") {
+      if (args[0] === "payment" && args[1] === "pay" && args[2] === "--accepts") {
         const accepts = JSON.parse(args[3]);
         process.stdout.write(JSON.stringify({
           data: {

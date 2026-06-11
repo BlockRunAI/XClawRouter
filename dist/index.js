@@ -75379,19 +75379,19 @@ var OnchainOsAdapter = class {
    */
   async signX402Payment(accepts) {
     const acceptsJson = JSON.stringify(accepts);
-    const stdout = await runCli(this.bin, ["payment", "x402-pay", "--accepts", acceptsJson], {
+    const stdout = await runCli(this.bin, ["payment", "pay", "--accepts", acceptsJson], {
       timeoutMs: PAYMENT_TIMEOUT_MS
     });
-    const parsed = parseJson(stdout, "payment x402-pay");
+    const parsed = parseJson(stdout, "payment pay");
     const result = unwrapData(parsed);
     if (!result.signature || typeof result.signature !== "string") {
       throw new OnchainOsCliError(
-        `onchainos payment x402-pay returned no signature: ${JSON.stringify(parsed).slice(0, 500)}`
+        `onchainos payment pay returned no signature: ${JSON.stringify(parsed).slice(0, 500)}`
       );
     }
     if (!result.authorization || typeof result.authorization !== "object") {
       throw new OnchainOsCliError(
-        `onchainos payment x402-pay returned no authorization: ${JSON.stringify(parsed).slice(0, 500)}`
+        `onchainos payment pay returned no authorization: ${JSON.stringify(parsed).slice(0, 500)}`
       );
     }
     return {

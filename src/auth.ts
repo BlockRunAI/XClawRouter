@@ -4,7 +4,7 @@
  * Wallet identity is resolved in this order:
  *   1. OKX onchainos CLI (if installed AND user is logged in) — preferred.
  *      Private keys never enter this process; signing happens via
- *      `onchainos payment x402-pay`. See onchainos-adapter.ts.
+ *      `onchainos payment pay`. See onchainos-adapter.ts.
  *   2. Saved wallet.key file (legacy BIP-39 path — preserved for existing users)
  *   3. BLOCKRUN_WALLET_KEY env var (legacy)
  *   4. Auto-generated BIP-39 wallet — **opt-in only**, gated behind

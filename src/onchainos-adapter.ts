@@ -15,7 +15,7 @@
  *                                            tolerantly by `addresses()`.
  *   onchainos wallet login <email>         (interactive)
  *   onchainos wallet logout
- *   onchainos payment x402-pay --accepts <json>
+ *   onchainos payment pay --accepts <json>
  *                                          → { data: { signature, authorization, sessionCert? } }
  *
  * Some onchainos builds omit `evmAddress` from `wallet status` even when the
@@ -24,7 +24,7 @@
  * onchainos wallet".
  *
  * Raw EIP-712 / typed-data signing is NOT exposed by onchainos, so we use
- * `payment x402-pay` for the entire signing step rather than the @x402/fetch
+ * `payment pay` for the entire signing step rather than the @x402/fetch
  * signer plumbing. See proxy.ts for the call site.
  */
 
@@ -277,19 +277,19 @@ export class OnchainOsAdapter {
    */
   async signX402Payment(accepts: unknown[]): Promise<OnchainOsX402Payment> {
     const acceptsJson = JSON.stringify(accepts);
-    const stdout = await runCli(this.bin, ["payment", "x402-pay", "--accepts", acceptsJson], {
+    const stdout = await runCli(this.bin, ["payment", "pay", "--accepts", acceptsJson], {
       timeoutMs: PAYMENT_TIMEOUT_MS,
     });
-    const parsed = parseJson<unknown>(stdout, "payment x402-pay");
+    const parsed = parseJson<unknown>(stdout, "payment pay");
     const result = unwrapData<Partial<OnchainOsX402Payment>>(parsed);
     if (!result.signature || typeof result.signature !== "string") {
       throw new OnchainOsCliError(
-        `onchainos payment x402-pay returned no signature: ${JSON.stringify(parsed).slice(0, 500)}`,
+        `onchainos payment pay returned no signature: ${JSON.stringify(parsed).slice(0, 500)}`,
       );
     }
     if (!result.authorization || typeof result.authorization !== "object") {
       throw new OnchainOsCliError(
-        `onchainos payment x402-pay returned no authorization: ${JSON.stringify(parsed).slice(0, 500)}`,
+        `onchainos payment pay returned no authorization: ${JSON.stringify(parsed).slice(0, 500)}`,
       );
     }
     return {

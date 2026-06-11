@@ -790,7 +790,7 @@ declare class SolanaBalanceMonitor {
  *                                            tolerantly by `addresses()`.
  *   onchainos wallet login <email>         (interactive)
  *   onchainos wallet logout
- *   onchainos payment x402-pay --accepts <json>
+ *   onchainos payment pay --accepts <json>
  *                                          → { data: { signature, authorization, sessionCert? } }
  *
  * Some onchainos builds omit `evmAddress` from `wallet status` even when the
@@ -799,7 +799,7 @@ declare class SolanaBalanceMonitor {
  * onchainos wallet".
  *
  * Raw EIP-712 / typed-data signing is NOT exposed by onchainos, so we use
- * `payment x402-pay` for the entire signing step rather than the @x402/fetch
+ * `payment pay` for the entire signing step rather than the @x402/fetch
  * signer plumbing. See proxy.ts for the call site.
  */
 interface OnchainOsStatus {
@@ -860,7 +860,7 @@ declare class OnchainOsAdapter {
  * Wallet identity is resolved in this order:
  *   1. OKX onchainos CLI (if installed AND user is logged in) — preferred.
  *      Private keys never enter this process; signing happens via
- *      `onchainos payment x402-pay`. See onchainos-adapter.ts.
+ *      `onchainos payment pay`. See onchainos-adapter.ts.
  *   2. Saved wallet.key file (legacy BIP-39 path — preserved for existing users)
  *   3. BLOCKRUN_WALLET_KEY env var (legacy)
  *   4. Auto-generated BIP-39 wallet — **opt-in only**, gated behind
