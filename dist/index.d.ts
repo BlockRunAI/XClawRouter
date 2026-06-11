@@ -1793,7 +1793,7 @@ declare function buildPartnerTools(proxyBaseUrl: string): PartnerToolDefinition[
 /**
  * @blockrun/xclawrouter
  *
- * Smart LLM router for OpenClaw — 55+ models, x402 micropayments, 78% cost savings.
+ * Smart LLM router for OpenClaw — 60+ models, x402 micropayments, 78% cost savings.
  * Routes each request to the cheapest model that can handle it.
  *
  * Usage:

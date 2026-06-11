@@ -1,7 +1,7 @@
 /**
  * @blockrun/xclawrouter
  *
- * Smart LLM router for OpenClaw — 55+ models, x402 micropayments, 78% cost savings.
+ * Smart LLM router for OpenClaw — 60+ models, x402 micropayments, 78% cost savings.
  * Routes each request to the cheapest model that can handle it.
  *
  * Usage:
@@ -1593,7 +1593,7 @@ const plugin: OpenClawPluginDefinition = {
   // declares "xclawrouter", so this must too.
   id: "xclawrouter",
   name: "XClawRouter",
-  description: "Smart LLM router — 55+ models, x402 micropayments, 78% cost savings",
+  description: "Smart LLM router — 60+ models, x402 micropayments, 78% cost savings",
   version: VERSION,
 
   // OpenClaw 2026.5.7+ requires plugins to declare upfront every tool name
@@ -1722,7 +1722,7 @@ const plugin: OpenClawPluginDefinition = {
     proc.__clawrouterRegistrationLogged = true;
 
     if (shouldLogRegistration) {
-      api.logger.info("BlockRun provider registered (55+ models via x402)");
+      api.logger.info("BlockRun provider registered (60+ models via x402)");
       if (typeof api.registerWebSearchProvider === "function") {
         api.logger.info(`Registered BlockRun web_search provider (${BLOCKRUN_EXA_PROVIDER_ID})`);
       }
