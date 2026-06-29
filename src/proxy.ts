@@ -1164,9 +1164,7 @@ export type InsufficientFundsInfo = {
  *     local key, signing delegated to the onchainos CLI.
  */
 export type WalletConfig =
-  | string
-  | { key: string; solanaPrivateKeyBytes?: Uint8Array }
-  | WalletResolution;
+  string | { key: string; solanaPrivateKeyBytes?: Uint8Array } | WalletResolution;
 
 export type PaymentChain = "base" | "solana";
 

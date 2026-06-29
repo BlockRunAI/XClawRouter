@@ -362,7 +362,7 @@ Free-tier routing realigned to the backend's 2026-06-07 model sweep (mirrors Cla
 
 ### Fixed
 
-- **Free model cost logging** — Usage stats incorrectly showed non-zero cost for free models (e.g. `free/gpt-oss-120b` showed $0.001 per request due to the `MIN_PAYMENT_USD` floor in `calculateModelCost`). Free models now log `cost: $0.00` and `savings: 100%`, accurately reflecting that no payment is made.
+- **Free model cost logging** — Usage stats incorrectly showed non-zero cost for free models (e.g. `free/gpt-oss-120b` showed $0.001 per request due to the `MIN_PAYMENT_USD` floor in `calculateModelCost`). Free models now log `cost: $0.00`and`savings: 100%`, accurately reflecting that no payment is made.
 
 ---
 
