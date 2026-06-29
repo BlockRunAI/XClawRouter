@@ -73,20 +73,35 @@ describe("OpenClaw security scanner", () => {
     // Locate openclaw's skill-scanner chunk in its dist/
     const openclawDist = resolveOpenclawDist();
     try {
-      const files = readdirSync(openclawDist);
-      const scannerFile = files.find((f) => f.startsWith("skill-scanner"));
-      if (!scannerFile) {
+      const chunks = readdirSync(openclawDist).filter((f) => f.startsWith("skill-scanner"));
+      if (chunks.length === 0) {
         scannerLoadError = `skill-scanner chunk not found in ${openclawDist}`;
         return;
       }
-      const scannerPath = resolve(openclawDist, scannerFile);
-      const mod = (await import(pathToFileURL(scannerPath).href)) as Record<string, unknown>;
-      // The scanner exports scanDirectoryWithSummary as a minified name
-      const fn = Object.values(mod).find((v) => typeof v === "function") as ScanFn | undefined;
-      if (fn) {
-        scanDirectoryWithSummary = fn;
-      } else {
-        scannerLoadError = `No function export found in ${scannerFile}`;
+
+      // openclaw 2026.5.7 split the scanner across multiple skill-scanner-*.js
+      // chunks. One chunk exports scanDirectoryWithSummary by name (still returning
+      // the { scannedFiles, critical, warn, info, findings } summary); the other
+      // exports unrelated minified helpers. Resolve the scanner by its export name
+      // rather than positionally, so we don't grab the wrong chunk's first function.
+      // Older single-chunk builds emitted the scanner as a minified-only export, so
+      // fall back to the first function export when the named export is absent.
+      let namedFn: ScanFn | undefined;
+      let fallbackFn: ScanFn | undefined;
+      for (const chunk of chunks) {
+        const scannerPath = resolve(openclawDist, chunk);
+        const mod = (await import(pathToFileURL(scannerPath).href)) as Record<string, unknown>;
+        if (typeof mod.scanDirectoryWithSummary === "function") {
+          namedFn = mod.scanDirectoryWithSummary as ScanFn;
+          break;
+        }
+        fallbackFn ??= Object.values(mod).find((v) => typeof v === "function") as
+          ScanFn | undefined;
+      }
+
+      scanDirectoryWithSummary = namedFn ?? fallbackFn;
+      if (!scanDirectoryWithSummary) {
+        scannerLoadError = `scanDirectoryWithSummary not found in skill-scanner chunks at ${openclawDist}`;
       }
     } catch (err) {
       scannerLoadError = `Could not load openclaw scanner: ${String(err)}`;
