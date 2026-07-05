@@ -37,6 +37,7 @@ import { base } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import { x402Client } from "@x402/fetch";
 import { createPayFetchWithPreAuth } from "./payment-preauth.js";
+import { withBuilderCodeServiceCode } from "./builder-code.js";
 import { registerExactEvmScheme } from "@x402/evm/exact/client";
 import { toClientEvmSigner } from "@x402/evm";
 import {
@@ -1820,6 +1821,19 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
         `Run "/chain base" to switch chains, or wait for an onchainos release that supports Solana.`,
     );
   }
+
+  // Stamp BlockRun's builder-code service code (`s`) onto every signed payment
+  // for on-chain attribution. Mirrors @x402/extensions' BuilderCodeClientExtension
+  // but fires unconditionally (independent of whether the server advertises the
+  // extension) and needs no @x402 upgrade. The EIP-712 signature covers the
+  // authorization, not the extensions, so stamping post-creation is safe. Any app
+  // code (`a`) the server echoed back is preserved.
+  x402.onAfterPaymentCreation(async (context) => {
+    const payload = context.paymentPayload as {
+      extensions?: Record<string, unknown>;
+    };
+    payload.extensions = withBuilderCodeServiceCode(payload.extensions);
+  });
 
   // Log which chain is used for each payment and capture actual payment amount
   x402.onAfterPaymentCreation(async (context) => {
