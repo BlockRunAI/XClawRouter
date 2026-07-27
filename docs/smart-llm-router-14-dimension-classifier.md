@@ -2,7 +2,13 @@
 
 _March 20, 2026 | BlockRun Engineering_
 
-When you route AI requests across 55+ models from 8 providers, you can't just pick the cheapest one. You can't just pick the fastest one either. We learned this the hard way.
+> **Numbers in this post are a snapshot from the date above.** They record what was
+> measured then and are deliberately not updated — rewriting them would misrepresent
+> the benchmark. For current figures see
+> [blockrun.ai/brand/numbers.json](https://blockrun.ai/brand/numbers.json).
+
+
+When you route AI requests across <!-- br:models.chatVisible -->66<!-- /br:models.chatVisible --> models from 8 providers, you can't just pick the cheapest one. You can't just pick the fastest one either. We learned this the hard way.
 
 This is the technical story of how we benchmarked every model on our platform, discovered that speed and intelligence are poorly correlated, and built a production routing system that classifies requests in under 1ms using 14 weighted dimensions with sigmoid confidence calibration.
 
@@ -21,7 +27,7 @@ We needed a system that could classify any request and route it to the optimal m
 
 ## Step 1: Benchmarking the Fleet
 
-Before building the router, we needed ground truth. We benchmarked all 55+ models through our production payment pipeline.
+Before building the router, we needed ground truth. We benchmarked all <!-- br:models.chatVisible -->66<!-- /br:models.chatVisible --> models through our production payment pipeline.
 
 ### Methodology
 
@@ -312,7 +318,7 @@ We originally designed a two-stage system where low-confidence rules-based class
 
 ## Appendix: Full Benchmark Data
 
-Raw data (55+ models, latency, throughput, IQ scores, pricing): [`benchmark-merged.json`](https://github.com/BlockRunAI/XClawRouter/blob/main/benchmark-merged.json)
+Raw data (<!-- br:models.chatVisible -->66<!-- /br:models.chatVisible --> models, latency, throughput, IQ scores, pricing): [`benchmark-merged.json`](https://github.com/BlockRunAI/XClawRouter/blob/main/benchmark-merged.json)
 
 Routing configuration: [`src/router/config.ts`](https://github.com/BlockRunAI/XClawRouter/blob/main/src/router/config.ts)
 
@@ -320,4 +326,4 @@ Scoring implementation: [`src/router/rules.ts`](https://github.com/BlockRunAI/XC
 
 ---
 
-_BlockRun is the x402 micropayment gateway for AI. One wallet, 55+ models, pay-per-request with USDC. [blockrun.ai](https://blockrun.ai)_
+_BlockRun is the x402 micropayment gateway for AI. One wallet, <!-- br:models.chatVisible -->66<!-- /br:models.chatVisible --> models, pay-per-request with USDC. [blockrun.ai](https://blockrun.ai)_
