@@ -256,21 +256,21 @@ No silent drops. No stale catalog. Models are benchmarked for speed, quality, an
 
 ## The Full Comparison
 
-|                     | OpenRouter                       | XClawRouter                                    |
-| ------------------- | -------------------------------- | ---------------------------------------------- |
-| **Authentication**  | API key (leak risk)              | Wallet signature (no keys)                     |
-| **Payment**         | Prepaid balance (custodial)      | Per-request USDC (non-custodial)               |
-| **Routing**         | Server-side black box            | Local 14-dim classifier, <1ms                  |
-| **Fallback**        | Often broken (20+ issues)        | 8-deep chains, per-model isolation             |
-| **Model IDs**       | Nested prefixes, mangling bugs   | Clean aliases, single format                   |
-| **Cost visibility** | None per-request                 | Headers + JSONL logs + `/stats`                |
-| **Empty wallet**    | Request fails                    | Auto-fallback to free tier                     |
-| **Rate limits**     | Per-key, shared                  | Per-wallet, independent                        |
-| **Vision support**  | Images sometimes dropped         | Auto-detected, vision-only fallback            |
-| **Tool calling**    | Silent failures with some models | Flag-based filtering, guaranteed support       |
-| **Model catalog**   | Laggy, silent drops              | Curated <!-- br:models.chatVisible -->66<!-- /br:models.chatVisible --> models, redirect aliases           |
-| **Budget control**  | Monthly invoice                  | Per-session cap (`maxCostPerRun`)              |
-| **Setup**           | Create account, paste key        | Agent generates wallet, auto-configured        |
+|                     | OpenRouter                       | XClawRouter                                                                                              |
+| ------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **Authentication**  | API key (leak risk)              | Wallet signature (no keys)                                                                               |
+| **Payment**         | Prepaid balance (custodial)      | Per-request USDC (non-custodial)                                                                         |
+| **Routing**         | Server-side black box            | Local 14-dim classifier, <1ms                                                                            |
+| **Fallback**        | Often broken (20+ issues)        | 8-deep chains, per-model isolation                                                                       |
+| **Model IDs**       | Nested prefixes, mangling bugs   | Clean aliases, single format                                                                             |
+| **Cost visibility** | None per-request                 | Headers + JSONL logs + `/stats`                                                                          |
+| **Empty wallet**    | Request fails                    | Auto-fallback to free tier                                                                               |
+| **Rate limits**     | Per-key, shared                  | Per-wallet, independent                                                                                  |
+| **Vision support**  | Images sometimes dropped         | Auto-detected, vision-only fallback                                                                      |
+| **Tool calling**    | Silent failures with some models | Flag-based filtering, guaranteed support                                                                 |
+| **Model catalog**   | Laggy, silent drops              | Curated <!-- br:models.chatVisible -->66<!-- /br:models.chatVisible --> models, redirect aliases         |
+| **Budget control**  | Monthly invoice                  | Per-session cap (`maxCostPerRun`)                                                                        |
+| **Setup**           | Create account, paste key        | Agent generates wallet, auto-configured                                                                  |
 | **Average cost**    | $25/M tokens (Opus direct)       | auto-routed = **<!-- br:savings.autoVsBaselinePct -->87<!-- /br:savings.autoVsBaselinePct -->% savings** |
 
 ![The Engineering Matrix — Side-by-side feature comparison: OpenRouter vs XClawRouter across Routing, Authentication, Payment, Fallback, Model IDs, Empty Wallet, Vision/Tools, and Average Cost. XClawRouter wins on every dimension.](./assets/clawrouter-engineering-matrix-comparison.png)

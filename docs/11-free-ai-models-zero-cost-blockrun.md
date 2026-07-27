@@ -6,7 +6,6 @@
 > The URL keeps its original slug so existing links do not break. Current figures:
 > [blockrun.ai/brand/numbers.json](https://blockrun.ai/brand/numbers.json).
 
-
 ## The Cost Problem Nobody Talks About
 
 It's 2026. Large language models are table stakes for developers. But here's the uncomfortable truth — **the models you can afford aren't good enough, and the good ones aren't affordable.**

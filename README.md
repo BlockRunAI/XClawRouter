@@ -59,16 +59,16 @@ This is the stack that lets agents operate autonomously: **x402 + USDC + local r
 
 ## How it compares
 
-|                  | OpenRouter        | LiteLLM          | Martian           | Portkey           | **ClawRouter**          |
-| ---------------- | ----------------- | ---------------- | ----------------- | ----------------- | ----------------------- |
-| **Models**       | 200+              | 100+             | Smart routing     | Gateway           | **60+**                 |
+|                  | OpenRouter        | LiteLLM          | Martian           | Portkey           | **ClawRouter**                                                         |
+| ---------------- | ----------------- | ---------------- | ----------------- | ----------------- | ---------------------------------------------------------------------- |
+| **Models**       | 200+              | 100+             | Smart routing     | Gateway           | **60+**                                                                |
 | **Free tier**    | Rate-limited      | BYO keys         | No                | No                | **<!-- br:models.free -->8<!-- /br:models.free --> models, no signup** |
-| **Routing**      | Manual selection  | Manual selection | Smart (closed)    | Observability     | **Smart (open source)** |
-| **Auth**         | Account + API key | Your API keys    | Account + API key | Account + API key | **Wallet signature**    |
-| **Payment**      | Credit card       | BYO keys         | Credit card       | $49-499/mo        | **USDC per-request**    |
-| **Runs locally** | No                | Yes              | No                | No                | **Yes**                 |
-| **Open source**  | No                | Yes              | No                | Partial           | **Yes**                 |
-| **Agent-ready**  | No                | No               | No                | No                | **Yes**                 |
+| **Routing**      | Manual selection  | Manual selection | Smart (closed)    | Observability     | **Smart (open source)**                                                |
+| **Auth**         | Account + API key | Your API keys    | Account + API key | Account + API key | **Wallet signature**                                                   |
+| **Payment**      | Credit card       | BYO keys         | Credit card       | $49-499/mo        | **USDC per-request**                                                   |
+| **Runs locally** | No                | Yes              | No                | No                | **Yes**                                                                |
+| **Open source**  | No                | Yes              | No                | Partial           | **Yes**                                                                |
+| **Agent-ready**  | No                | No               | No                | No                | **Yes**                                                                |
 
 ✓ Open source · ✓ Smart routing · ✓ Runs locally · ✓ Crypto native · ✓ Agent ready
 
