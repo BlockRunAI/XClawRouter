@@ -1,6 +1,6 @@
 ---
 name: xclawrouter
-description: Smart LLM router for OKX — agentic wallet, 55+ models, x402 micropayments on Base + Solana. Routes every request to the cheapest capable model. 11 free NVIDIA models included.
+description: Smart LLM router for OKX — agentic wallet, 66 models, x402 micropayments on Base + Solana. Routes every request to the cheapest capable model. 11 free NVIDIA models included.
 triggers:
   - "xclawrouter"
   - "x claw router"
@@ -19,7 +19,7 @@ metadata: { "openclaw": { "emoji": "🦀", "requires": { "config": ["models.prov
 
 # XClawRouter
 
-Smart LLM router that saves 67% on inference costs by routing each request to the cheapest model that can handle it. 55+ models across 9 providers (11 free NVIDIA models), all through one wallet.
+Smart LLM router that saves <!-- br:savings.autoVsBaselinePct -->87<!-- /br:savings.autoVsBaselinePct -->% on inference costs by routing each request to the cheapest model that can handle it. <!-- br:models.chatVisible -->66<!-- /br:models.chatVisible --> models across 9 providers (11 free NVIDIA models), all through one wallet.
 
 ## Install
 
@@ -41,16 +41,21 @@ openclaw models set openai/gpt-4o
 
 XClawRouter classifies each request into one of four tiers:
 
-- **SIMPLE** (40% of traffic) — factual lookups, greetings, translations → Gemini Flash ($0.60/M, 99% savings)
-- **MEDIUM** (30%) — summaries, explanations, data extraction → DeepSeek Chat ($0.42/M, 99% savings)
-- **COMPLEX** (20%) — code generation, multi-step analysis → Claude Opus ($75/M, best quality)
-- **REASONING** (10%) — proofs, formal logic, multi-step math → o3 ($8/M, 89% savings)
+- **SIMPLE** — factual lookups, greetings, translations → gemini-2.5-flash ($0.30/$2.50)
+- **MEDIUM** — summaries, explanations, data extraction → kimi-k2.7 ($0.95/$4.00)
+- **COMPLEX** — code generation, multi-step analysis → gemini-3.1-pro ($2/$12)
+- **REASONING** — proofs, formal logic, multi-step math → grok-4-1-fast-reasoning ($0.20/$0.50)
+
+Prices are per 1M input/output tokens on the default `auto` profile. Per-tier
+savings percentages are deliberately not quoted: the published figure is blended
+across a stated workload mix, and a per-tier number invites comparison against a
+baseline nobody wrote down.
 
 Rules handle ~~80% of requests in <1ms. Only ambiguous queries hit the LLM classifier (~~$0.00003 per classification).
 
 ## Available Models
 
-55+ models including: gpt-5.5, gpt-5.4, gpt-4o, o3, claude-opus-4.8, claude-opus-4.7, claude-sonnet-4.6, gemini-3.1-pro, gemini-3.5-flash, deepseek-v4-pro, deepseek-chat, grok-4.3, grok-build-0.1, kimi-k2.6, kimi-k2.5, and free NVIDIA-hosted models (gpt-oss-120b [default], gpt-oss-20b, deepseek-v4-flash, qwen3-coder-480b, llama-4-maverick, nemotron-3-nano-omni-30b-a3b-reasoning [vision]).
+<!-- br:models.chatVisible -->66<!-- /br:models.chatVisible --> models including: gpt-5.5, gpt-5.4, gpt-4o, o3, claude-opus-4.8, claude-opus-4.7, claude-sonnet-4.6, gemini-3.1-pro, gemini-3.5-flash, deepseek-v4-pro, deepseek-chat, grok-4.3, grok-build-0.1, kimi-k2.6, kimi-k2.5, and free NVIDIA-hosted models (gpt-oss-120b [default], gpt-oss-20b, deepseek-v4-flash, qwen3-coder-480b, llama-4-maverick, nemotron-3-nano-omni-30b-a3b-reasoning [vision]).
 
 ## Example Output
 

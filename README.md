@@ -7,7 +7,7 @@
 <p>Agents can't sign up for accounts. Agents can't enter credit cards.<br>
 Agents can only sign transactions.<br><br>
 <strong>ClawRouter is the only LLM router that lets agents operate independently.</strong><br><br>
-<em>7 models free, no crypto required. No signup. No API key. No credit card.</em></p>
+<em><!-- br:models.free -->8<!-- /br:models.free --> models free, no crypto required. No signup. No API key. No credit card.</em></p>
 
 <br>
 
@@ -34,7 +34,7 @@ Agents can only sign transactions.<br><br>
 
 </div>
 
-> **ClawRouter** is an open-source smart LLM router that reduces AI API costs by up to 92%. It analyzes each request across 15 dimensions and routes to the cheapest capable model in under 1ms, entirely locally. ClawRouter is the only LLM router built for autonomous AI agents — it uses wallet signatures for authentication (no API keys) and USDC micropayments via the x402 protocol (no credit cards). 60+ models from OpenAI, Anthropic, Google, xAI, DeepSeek, and more. MIT licensed.
+> **ClawRouter** is an open-source smart LLM router that reduces AI API costs by <!-- br:savings.autoVsBaselinePct -->87<!-- /br:savings.autoVsBaselinePct -->%. It analyzes each request across 15 dimensions and routes to the cheapest capable model in under 1ms, entirely locally. ClawRouter is the only LLM router built for autonomous AI agents — it uses wallet signatures for authentication (no API keys) and USDC micropayments via the x402 protocol (no credit cards). <!-- br:models.chatVisible -->66<!-- /br:models.chatVisible --> models from OpenAI, Anthropic, Google, xAI, DeepSeek, and more. MIT licensed.
 
 ---
 
@@ -59,16 +59,16 @@ This is the stack that lets agents operate autonomously: **x402 + USDC + local r
 
 ## How it compares
 
-|                  | OpenRouter        | LiteLLM          | Martian           | Portkey           | **ClawRouter**          |
-| ---------------- | ----------------- | ---------------- | ----------------- | ----------------- | ----------------------- |
-| **Models**       | 200+              | 100+             | Smart routing     | Gateway           | **60+**                 |
-| **Free tier**    | Rate-limited      | BYO keys         | No                | No                | **7 models, no signup** |
-| **Routing**      | Manual selection  | Manual selection | Smart (closed)    | Observability     | **Smart (open source)** |
-| **Auth**         | Account + API key | Your API keys    | Account + API key | Account + API key | **Wallet signature**    |
-| **Payment**      | Credit card       | BYO keys         | Credit card       | $49-499/mo        | **USDC per-request**    |
-| **Runs locally** | No                | Yes              | No                | No                | **Yes**                 |
-| **Open source**  | No                | Yes              | No                | Partial           | **Yes**                 |
-| **Agent-ready**  | No                | No               | No                | No                | **Yes**                 |
+|                  | OpenRouter        | LiteLLM          | Martian           | Portkey           | **ClawRouter**                                                         |
+| ---------------- | ----------------- | ---------------- | ----------------- | ----------------- | ---------------------------------------------------------------------- |
+| **Models**       | 200+              | 100+             | Smart routing     | Gateway           | **60+**                                                                |
+| **Free tier**    | Rate-limited      | BYO keys         | No                | No                | **<!-- br:models.free -->8<!-- /br:models.free --> models, no signup** |
+| **Routing**      | Manual selection  | Manual selection | Smart (closed)    | Observability     | **Smart (open source)**                                                |
+| **Auth**         | Account + API key | Your API keys    | Account + API key | Account + API key | **Wallet signature**                                                   |
+| **Payment**      | Credit card       | BYO keys         | Credit card       | $49-499/mo        | **USDC per-request**                                                   |
+| **Runs locally** | No                | Yes              | No                | No                | **Yes**                                                                |
+| **Open source**  | No                | Yes              | No                | Partial           | **Yes**                                                                |
+| **Agent-ready**  | No                | No               | No                | No                | **Yes**                                                                |
 
 ✓ Open source · ✓ Smart routing · ✓ Runs locally · ✓ Crypto native · ✓ Agent ready
 
@@ -78,7 +78,7 @@ This is the stack that lets agents operate autonomously: **x402 + USDC + local r
 
 ## Quick Start
 
-> **No wallet? 7 models work free out of the box.** Install, run, and pin `free/gpt-oss-120b` (or any of the 7) — no crypto, no signup, no balance required. Add USDC later when you want paid models.
+> **No wallet? <!-- br:models.free -->8<!-- /br:models.free --> models work free out of the box.** Install, run, and pin `free/gpt-oss-120b` (or any of the 7) — no crypto, no signup, no balance required. Add USDC later when you want paid models.
 
 ### Option A — OpenClaw Agent
 
@@ -223,7 +223,7 @@ Request → Weighted Scorer (15 dimensions) → Tier → Best Model → Response
 | COMPLEX   | gemini-3.1-flash-lite ($0.25/$1.50) | gemini-3.1-pro ($2/$12)               | claude-opus-4.6 ($5/$25)     |
 | REASONING | grok-4-1-fast ($0.20/$0.50)         | grok-4-1-fast-reasoning ($0.20/$0.50) | claude-sonnet-4.6 ($3/$15)   |
 
-**Blended average: $2.05/M** vs $25/M for Claude Opus = **92% savings**
+**Blended average: $2.05/M** vs $25/M for Claude Opus = **<!-- br:savings.autoVsBaselinePct -->87<!-- /br:savings.autoVsBaselinePct -->% savings**
 
 ---
 
@@ -297,7 +297,7 @@ Edit existing images with `/img2img`:
 
 ## Models & Pricing
 
-60+ models across 9 providers, one wallet. **Starting at $0.0002/request.**
+<!-- br:models.chatVisible -->66<!-- /br:models.chatVisible --> models across 9 providers, one wallet. **Starting at $0.0002/request.**
 
 > **💡 "Cost per request"** = estimated cost for a typical chat message (~500 input + 500 output tokens).
 
@@ -382,7 +382,7 @@ Edit existing images with `/img2img`:
 | openai/gpt-5.2-pro          |    $21.00 |    $168.00 |    $0.0945 | 400K    | reasoning, tools                  |
 | openai/gpt-5.4-pro          |    $30.00 |    $180.00 |    $0.1050 | 400K    | reasoning, tools                  |
 
-> **Free tier:** 7 models cost nothing — `/model free` points to gpt-oss-120b, or pick any free model directly (e.g., `/model nemotron-omni` for vision, `/model qwen-coder` for coding, `/model deepseek-v4-flash` for reasoning + 1M context, `/model maverick` for general chat).
+> **Free tier:** <!-- br:models.free -->8<!-- /br:models.free --> models cost nothing — `/model free` points to gpt-oss-120b, or pick any free model directly (e.g., `/model nemotron-omni` for vision, `/model qwen-coder` for coding, `/model deepseek-v4-flash` for reasoning + 1M context, `/model maverick` for general chat).
 > **Best value:** `gpt-5-nano` and `gemini-2.5-flash-lite` deliver strong results at ~$0.0003/request.
 
 ---
@@ -552,7 +552,7 @@ npm test
 
 **The LLM router built for autonomous agents**
 
-You're here. 60+ models, local smart routing, x402 USDC payments — the only stack that lets agents operate independently.
+You're here. <!-- br:models.chatVisible -->66<!-- /br:models.chatVisible --> models, local smart routing, x402 USDC payments — the only stack that lets agents operate independently.
 
 `curl -fsSL https://blockrun.ai/XClawRouter-update | bash`
 
@@ -563,7 +563,7 @@ You're here. 60+ models, local smart routing, x402 USDC payments — the only st
 
 **BlockRun for Claude Code**
 
-Run Claude Code with 50+ models, no rate limits, no Anthropic account, no phone verification. Pay per request with USDC — your wallet is your identity.
+Run Claude Code with <!-- br:models.chatVisible -->66<!-- /br:models.chatVisible --> models, no rate limits, no Anthropic account, no phone verification. Pay per request with USDC — your wallet is your identity.
 
 `curl -fsSL https://blockrun.ai/brcc-install | bash`
 
@@ -606,7 +606,7 @@ ClawRouter is an open-source (MIT licensed) smart LLM router built for autonomou
 
 ### How much can ClawRouter save on LLM costs?
 
-ClawRouter's blended average cost is $2.05 per million tokens compared to $25/M for Claude Opus, representing 92% savings. Actual savings depend on your workload — simple queries are routed to free models ($0/request), while complex tasks get premium models.
+ClawRouter's blended average cost is $2.05 per million tokens compared to $25/M for Claude Opus, representing <!-- br:savings.autoVsBaselinePct -->87<!-- /br:savings.autoVsBaselinePct -->% savings. Actual savings depend on your workload — simple queries are routed to free models ($0/request), while complex tasks get premium models.
 
 ### How does ClawRouter compare to OpenRouter?
 
