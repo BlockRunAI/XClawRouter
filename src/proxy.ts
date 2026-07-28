@@ -1454,7 +1454,12 @@ const IMAGE_PRICING: Record<string, { default: number; sizes?: Record<string, nu
     default: 0.02,
     sizes: { "1024x1024": 0.02, "1536x1024": 0.04, "1024x1536": 0.04 },
   },
-  "black-forest/flux-1.1-pro": { default: 0.04 },
+  // Prices mirrored from the gateway catalog (pricePerImage / per-size).
+  "openai/gpt-image-2": {
+    default: 0.06,
+    sizes: { "1024x1024": 0.06, "1536x1024": 0.12, "1024x1536": 0.12 },
+  },
+  "bytedance/seedream-5-pro": { default: 0.045 },
   "google/nano-banana": { default: 0.05 },
   "google/nano-banana-pro": {
     default: 0.1,
@@ -2132,7 +2137,9 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
         let imgCost = 0;
         try {
           const parsed = JSON.parse(reqBody.toString());
-          imgModel = parsed.model || "openai/dall-e-3";
+          // dall-e-3 is delisted upstream (available:false in the catalog), so
+          // it defaulted every unqualified image request into a failed call.
+          imgModel = parsed.model || "google/nano-banana";
           const n = parsed.n || 1;
           imgCost = estimateImageCost(imgModel, parsed.size, n);
         } catch {
@@ -3312,18 +3319,29 @@ async function proxyRequest(
         if (modelMatch) {
           const raw = modelMatch[1];
           // Resolve shorthand aliases
+          // Every target must be an AVAILABLE model in the gateway catalog.
+          // Two were not: dall-e-3 has available:false since it was delisted
+          // upstream, and black-forest/flux-1.1-pro is not in the catalog at
+          // all — so `--model dalle` and `--model flux` both failed the call.
+          // Legacy names redirect to a live successor rather than 404.
           const IMAGE_MODEL_ALIASES: Record<string, string> = {
-            "dall-e-3": "openai/dall-e-3",
-            dalle3: "openai/dall-e-3",
-            dalle: "openai/dall-e-3",
+            // Retired: dall-e-3 is delisted upstream. Kept as a redirect so
+            // existing scripts keep working instead of breaking outright.
+            "dall-e-3": "openai/gpt-image-2",
+            dalle3: "openai/gpt-image-2",
+            dalle: "openai/gpt-image-2",
             "gpt-image": "openai/gpt-image-1",
             "gpt-image-1": "openai/gpt-image-1",
-            flux: "black-forest/flux-1.1-pro",
-            "flux-pro": "black-forest/flux-1.1-pro",
+            "gpt-image-2": "openai/gpt-image-2",
             banana: "google/nano-banana",
             "nano-banana": "google/nano-banana",
             "banana-pro": "google/nano-banana-pro",
             "nano-banana-pro": "google/nano-banana-pro",
+            grok: "xai/grok-imagine-image",
+            "grok-imagine": "xai/grok-imagine-image",
+            "grok-imagine-pro": "xai/grok-imagine-image-pro",
+            seedream: "bytedance/seedream-5-pro",
+            cogview: "zai/cogview-4",
           };
           imageModel = IMAGE_MODEL_ALIASES[raw] ?? raw;
           imagePrompt = imagePrompt.replace(/--model\s+\S+/, "").trim();
