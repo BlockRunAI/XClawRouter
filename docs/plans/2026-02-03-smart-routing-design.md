@@ -6,7 +6,7 @@
 
 Simple queries go to Claude Opus at $75/M output tokens when Gemini Flash could handle them at $0.60/M. No cost-aware model selection.
 
-Phase 1 solved API key management (one wallet for <!-- br:models.chatVisible -->66<!-- /br:models.chatVisible --> models). Phase 2 solves cost optimization by routing queries to the cheapest capable model.
+Phase 1 solved API key management (one wallet for <!-- br:models.chatVisible -->71<!-- /br:models.chatVisible --> models). Phase 2 solves cost optimization by routing queries to the cheapest capable model.
 
 ## Why Client-Side
 

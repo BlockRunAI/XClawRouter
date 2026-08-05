@@ -7,7 +7,7 @@
 <p>Agents can't sign up for accounts. Agents can't enter credit cards.<br>
 Agents can only sign transactions.<br><br>
 <strong>ClawRouter is the only LLM router that lets agents operate independently.</strong><br><br>
-<em><!-- br:models.free -->8<!-- /br:models.free --> models free, no crypto required. No signup. No API key. No credit card.</em></p>
+<em><!-- br:models.free -->6<!-- /br:models.free --> models free, no crypto required. No signup. No API key. No credit card.</em></p>
 
 <br>
 
@@ -34,7 +34,7 @@ Agents can only sign transactions.<br><br>
 
 </div>
 
-> **ClawRouter** is an open-source smart LLM router that reduces AI API costs by <!-- br:savings.autoVsBaselinePct -->87<!-- /br:savings.autoVsBaselinePct -->%. It analyzes each request across 15 dimensions and routes to the cheapest capable model in under 1ms, entirely locally. ClawRouter is the only LLM router built for autonomous AI agents — it uses wallet signatures for authentication (no API keys) and USDC micropayments via the x402 protocol (no credit cards). <!-- br:models.chatVisible -->66<!-- /br:models.chatVisible --> models from OpenAI, Anthropic, Google, xAI, DeepSeek, and more. MIT licensed.
+> **ClawRouter** is an open-source smart LLM router that reduces AI API costs by <!-- br:savings.autoVsBaselinePct -->87<!-- /br:savings.autoVsBaselinePct -->%. It analyzes each request across 15 dimensions and routes to the cheapest capable model in under 1ms, entirely locally. ClawRouter is the only LLM router built for autonomous AI agents — it uses wallet signatures for authentication (no API keys) and USDC micropayments via the x402 protocol (no credit cards). <!-- br:models.chatVisible -->71<!-- /br:models.chatVisible --> models from OpenAI, Anthropic, Google, xAI, DeepSeek, and more. MIT licensed.
 
 ---
 
@@ -62,7 +62,7 @@ This is the stack that lets agents operate autonomously: **x402 + USDC + local r
 |                  | OpenRouter        | LiteLLM          | Martian           | Portkey           | **ClawRouter**                                                         |
 | ---------------- | ----------------- | ---------------- | ----------------- | ----------------- | ---------------------------------------------------------------------- |
 | **Models**       | 200+              | 100+             | Smart routing     | Gateway           | **60+**                                                                |
-| **Free tier**    | Rate-limited      | BYO keys         | No                | No                | **<!-- br:models.free -->8<!-- /br:models.free --> models, no signup** |
+| **Free tier**    | Rate-limited      | BYO keys         | No                | No                | **<!-- br:models.free -->6<!-- /br:models.free --> models, no signup** |
 | **Routing**      | Manual selection  | Manual selection | Smart (closed)    | Observability     | **Smart (open source)**                                                |
 | **Auth**         | Account + API key | Your API keys    | Account + API key | Account + API key | **Wallet signature**                                                   |
 | **Payment**      | Credit card       | BYO keys         | Credit card       | $49-499/mo        | **USDC per-request**                                                   |
@@ -78,7 +78,7 @@ This is the stack that lets agents operate autonomously: **x402 + USDC + local r
 
 ## Quick Start
 
-> **No wallet? <!-- br:models.free -->8<!-- /br:models.free --> models work free out of the box.** Install, run, and pin `free/gpt-oss-120b` (or any of the 7) — no crypto, no signup, no balance required. Add USDC later when you want paid models.
+> **No wallet? <!-- br:models.free -->6<!-- /br:models.free --> models work free out of the box.** Install, run, and pin `free/gpt-oss-120b` (or any of the 7) — no crypto, no signup, no balance required. Add USDC later when you want paid models.
 
 ### Option A — OpenClaw Agent
 
@@ -297,7 +297,7 @@ Edit existing images with `/img2img`:
 
 ## Models & Pricing
 
-<!-- br:models.chatVisible -->66<!-- /br:models.chatVisible --> models across 9 providers, one wallet. **Starting at $0.0002/request.**
+<!-- br:models.chatVisible -->71<!-- /br:models.chatVisible --> models across 9 providers, one wallet. **Starting at $0.0002/request.**
 
 > **💡 "Cost per request"** = estimated cost for a typical chat message (~500 input + 500 output tokens).
 
@@ -382,7 +382,7 @@ Edit existing images with `/img2img`:
 | openai/gpt-5.2-pro          |    $21.00 |    $168.00 |    $0.0945 | 400K    | reasoning, tools                  |
 | openai/gpt-5.4-pro          |    $30.00 |    $180.00 |    $0.1050 | 400K    | reasoning, tools                  |
 
-> **Free tier:** <!-- br:models.free -->8<!-- /br:models.free --> models cost nothing — `/model free` points to gpt-oss-120b, or pick any free model directly (e.g., `/model nemotron-omni` for vision, `/model qwen-coder` for coding, `/model deepseek-v4-flash` for reasoning + 1M context, `/model maverick` for general chat).
+> **Free tier:** <!-- br:models.free -->6<!-- /br:models.free --> models cost nothing — `/model free` points to gpt-oss-120b, or pick any free model directly (e.g., `/model nemotron-omni` for vision, `/model qwen-coder` for coding, `/model deepseek-v4-flash` for reasoning + 1M context, `/model maverick` for general chat).
 > **Best value:** `gpt-5-nano` and `gemini-2.5-flash-lite` deliver strong results at ~$0.0003/request.
 
 ---
@@ -552,7 +552,7 @@ npm test
 
 **The LLM router built for autonomous agents**
 
-You're here. <!-- br:models.chatVisible -->66<!-- /br:models.chatVisible --> models, local smart routing, x402 USDC payments — the only stack that lets agents operate independently.
+You're here. <!-- br:models.chatVisible -->71<!-- /br:models.chatVisible --> models, local smart routing, x402 USDC payments — the only stack that lets agents operate independently.
 
 `curl -fsSL https://blockrun.ai/XClawRouter-update | bash`
 
@@ -563,7 +563,7 @@ You're here. <!-- br:models.chatVisible -->66<!-- /br:models.chatVisible --> mod
 
 **BlockRun for Claude Code**
 
-Run Claude Code with <!-- br:models.chatVisible -->66<!-- /br:models.chatVisible --> models, no rate limits, no Anthropic account, no phone verification. Pay per request with USDC — your wallet is your identity.
+Run Claude Code with <!-- br:models.chatVisible -->71<!-- /br:models.chatVisible --> models, no rate limits, no Anthropic account, no phone verification. Pay per request with USDC — your wallet is your identity.
 
 `curl -fsSL https://blockrun.ai/brcc-install | bash`
 
