@@ -34,7 +34,7 @@ Agents can only sign transactions.<br><br>
 
 </div>
 
-> **ClawRouter** is an open-source smart LLM router that reduces AI API costs by <!-- br:savings.autoVsBaselinePct -->87<!-- /br:savings.autoVsBaselinePct -->%. It analyzes each request across 15 dimensions and routes to the cheapest capable model in under 1ms, entirely locally. ClawRouter is the only LLM router built for autonomous AI agents — it uses wallet signatures for authentication (no API keys) and USDC micropayments via the x402 protocol (no credit cards). <!-- br:models.chatVisible -->71<!-- /br:models.chatVisible --> models from OpenAI, Anthropic, Google, xAI, DeepSeek, and more. MIT licensed.
+> **ClawRouter** is an open-source smart LLM router that reduces AI API costs by <!-- br:savings.autoVsBaselinePct -->88<!-- /br:savings.autoVsBaselinePct -->%. It analyzes each request across 15 dimensions and routes to the cheapest capable model in under 1ms, entirely locally. ClawRouter is the only LLM router built for autonomous AI agents — it uses wallet signatures for authentication (no API keys) and USDC micropayments via the x402 protocol (no credit cards). <!-- br:models.chatVisible -->71<!-- /br:models.chatVisible --> models from OpenAI, Anthropic, Google, xAI, DeepSeek, and more. MIT licensed.
 
 ---
 
@@ -223,7 +223,7 @@ Request → Weighted Scorer (15 dimensions) → Tier → Best Model → Response
 | COMPLEX   | gemini-3.1-flash-lite ($0.25/$1.50) | gemini-3.1-pro ($2/$12)               | claude-opus-4.6 ($5/$25)     |
 | REASONING | grok-4-1-fast ($0.20/$0.50)         | grok-4-1-fast-reasoning ($0.20/$0.50) | claude-sonnet-4.6 ($3/$15)   |
 
-**Blended average: $2.05/M** vs $25/M for Claude Opus = **<!-- br:savings.autoVsBaselinePct -->87<!-- /br:savings.autoVsBaselinePct -->% savings**
+**Blended average: $2.05/M** vs $25/M for Claude Opus = **<!-- br:savings.autoVsBaselinePct -->88<!-- /br:savings.autoVsBaselinePct -->% savings**
 
 ---
 
@@ -606,7 +606,7 @@ ClawRouter is an open-source (MIT licensed) smart LLM router built for autonomou
 
 ### How much can ClawRouter save on LLM costs?
 
-ClawRouter's blended average cost is $2.05 per million tokens compared to $25/M for Claude Opus, representing <!-- br:savings.autoVsBaselinePct -->87<!-- /br:savings.autoVsBaselinePct -->% savings. Actual savings depend on your workload — simple queries are routed to free models ($0/request), while complex tasks get premium models.
+ClawRouter's blended average cost is $2.05 per million tokens compared to $25/M for Claude Opus, representing <!-- br:savings.autoVsBaselinePct -->88<!-- /br:savings.autoVsBaselinePct -->% savings. Actual savings depend on your workload — simple queries are routed to free models ($0/request), while complex tasks get premium models.
 
 ### How does ClawRouter compare to OpenRouter?
 
