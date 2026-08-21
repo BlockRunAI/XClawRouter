@@ -7,7 +7,7 @@
 <p>Agents can't sign up for accounts. Agents can't enter credit cards.<br>
 Agents can only sign transactions.<br><br>
 <strong>ClawRouter is the only LLM router that lets agents operate independently.</strong><br><br>
-<em><!-- br:models.free -->6<!-- /br:models.free --> models free, no crypto required. No signup. No API key. No credit card.</em></p>
+<em><!-- br:models.free -->5<!-- /br:models.free --> models free, no crypto required. No signup. No API key. No credit card.</em></p>
 
 <br>
 
@@ -62,7 +62,7 @@ This is the stack that lets agents operate autonomously: **x402 + USDC + local r
 |                  | OpenRouter        | LiteLLM          | Martian           | Portkey           | **ClawRouter**                                                         |
 | ---------------- | ----------------- | ---------------- | ----------------- | ----------------- | ---------------------------------------------------------------------- |
 | **Models**       | 200+              | 100+             | Smart routing     | Gateway           | **60+**                                                                |
-| **Free tier**    | Rate-limited      | BYO keys         | No                | No                | **<!-- br:models.free -->6<!-- /br:models.free --> models, no signup** |
+| **Free tier**    | Rate-limited      | BYO keys         | No                | No                | **<!-- br:models.free -->5<!-- /br:models.free --> models, no signup** |
 | **Routing**      | Manual selection  | Manual selection | Smart (closed)    | Observability     | **Smart (open source)**                                                |
 | **Auth**         | Account + API key | Your API keys    | Account + API key | Account + API key | **Wallet signature**                                                   |
 | **Payment**      | Credit card       | BYO keys         | Credit card       | $49-499/mo        | **USDC per-request**                                                   |
@@ -78,7 +78,7 @@ This is the stack that lets agents operate autonomously: **x402 + USDC + local r
 
 ## Quick Start
 
-> **No wallet? <!-- br:models.free -->6<!-- /br:models.free --> models work free out of the box.** Install, run, and pin `free/gpt-oss-120b` (or any of the 7) — no crypto, no signup, no balance required. Add USDC later when you want paid models.
+> **No wallet? <!-- br:models.free -->5<!-- /br:models.free --> models work free out of the box.** Install, run, and pin `free/gpt-oss-120b` (or any of the 7) — no crypto, no signup, no balance required. Add USDC later when you want paid models.
 
 ### Option A — OpenClaw Agent
 
@@ -382,7 +382,7 @@ Edit existing images with `/img2img`:
 | openai/gpt-5.2-pro          |    $21.00 |    $168.00 |    $0.0945 | 400K    | reasoning, tools                  |
 | openai/gpt-5.4-pro          |    $30.00 |    $180.00 |    $0.1050 | 400K    | reasoning, tools                  |
 
-> **Free tier:** <!-- br:models.free -->6<!-- /br:models.free --> models cost nothing — `/model free` points to gpt-oss-120b, or pick any free model directly (e.g., `/model nemotron-omni` for vision, `/model qwen-coder` for coding, `/model deepseek-v4-flash` for reasoning + 1M context, `/model maverick` for general chat).
+> **Free tier:** <!-- br:models.free -->5<!-- /br:models.free --> models cost nothing — `/model free` points to gpt-oss-120b, or pick any free model directly (e.g., `/model nemotron-omni` for vision, `/model qwen-coder` for coding, `/model deepseek-v4-flash` for reasoning + 1M context, `/model maverick` for general chat).
 > **Best value:** `gpt-5-nano` and `gemini-2.5-flash-lite` deliver strong results at ~$0.0003/request.
 
 ---
