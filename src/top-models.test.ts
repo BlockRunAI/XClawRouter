@@ -30,6 +30,22 @@ const RETIRED_FREE_IDS = [
   "free/nemotron-nano-12b-v2-vl", // NVIDIA sweep 2026-08-30
 ] as const;
 
+/**
+ * Paid ids retired from the live catalog. Same rule as the free ones: they may
+ * stay defined in BLOCKRUN_MODELS so explicit pins resolve, but they must not
+ * be advertised. All seven were still in the picker on 2026-08-31, and five of
+ * them were also still wired into router/config.ts — two as tier primaries.
+ */
+const RETIRED_PAID_IDS = [
+  "openai/gpt-5.3",
+  "openai/gpt-5-nano",
+  "moonshot/kimi-k2.6",
+  "moonshot/kimi-k2.5",
+  "xai/grok-3",
+  "xai/grok-4-0709",
+  "xai/grok-4-1-fast-reasoning",
+] as const;
+
 /** The live free tier as of the 2026-08-31 rebuild, in auto-pick order. */
 const LIVE_FREE_IDS = [
   "free/nemotron-3.5-lightning",
@@ -46,13 +62,27 @@ describe("TOP_MODELS", () => {
     expect(TOP_MODELS).toEqual(topModelsJson);
     expect(new Set(TOP_MODELS).size).toBe(TOP_MODELS.length);
     expect(TOP_MODELS).toContain("openai/gpt-5.5");
-    expect(TOP_MODELS).toContain("xai/grok-4-0709");
+    expect(TOP_MODELS).toContain("xai/grok-4.5");
     expect(TOP_MODELS).toContain("deepseek/deepseek-reasoner");
   });
 
-  it("advertises no retired free model", () => {
-    const resurrected = RETIRED_FREE_IDS.filter((id) => TOP_MODELS.includes(id));
+  it("advertises no retired model", () => {
+    const resurrected = [...RETIRED_FREE_IDS, ...RETIRED_PAID_IDS].filter((id) =>
+      TOP_MODELS.includes(id),
+    );
     expect(resurrected).toEqual([]);
+  });
+
+  it("names the current flagships, so a frozen catalog is visible", () => {
+    for (const id of [
+      "anthropic/claude-opus-5",
+      "openai/gpt-5.6-terra",
+      "xai/grok-4.5",
+      "moonshot/kimi-k3",
+      "zai/glm-5.3",
+    ]) {
+      expect(TOP_MODELS).toContain(id);
+    }
   });
 
   it("advertises the live free tier, contiguously at the end and in cascade order", () => {

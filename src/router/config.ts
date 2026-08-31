@@ -1046,31 +1046,30 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
       fallback: [
         "google/gemini-3-flash-preview", // 1,398ms, IQ 46 — smarter fallback
         "deepseek/deepseek-chat", // 1,431ms, IQ 32, 41% retention
-        "moonshot/kimi-k2.5", // 1,646ms, IQ 47, strong quality
+        "moonshot/kimi-k3", // $3/$15
         "google/gemini-3.1-flash-lite", // $0.25/$1.50, 1M context — newest flash-lite
         "google/gemini-2.5-flash-lite", // 1,353ms, $0.10/$0.40
         "openai/gpt-5.4-nano", // $0.20/$1.25, 1M context
-        "xai/grok-4-fast-non-reasoning", // 1,143ms, $0.20/$0.50 — fast fallback
+        "qwen/qwen3.8-flash", // $0.15/$0.47
         "free/nemotron-3.5-lightning", // FREE fallback
       ],
     },
     MEDIUM: {
-      primary: "moonshot/kimi-k2.5", // 1,646ms, IQ 47, $0.60/$3.00 — strong tool use, quality output
+      primary: "moonshot/kimi-k3", // $3/$15
       fallback: [
         "google/gemini-3-flash-preview", // 1,398ms, IQ 46 — nearly same IQ, faster + cheaper
         "deepseek/deepseek-chat", // 1,431ms, IQ 32, 41% retention
         "google/gemini-2.5-flash", // 1,238ms, 60% retention
         "google/gemini-3.1-flash-lite", // $0.25/$1.50, 1M context
         "google/gemini-2.5-flash-lite", // 1,353ms, $0.10/$0.40
-        "xai/grok-4-1-fast-non-reasoning", // 1,244ms, fast fallback
-        "xai/grok-3-mini", // 1,202ms, $0.30/$0.50
+        "zai/glm-5.3-flash", // 1,244ms, fast fallback
       ],
     },
     COMPLEX: {
       primary: "google/gemini-3.1-pro", // 1,609ms, IQ 57 — fast flagship quality
       fallback: [
         "google/gemini-3-flash-preview", // 1,398ms, IQ 46 — fast + smart
-        "xai/grok-4-0709", // 1,348ms, IQ 41
+        "xai/grok-4.3", // $1.5/$4
         "google/gemini-2.5-pro", // 1,294ms
         "anthropic/claude-sonnet-4.6", // 2,110ms, IQ 52 — quality fallback
         "deepseek/deepseek-chat", // 1,431ms, IQ 32
@@ -1080,10 +1079,9 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
       ],
     },
     REASONING: {
-      primary: "xai/grok-4-1-fast-reasoning", // 1,454ms, $0.20/$0.50
+      primary: "deepseek/deepseek-reasoner", // $0.14/$0.28
       fallback: [
-        "xai/grok-4-fast-reasoning", // 1,298ms, $0.20/$0.50
-        "deepseek/deepseek-reasoner", // V4 Flash thinking ($0.20/$0.40, 1M ctx)
+        "xiaomi/mimo-v2.5", // $0.14/$0.28
         "deepseek/deepseek-v4-pro", // V4 Pro flagship ($0.50/$1.00 promo through 2026-05-31, list $2/$4)
         "openai/o4-mini", // 2,328ms ($1.10/$4.40)
         "openai/o3", // 2,862ms
@@ -1104,7 +1102,7 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
         "google/gemini-3.1-flash-lite", // $0.25/$1.50 — newest flash-lite
         "openai/gpt-5.4-nano", // $0.20/$1.25 — fast nano
         "google/gemini-2.5-flash-lite", // $0.10/$0.40
-        "xai/grok-4-fast-non-reasoning", // $0.20/$0.50
+        "qwen/qwen3.8-flash", // $0.15/$0.47
       ],
     },
     MEDIUM: {
@@ -1112,7 +1110,7 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
       fallback: [
         "openai/gpt-5.4-nano", // $0.20/$1.25
         "google/gemini-2.5-flash-lite", // $0.10/$0.40
-        "xai/grok-4-fast-non-reasoning",
+        "qwen/qwen3.8-flash",
         "google/gemini-2.5-flash",
       ],
     },
@@ -1120,16 +1118,15 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
       primary: "google/gemini-3.1-flash-lite", // $0.25/$1.50
       fallback: [
         "google/gemini-2.5-flash-lite",
-        "xai/grok-4-0709",
+        "xai/grok-4.3",
         "google/gemini-2.5-flash",
         "deepseek/deepseek-chat",
       ],
     },
     REASONING: {
-      primary: "xai/grok-4-1-fast-reasoning", // $0.20/$0.50
+      primary: "deepseek/deepseek-reasoner", // $0.14/$0.28
       fallback: [
-        "xai/grok-4-fast-reasoning",
-        "deepseek/deepseek-reasoner", // V4 Flash thinking — $0.20/$0.40
+        "xiaomi/mimo-v2.5",
         "deepseek/deepseek-v4-pro", // V4 Pro flagship — $0.50/$1.00 promo, post-promo $2/$4
       ],
     },
@@ -1139,9 +1136,8 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
   // codex=complex coding, kimi=simple coding, sonnet=reasoning/instructions, opus=architecture/PM/audits
   premiumTiers: {
     SIMPLE: {
-      primary: "moonshot/kimi-k2.6", // $0.95/$4.00 - Moonshot flagship (256K ctx, vision + reasoning)
+      primary: "moonshot/kimi-k3", // $3/$15
       fallback: [
-        "moonshot/kimi-k2.5", // $0.60/$3.00 - proven reliable NVIDIA fallback when Moonshot direct API falters
         "google/gemini-2.5-flash", // 60% retention, fast growth
         "anthropic/claude-haiku-4.5",
         "google/gemini-2.5-flash-lite",
@@ -1151,27 +1147,24 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
     MEDIUM: {
       primary: "openai/gpt-5.3-codex", // $1.75/$14 - 400K context, 128K output, replaces 5.2
       fallback: [
-        "moonshot/kimi-k2.6", // Moonshot flagship
-        "moonshot/kimi-k2.5",
+        "moonshot/kimi-k3", // Moonshot flagship
         "google/gemini-2.5-flash", // 60% retention, good coding capability
         "google/gemini-2.5-pro",
-        "xai/grok-4-0709",
+        "xai/grok-4.3",
         "anthropic/claude-sonnet-4.6",
       ],
     },
     COMPLEX: {
-      primary: "anthropic/claude-opus-4.8", // Anthropic flagship (promoted 2026-06-05, same $5/$25 as 4.7)
+      primary: "anthropic/claude-opus-4.8", // $5/$25
       // Fallback chain de-Gemini'd 2026-04-22: when Anthropic 503s, Gemini is
       // also prone to "high demand" 503s (correlated failure — everyone falls
       // back to Google at the same time). Prefer xAI Grok → Moonshot → OpenAI
       // flagship → DeepSeek → NVIDIA free instead.
       fallback: [
         "anthropic/claude-opus-4.7", // in-family hot swap first
-        "anthropic/claude-opus-4.6",
         "anthropic/claude-sonnet-4.6",
-        "xai/grok-4-0709", // 503-resistant flagship
-        "moonshot/kimi-k2.6", // Moonshot flagship, independent infra
-        "moonshot/kimi-k2.5",
+        "xai/grok-4.3", // 503-resistant flagship
+        "moonshot/kimi-k3", // Moonshot flagship, independent infra
         "openai/gpt-5.5", // Newest OpenAI flagship — 1M+ ctx, native agent + computer use
         "openai/gpt-5.4", // Previous flagship (slow but stable, benchmarked at 6,213ms)
         "openai/gpt-5.3-codex",
@@ -1184,8 +1177,7 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
       fallback: [
         "anthropic/claude-opus-4.8", // Flagship Opus w/ adaptive thinking
         "anthropic/claude-opus-4.7",
-        "anthropic/claude-opus-4.6", // 2,139ms
-        "xai/grok-4-1-fast-reasoning", // 1,454ms, cheap fast reasoning
+        "deepseek/deepseek-reasoner", // 1,454ms, cheap fast reasoning
         "openai/o4-mini", // 2,328ms ($1.10/$4.40)
         "openai/o3", // 2,862ms
       ],
@@ -1197,15 +1189,15 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
     SIMPLE: {
       primary: "openai/gpt-4o-mini", // $0.15/$0.60 - best tool compliance at lowest cost
       fallback: [
-        "moonshot/kimi-k2.5", // 1,646ms, strong tool use quality
+        "moonshot/kimi-k3", // 1,646ms, strong tool use quality
         "anthropic/claude-haiku-4.5", // 2,305ms
-        "xai/grok-4-1-fast-non-reasoning", // 1,244ms, fast fallback
+        "zai/glm-5.3-flash", // 1,244ms, fast fallback
       ],
     },
     MEDIUM: {
-      primary: "moonshot/kimi-k2.5", // 1,646ms, $0.60/$3.00 - strong tool use, proper function calls
+      primary: "moonshot/kimi-k3", // $3/$15
       fallback: [
-        "xai/grok-4-1-fast-non-reasoning", // 1,244ms, fast fallback
+        "zai/glm-5.3-flash", // 1,244ms, fast fallback
         "openai/gpt-4o-mini", // 2,764ms, reliable tool calling
         "anthropic/claude-haiku-4.5", // 2,305ms
         "deepseek/deepseek-chat", // 1,431ms
@@ -1219,9 +1211,8 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
       fallback: [
         "anthropic/claude-opus-4.8", // Flagship Opus — in-family hot swap
         "anthropic/claude-opus-4.7",
-        "anthropic/claude-opus-4.6", // 2,139ms
-        "xai/grok-4-0709", // 1,348ms — strong tool use, independent infra
-        "moonshot/kimi-k2.5", // strong tool use, independent infra
+        "xai/grok-4.3", // 1,348ms — strong tool use, independent infra
+        "moonshot/kimi-k3", // strong tool use, independent infra
         "openai/gpt-5.5", // Newest flagship — native agent + computer use (exactly the agentic-tier use case)
         "openai/gpt-5.4", // Previous flagship — 6,213ms, reliable
         "deepseek/deepseek-chat", // 1,431ms — cheap, reliable
@@ -1233,8 +1224,6 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
       fallback: [
         "anthropic/claude-opus-4.8", // Flagship Opus w/ adaptive thinking
         "anthropic/claude-opus-4.7",
-        "anthropic/claude-opus-4.6", // 2,139ms
-        "xai/grok-4-1-fast-reasoning", // 1,454ms
         "deepseek/deepseek-reasoner", // 1,454ms
       ],
     },

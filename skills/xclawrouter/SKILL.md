@@ -42,9 +42,9 @@ openclaw models set openai/gpt-4o
 XClawRouter classifies each request into one of four tiers:
 
 - **SIMPLE** — factual lookups, greetings, translations → gemini-2.5-flash ($0.30/$2.50)
-- **MEDIUM** — summaries, explanations, data extraction → kimi-k2.7 ($0.95/$4.00)
+- **MEDIUM** — summaries, explanations, data extraction → kimi-k3 ($3/$15)
 - **COMPLEX** — code generation, multi-step analysis → gemini-3.1-pro ($2/$12)
-- **REASONING** — proofs, formal logic, multi-step math → grok-4-1-fast-reasoning ($0.20/$0.50)
+- **REASONING** — proofs, formal logic, multi-step math → deepseek-reasoner ($0.14/$0.28)
 
 Prices are per 1M input/output tokens on the default `auto` profile. Per-tier
 savings percentages are deliberately not quoted: the published figure is blended
@@ -55,7 +55,7 @@ Rules handle ~~80% of requests in <1ms. Only ambiguous queries hit the LLM class
 
 ## Available Models
 
-<!-- br:models.chatVisible -->76<!-- /br:models.chatVisible --> models including: gpt-5.5, gpt-5.4, gpt-4o, o3, claude-opus-4.8, claude-opus-4.7, claude-sonnet-4.6, gemini-3.1-pro, gemini-3.5-flash, deepseek-v4-pro, deepseek-chat, grok-4.3, grok-build-0.1, kimi-k2.6, kimi-k2.5, and the free models (nemotron-3.5-lightning [default], nemotron-3-nano-30b, laguna-xs-2.1, north-mini-code, nemotron-3-nano-omni-30b-a3b-reasoning [vision], nemotron-3-ultra-550b, llama-3.2-11b-vision [vision]).
+<!-- br:models.chatVisible -->76<!-- /br:models.chatVisible --> models including: claude-fable-5, claude-opus-5, claude-sonnet-5, gpt-5.6-terra, gpt-5.6-sol, gpt-5.5, gpt-5.4, gemini-3.1-pro, gemini-3.6-flash, grok-4.5, grok-4.3, glm-5.3, kimi-k3, qwen3.7-max, mimo-v2.5, deepseek-v4-pro, deepseek-chat, and the free models (nemotron-3.5-lightning [default], nemotron-3-nano-30b, laguna-xs-2.1, north-mini-code, nemotron-3-nano-omni-30b-a3b-reasoning [vision], nemotron-3-ultra-550b, llama-3.2-11b-vision [vision]).
 
 ## Example Output
 
