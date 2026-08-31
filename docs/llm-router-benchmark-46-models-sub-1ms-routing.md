@@ -13,7 +13,7 @@ The results changed how we route requests.
 
 ## Why We Did This
 
-BlockRun is an x402 micropayment gateway that sits between your AI agent and <!-- br:models.chatVisible -->71<!-- /br:models.chatVisible --> LLM providers. Every request flows through our payment verification layer before hitting the model API. That means our latency numbers include everything a real user experiences: payment auth, provider API call, and response delivery.
+BlockRun is an x402 micropayment gateway that sits between your AI agent and <!-- br:models.chatVisible -->76<!-- /br:models.chatVisible --> LLM providers. Every request flows through our payment verification layer before hitting the model API. That means our latency numbers include everything a real user experiences: payment auth, provider API call, and response delivery.
 
 Most benchmarks measure model speed in isolation. We wanted to measure what users actually feel.
 
@@ -136,7 +136,7 @@ Raw benchmark data: [benchmark-results.json](https://github.com/BlockRunAI/XClaw
 
 ---
 
-_BlockRun is the x402 micropayment gateway for AI. One wallet, <!-- br:models.chatVisible -->71<!-- /br:models.chatVisible --> models, pay-per-request with USDC. [Get started](https://blockrun.ai)_
+_BlockRun is the x402 micropayment gateway for AI. One wallet, <!-- br:models.chatVisible -->76<!-- /br:models.chatVisible --> models, pay-per-request with USDC. [Get started](https://blockrun.ai)_
 
 ---
 
