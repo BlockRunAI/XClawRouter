@@ -4,6 +4,18 @@ All notable changes to XClawRouter.
 
 ---
 
+## v0.12.191 — August 31, 2026
+
+Rebuilt the free tier. It had been dead since June — five of the six advertised free models were retired upstream in the eleven weeks after v0.12.190, and nothing here noticed.
+
+- **Five dead free models removed from the picker and the auto-pick cascade** — `free/gpt-oss-120b` and `free/gpt-oss-20b` (dead upstream 2026-08-16; the gateway 400s the `free/` id), `free/deepseek-v4-flash` (410 Gone at NVIDIA 2026-08-12), `free/qwen3-coder-480b` (NVIDIA EOL 2026-06-14), `free/llama-4-maverick` (dropped from the live catalog 2026-07-17). Only `nemotron-3-nano-omni` had survived. None failed loudly: blockrun hides a retired free id and server-redirects the call, so callers kept getting answers from a different model and `/exclude` on the visible id did nothing. Entries stay in the catalog so explicit pins still resolve — they are off the picker and cascade only.
+- **The current seven free models ship**, in blockrun's own auto-pick order: `nemotron-3.5-lightning` (new default), `nemotron-3-nano-30b`, `laguna-xs-2.1`, `north-mini-code`, `nemotron-3-nano-omni-30b-a3b-reasoning` (vision), `nemotron-3-ultra-550b`, `llama-3.2-11b-vision` (vision). `/model free`, the `nvidia` alias, the eco SIMPLE primary and two agentic backstops all repointed at `nemotron-3.5-lightning`.
+- **`FREE_UPSTREAM_OVERRIDES` added** — the free tier is no longer NVIDIA-only, so the blanket `free/` → `nvidia/` rewrite in `toUpstreamModelId` would have put ids the gateway does not serve on the wire. `nvidia/north-mini-code` and `nvidia/laguna-xs-2.1` are both absent from `/api/v1/models`; they map to `cohere/` and `poolside/`.
+- **Guard added** so this cannot recur silently — `top-models.test.ts` now rejects any retired free id in the picker, requires the free tail to match the live tier in cascade order, and requires every advertised id to be defined in `BLOCKRUN_MODELS` so a picker entry can never be a phantom.
+- README and `skills/xclawrouter/SKILL.md` swept of the dead model names; SKILL.md also claimed "11 free NVIDIA models", which was never right.
+
+---
+
 ## v0.12.190 — June 8, 2026
 
 Finished de-listing `nvidia/mistral-small-4-119b` after the gateway hid + redirected it (2026-06-08; mirrors ClawRouter v0.12.205).
