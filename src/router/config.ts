@@ -1051,7 +1051,7 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
         "google/gemini-2.5-flash-lite", // 1,353ms, $0.10/$0.40
         "openai/gpt-5.4-nano", // $0.20/$1.25, 1M context
         "xai/grok-4-fast-non-reasoning", // 1,143ms, $0.20/$0.50 — fast fallback
-        "free/gpt-oss-120b", // 1,252ms, FREE fallback
+        "free/nemotron-3.5-lightning", // FREE fallback
       ],
     },
     MEDIUM: {
@@ -1094,10 +1094,13 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
   // Eco tier configs - absolute cheapest (blockrun/eco)
   ecoTiers: {
     SIMPLE: {
-      primary: "free/gpt-oss-120b", // FREE! $0.00/$0.00 — heavy user default
+      primary: "free/nemotron-3.5-lightning", // FREE $0.00/$0.00 — 1M ctx, thinking mode
       fallback: [
-        "free/gpt-oss-20b", // FREE — smaller, faster
-        "free/deepseek-v4-flash", // FREE — 1M context, ~5x faster than v4-pro
+        // The free head keeps rotting with NVIDIA's hosting: deepseek-v4-flash
+        // 410 on 2026-08-12, gpt-oss-120b/20b dead since 2026-08-16, and on
+        // 2026-08-30 four of the five then-visible free models went at once.
+        // Each retirement retargets these free rungs; the paid rungs never move.
+        "free/nemotron-3-nano-30b", // FREE — fastest free model (~121 tok/s)
         "google/gemini-3.1-flash-lite", // $0.25/$1.50 — newest flash-lite
         "openai/gpt-5.4-nano", // $0.20/$1.25 — fast nano
         "google/gemini-2.5-flash-lite", // $0.10/$0.40
@@ -1173,7 +1176,7 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
         "openai/gpt-5.4", // Previous flagship (slow but stable, benchmarked at 6,213ms)
         "openai/gpt-5.3-codex",
         "deepseek/deepseek-chat", // Cheap, reliable
-        "free/qwen3-coder-480b", // NVIDIA free ultimate backstop
+        "free/nemotron-3.5-lightning", // free ultimate backstop
       ],
     },
     REASONING: {
@@ -1222,7 +1225,7 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
         "openai/gpt-5.5", // Newest flagship — native agent + computer use (exactly the agentic-tier use case)
         "openai/gpt-5.4", // Previous flagship — 6,213ms, reliable
         "deepseek/deepseek-chat", // 1,431ms — cheap, reliable
-        "free/qwen3-coder-480b", // NVIDIA free ultimate backstop
+        "free/nemotron-3.5-lightning", // free ultimate backstop
       ],
     },
     REASONING: {

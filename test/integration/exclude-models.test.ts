@@ -70,7 +70,7 @@ describe("exclude-models e2e", () => {
   it("exclude filter log appears for excluded models in eco SIMPLE tier", async () => {
     // Verify excluded models ARE in the unfiltered eco SIMPLE chain
     const ecoSimpleChain = getFallbackChain("SIMPLE", DEFAULT_ROUTING_CONFIG.ecoTiers!);
-    expect(ecoSimpleChain).toContain("free/gpt-oss-120b");
+    expect(ecoSimpleChain).toContain("free/nemotron-3.5-lightning");
 
     consoleLogs.length = 0;
 

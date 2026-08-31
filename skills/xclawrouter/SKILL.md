@@ -19,7 +19,7 @@ metadata: { "openclaw": { "emoji": "🦀", "requires": { "config": ["models.prov
 
 # XClawRouter
 
-Smart LLM router that saves <!-- br:savings.autoVsBaselinePct -->84<!-- /br:savings.autoVsBaselinePct -->% on inference costs by routing each request to the cheapest model that can handle it. <!-- br:models.chatVisible -->76<!-- /br:models.chatVisible --> models across 9 providers (11 free NVIDIA models), all through one wallet.
+Smart LLM router that saves <!-- br:savings.autoVsBaselinePct -->84<!-- /br:savings.autoVsBaselinePct -->% on inference costs by routing each request to the cheapest model that can handle it. <!-- br:models.chatVisible -->76<!-- /br:models.chatVisible --> models across 9 providers (<!-- br:models.free -->7<!-- /br:models.free --> free models), all through one wallet.
 
 ## Install
 
@@ -55,7 +55,7 @@ Rules handle ~~80% of requests in <1ms. Only ambiguous queries hit the LLM class
 
 ## Available Models
 
-<!-- br:models.chatVisible -->76<!-- /br:models.chatVisible --> models including: gpt-5.5, gpt-5.4, gpt-4o, o3, claude-opus-4.8, claude-opus-4.7, claude-sonnet-4.6, gemini-3.1-pro, gemini-3.5-flash, deepseek-v4-pro, deepseek-chat, grok-4.3, grok-build-0.1, kimi-k2.6, kimi-k2.5, and free NVIDIA-hosted models (gpt-oss-120b [default], gpt-oss-20b, deepseek-v4-flash, qwen3-coder-480b, llama-4-maverick, nemotron-3-nano-omni-30b-a3b-reasoning [vision]).
+<!-- br:models.chatVisible -->76<!-- /br:models.chatVisible --> models including: gpt-5.5, gpt-5.4, gpt-4o, o3, claude-opus-4.8, claude-opus-4.7, claude-sonnet-4.6, gemini-3.1-pro, gemini-3.5-flash, deepseek-v4-pro, deepseek-chat, grok-4.3, grok-build-0.1, kimi-k2.6, kimi-k2.5, and the free models (nemotron-3.5-lightning [default], nemotron-3-nano-30b, laguna-xs-2.1, north-mini-code, nemotron-3-nano-omni-30b-a3b-reasoning [vision], nemotron-3-ultra-550b, llama-3.2-11b-vision [vision]).
 
 ## Example Output
 
