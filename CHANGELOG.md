@@ -4,6 +4,19 @@ All notable changes to XClawRouter.
 
 ---
 
+## v0.12.192 — August 31, 2026
+
+Synced the paid catalog with the live gateway. v0.12.191 fixed the free tier; this is the other half — the catalog had been frozen since 2026-06-08, and the damage reached the router itself.
+
+- **Seven dead models removed from the picker** — `openai/gpt-5.3`, `openai/gpt-5-nano`, `moonshot/kimi-k2.6`, `moonshot/kimi-k2.5`, `xai/grok-3`, `xai/grok-4-0709`, `xai/grok-4-1-fast-reasoning`. All seven were gone from `/api/v1/models`.
+- **Nine dead models were wired into `router/config.ts`, five of them as tier primaries** — so whole tiers were routing to models that no longer exist. Beyond the seven above: `anthropic/claude-opus-4.6`, `xai/grok-3-mini`, `xai/grok-4-fast-reasoning`, `xai/grok-4-fast-non-reasoning`, `xai/grok-4-1-fast-non-reasoning`. Each retargeted to its nearest live equivalent on published price and capability: kimi-k2.5/k2.6 → kimi-k3, grok-4-0709 → grok-4.3, opus-4.6 → opus-4.8, the cheap grok-fast rungs → `deepseek-reasoner` / `xiaomi/mimo-v2.5` / `zai/glm-5.3-flash` / `qwen/qwen3.8-flash`. Latency and IQ annotations measured on the retired models were removed rather than inherited; the new rungs carry price only.
+- **Twenty live models added** — claude-fable-5, claude-opus-5, claude-sonnet-5, gpt-5.6-terra/sol/luna, gpt-5.5-pro, gemini-3.6-flash, gemini-3.5-flash-lite, grok-4.5, glm-5.3, glm-5.3-flash, glm-5.2, mimo-v2.5, mimo-v2.5-pro, kimi-k3, qwen3.7-max, qwen3.8-flash, tencent/hy3, deepseek-v4-flash-vision-exp. Picker 51 → 64 entries.
+- **`kimi` / `moonshot` / `kimi-k2` aliases** now resolve to K3; `kimi-k2.6` and `kimi-k2.5` pins still resolve to those exact ids. Aliases whose targets are still live (`claude`, `grok`, `glm`) were deliberately left alone — moving a live default is a product decision, not a catalog fix.
+- **Guard extended** — `top-models.test.ts` now also rejects retired _paid_ ids and asserts the current flagships are present, so a frozen catalog fails a test instead of going unnoticed for three months.
+- README pricing tables rebuilt against the live catalog (20 dead rows dropped, 21 rows added, `~$/request` computed on the table's own 1000-in/400-out basis), routing table regenerated from what `config.ts` actually does, and `skills/xclawrouter/SKILL.md` tier picks corrected.
+
+---
+
 ## v0.12.191 — August 31, 2026
 
 Rebuilt the free tier. It had been dead since June — five of the six advertised free models were retired upstream in the eleven weeks after v0.12.190, and nothing here noticed.

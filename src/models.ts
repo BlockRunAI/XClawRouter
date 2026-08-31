@@ -78,9 +78,12 @@ export const MODEL_ALIASES: Record<string, string> = {
   // BlockRun's UI 2026-04-28). Bare aliases now resolve to K2.6. Users who
   // explicitly pinned "kimi-k2.5" continue to get K2.5 (cost-stability opt-in:
   // $0.60/$3.00 vs K2.6's $0.95/$4.00). NVIDIA-hosted K2.5 was retired 2026-04-21.
-  kimi: "moonshot/kimi-k2.6",
-  moonshot: "moonshot/kimi-k2.6",
-  "kimi-k2": "moonshot/kimi-k2.6",
+  // 2026-08-31: K2.6 and K2.5 are both off the live catalog; the bare aliases
+  // follow the current flagship, K3. Explicit "kimi-k2.6"/"kimi-k2.5" pins keep
+  // resolving to those exact ids.
+  kimi: "moonshot/kimi-k3",
+  moonshot: "moonshot/kimi-k3",
+  "kimi-k2": "moonshot/kimi-k3",
   "kimi-k2.6": "moonshot/kimi-k2.6",
   "kimi-k2.5": "moonshot/kimi-k2.5",
   "nvidia/kimi-k2.5": "moonshot/kimi-k2.5",
@@ -1065,6 +1068,291 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
   //   (first vision-capable free model, 256K context, accepts text/image/video/audio).
   // 2026-04-21: slimmed to 8 models, retired nemotron family + mistral-large-3-675b
   //   + devstral-2-123b with successor redirects.
+  {
+    id: "anthropic/claude-fable-5",
+    name: "Claude Fable 5",
+    version: "5",
+    inputPrice: 10.0,
+    outputPrice: 50.0,
+    contextWindow: 1000000,
+    maxOutput: 128000,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true,
+  },
+  {
+    id: "anthropic/claude-opus-5",
+    name: "Claude Opus 5",
+    version: "5",
+    inputPrice: 5.0,
+    outputPrice: 25.0,
+    contextWindow: 1000000,
+    maxOutput: 128000,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true,
+  },
+  {
+    // Newest Sonnet — near-Opus coding/agentic quality at Sonnet cost. Same
+    // price as 4.6 ($3/$15) but 1M ctx / 128K out / adaptive thinking. Kept as
+    // an opt-in distinct model (bare `sonnet`/`claude` still resolve to 4.6);
+    // primaries not promoted pending benchmarks. BlockRun fallback → sonnet-4.6.
+    id: "anthropic/claude-sonnet-5",
+    name: "Claude Sonnet 5",
+    version: "5",
+    inputPrice: 3.0,
+    outputPrice: 15.0,
+    contextWindow: 1000000,
+    maxOutput: 128000,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true,
+  },
+  {
+    // Terra/Luna repriced 2026-07-30 (OpenAI price cut, blockrun #326).
+    id: "openai/gpt-5.6-terra",
+    name: "GPT-5.6 Terra",
+    version: "5.6",
+    inputPrice: 2.0,
+    outputPrice: 12.0,
+    contextWindow: 1050000,
+    maxOutput: 128000,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true,
+  },
+  {
+    id: "openai/gpt-5.6-sol",
+    name: "GPT-5.6 Sol",
+    version: "5.6",
+    inputPrice: 5.0,
+    outputPrice: 30.0,
+    contextWindow: 1050000,
+    maxOutput: 128000,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true,
+  },
+  {
+    id: "openai/gpt-5.6-luna",
+    name: "GPT-5.6 Luna",
+    version: "5.6",
+    inputPrice: 0.2,
+    outputPrice: 1.2,
+    contextWindow: 1050000,
+    maxOutput: 128000,
+    vision: true,
+    agentic: true,
+    toolCalling: true,
+  },
+  {
+    id: "openai/gpt-5.5-pro",
+    name: "GPT-5.5 Pro",
+    version: "5.5",
+    inputPrice: 30.0,
+    outputPrice: 180.0,
+    contextWindow: 1050000,
+    maxOutput: 128000,
+    reasoning: true,
+    vision: true,
+    toolCalling: true,
+  },
+  {
+    // Newest-generation Flash with built-in thinking mode (blockrun #329,
+    // 2026-08-03). 17% cheaper output than 3.5 Flash.
+    id: "google/gemini-3.6-flash",
+    name: "Gemini 3.6 Flash",
+    version: "3.6",
+    inputPrice: 1.5,
+    outputPrice: 7.5,
+    contextWindow: 1048576,
+    maxOutput: 65536,
+    reasoning: true,
+    vision: true,
+    toolCalling: true,
+  },
+  {
+    // Ultra-fast lightweight tier with thinking mode (blockrun #329).
+    id: "google/gemini-3.5-flash-lite",
+    name: "Gemini 3.5 Flash Lite",
+    version: "3.5",
+    inputPrice: 0.3,
+    outputPrice: 2.5,
+    contextWindow: 1048576,
+    maxOutput: 65536,
+    reasoning: true,
+    toolCalling: true,
+  },
+  {
+    id: "xai/grok-4.5",
+    name: "Grok 4.5",
+    version: "4.5",
+    inputPrice: 2.5,
+    outputPrice: 9.0,
+    contextWindow: 500000,
+    maxOutput: 16384,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true,
+  },
+  {
+    // Z.AI's flagship, live-probed by blockrun 2026-08-19 against api.z.ai
+    // (real completion in 2s, content alongside reasoning tokens). $1.40/$4.40,
+    // cached input $0.26, off the international USD price list.
+    // maxOutput is 131072, NOT the 1M context: that is the hard ceiling the API
+    // enforces (error 1210 above it), the same on every GLM-5 SKU.
+    // Thinking is ALWAYS ON here and cannot be disabled.
+    id: "zai/glm-5.3",
+    name: "GLM-5.3",
+    version: "5.3",
+    inputPrice: 1.4,
+    outputPrice: 4.4,
+    contextWindow: 1000000,
+    maxOutput: 131072,
+    reasoning: true,
+    toolCalling: true,
+  },
+  {
+    // Z.AI's first natively multimodal GLM-5 — 320B/18B MoE. blockrun probed
+    // text, vision (base64 data URL → correct answer), tools
+    // (finish_reason=tool_calls with well-formed arguments) and streaming live
+    // on 2026-08-27 before listing it.
+    //
+    // MUST be in this catalog, not just router-core's: it is router-core's eco
+    // MEDIUM and COMPLEX primary, and estimateAmount() returns undefined for an
+    // id we do not carry — which makes the request skip the maxCostPerRun filter
+    // AND never accumulate into session cost. An uncatalogued routing target is
+    // a cost-cap hole, not a logging gap.
+    //
+    // Price is the LIST rate. Z.AI is running a 50% launch promo ($0.075/$0.25)
+    // that ENDS 2026-09-09; listing the promo rate would put us under COGS the
+    // morning it lapses. Thinking is always on, as on glm-5.3.
+    id: "zai/glm-5.3-flash",
+    name: "GLM-5.3 Flash",
+    version: "5.3-flash",
+    inputPrice: 0.15,
+    outputPrice: 0.5,
+    contextWindow: 1000000,
+    maxOutput: 131072,
+    reasoning: true,
+    vision: true,
+    toolCalling: true,
+  },
+  {
+    // Launched 2026-06-16. Was Z.AI's flagship until glm-5.3 (above) took the
+    // slot on 2026-08-19. 1M-token context,
+    // beats GPT-5.5 on long-horizon coding at a fraction of the cost.
+    // Paid per-token at $1.40/$4.40 (same as glm-5.1, cached $0.26).
+    id: "zai/glm-5.2",
+    name: "GLM-5.2",
+    version: "5.2",
+    inputPrice: 1.4,
+    outputPrice: 4.4,
+    contextWindow: 1000000,
+    maxOutput: 131072,
+    reasoning: true,
+    toolCalling: true,
+  },
+  {
+    // NOT a cheaper mimo-v2.5-pro — a different, natively multimodal SKU. The
+    // Pro entry is text-only upstream while this one takes images, at a third
+    // of the price. Keep both.
+    id: "xiaomi/mimo-v2.5",
+    name: "Xiaomi MiMo V2.5",
+    version: "2.5",
+    inputPrice: 0.14,
+    outputPrice: 0.28,
+    contextWindow: 1048576,
+    maxOutput: 131072,
+    reasoning: true,
+    vision: true,
+    toolCalling: true,
+  },
+  {
+    id: "xiaomi/mimo-v2.5-pro",
+    name: "Xiaomi MiMo-V2.5 Pro",
+    version: "v2.5-pro",
+    inputPrice: 0.435,
+    outputPrice: 0.87,
+    contextWindow: 1048576,
+    maxOutput: 131072,
+    reasoning: true,
+    toolCalling: true,
+  },
+  {
+    id: "moonshot/kimi-k3",
+    name: "Kimi K3",
+    version: "k3",
+    inputPrice: 3.0,
+    outputPrice: 15.0,
+    contextWindow: 1048576,
+    maxOutput: 65536,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true,
+  },
+  {
+    id: "qwen/qwen3.7-max",
+    name: "Qwen3.7 Max",
+    version: "3.7-max",
+    inputPrice: 1.475,
+    outputPrice: 4.425,
+    contextWindow: 1000000,
+    maxOutput: 65536,
+    reasoning: true,
+    agentic: true,
+    toolCalling: true,
+  },
+  {
+    // Alibaba's 3.8 generation: 125B MoE, one tier above the whole 3.7 line and
+    // cheaper than the qwen3.7-plus ($0.32/$1.28) it outperforms.
+    // Vision took two probes to establish upstream: the first 400'd with
+    // `invalid_parameter_error` on an 8x8 PNG because the model requires >10px
+    // per side; 64x64 answered correctly. A single 400 is not a capability gap.
+    id: "qwen/qwen3.8-flash",
+    name: "Qwen3.8 Flash",
+    version: "3.8-flash",
+    inputPrice: 0.15,
+    outputPrice: 0.47,
+    contextWindow: 1000000,
+    maxOutput: 131072,
+    reasoning: true,
+    vision: true,
+    toolCalling: true,
+  },
+  {
+    id: "tencent/hy3",
+    name: "Tencent Hy3",
+    version: "hy3",
+    inputPrice: 0.132,
+    outputPrice: 0.528,
+    contextWindow: 262144,
+    maxOutput: 128000,
+    reasoning: true,
+    toolCalling: true,
+  },
+  {
+    // The first DeepSeek SKU that takes images. Priced at DeepSeek's PEAK rate
+    // on purpose: they now split peak/off-peak and off-peak is half, so listing
+    // the lower number would sell under cost for seven hours every weekday.
+    id: "deepseek/deepseek-v4-flash-vision-exp",
+    name: "DeepSeek V4 Flash Vision",
+    version: "v4-flash-vision-exp",
+    inputPrice: 0.44,
+    outputPrice: 1.32,
+    contextWindow: 1048576,
+    maxOutput: 65536,
+    reasoning: true,
+    vision: true,
+    toolCalling: true,
+  },
   {
     id: "free/gpt-oss-120b",
     name: "[Free] GPT-OSS 120B",

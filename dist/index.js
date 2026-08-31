@@ -58609,9 +58609,12 @@ var MODEL_ALIASES = {
   // BlockRun's UI 2026-04-28). Bare aliases now resolve to K2.6. Users who
   // explicitly pinned "kimi-k2.5" continue to get K2.5 (cost-stability opt-in:
   // $0.60/$3.00 vs K2.6's $0.95/$4.00). NVIDIA-hosted K2.5 was retired 2026-04-21.
-  kimi: "moonshot/kimi-k2.6",
-  moonshot: "moonshot/kimi-k2.6",
-  "kimi-k2": "moonshot/kimi-k2.6",
+  // 2026-08-31: K2.6 and K2.5 are both off the live catalog; the bare aliases
+  // follow the current flagship, K3. Explicit "kimi-k2.6"/"kimi-k2.5" pins keep
+  // resolving to those exact ids.
+  kimi: "moonshot/kimi-k3",
+  moonshot: "moonshot/kimi-k3",
+  "kimi-k2": "moonshot/kimi-k3",
   "kimi-k2.6": "moonshot/kimi-k2.6",
   "kimi-k2.5": "moonshot/kimi-k2.5",
   "nvidia/kimi-k2.5": "moonshot/kimi-k2.5",
@@ -59515,6 +59518,291 @@ var BLOCKRUN_MODELS = [
   //   (first vision-capable free model, 256K context, accepts text/image/video/audio).
   // 2026-04-21: slimmed to 8 models, retired nemotron family + mistral-large-3-675b
   //   + devstral-2-123b with successor redirects.
+  {
+    id: "anthropic/claude-fable-5",
+    name: "Claude Fable 5",
+    version: "5",
+    inputPrice: 10,
+    outputPrice: 50,
+    contextWindow: 1e6,
+    maxOutput: 128e3,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true
+  },
+  {
+    id: "anthropic/claude-opus-5",
+    name: "Claude Opus 5",
+    version: "5",
+    inputPrice: 5,
+    outputPrice: 25,
+    contextWindow: 1e6,
+    maxOutput: 128e3,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true
+  },
+  {
+    // Newest Sonnet — near-Opus coding/agentic quality at Sonnet cost. Same
+    // price as 4.6 ($3/$15) but 1M ctx / 128K out / adaptive thinking. Kept as
+    // an opt-in distinct model (bare `sonnet`/`claude` still resolve to 4.6);
+    // primaries not promoted pending benchmarks. BlockRun fallback → sonnet-4.6.
+    id: "anthropic/claude-sonnet-5",
+    name: "Claude Sonnet 5",
+    version: "5",
+    inputPrice: 3,
+    outputPrice: 15,
+    contextWindow: 1e6,
+    maxOutput: 128e3,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true
+  },
+  {
+    // Terra/Luna repriced 2026-07-30 (OpenAI price cut, blockrun #326).
+    id: "openai/gpt-5.6-terra",
+    name: "GPT-5.6 Terra",
+    version: "5.6",
+    inputPrice: 2,
+    outputPrice: 12,
+    contextWindow: 105e4,
+    maxOutput: 128e3,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true
+  },
+  {
+    id: "openai/gpt-5.6-sol",
+    name: "GPT-5.6 Sol",
+    version: "5.6",
+    inputPrice: 5,
+    outputPrice: 30,
+    contextWindow: 105e4,
+    maxOutput: 128e3,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true
+  },
+  {
+    id: "openai/gpt-5.6-luna",
+    name: "GPT-5.6 Luna",
+    version: "5.6",
+    inputPrice: 0.2,
+    outputPrice: 1.2,
+    contextWindow: 105e4,
+    maxOutput: 128e3,
+    vision: true,
+    agentic: true,
+    toolCalling: true
+  },
+  {
+    id: "openai/gpt-5.5-pro",
+    name: "GPT-5.5 Pro",
+    version: "5.5",
+    inputPrice: 30,
+    outputPrice: 180,
+    contextWindow: 105e4,
+    maxOutput: 128e3,
+    reasoning: true,
+    vision: true,
+    toolCalling: true
+  },
+  {
+    // Newest-generation Flash with built-in thinking mode (blockrun #329,
+    // 2026-08-03). 17% cheaper output than 3.5 Flash.
+    id: "google/gemini-3.6-flash",
+    name: "Gemini 3.6 Flash",
+    version: "3.6",
+    inputPrice: 1.5,
+    outputPrice: 7.5,
+    contextWindow: 1048576,
+    maxOutput: 65536,
+    reasoning: true,
+    vision: true,
+    toolCalling: true
+  },
+  {
+    // Ultra-fast lightweight tier with thinking mode (blockrun #329).
+    id: "google/gemini-3.5-flash-lite",
+    name: "Gemini 3.5 Flash Lite",
+    version: "3.5",
+    inputPrice: 0.3,
+    outputPrice: 2.5,
+    contextWindow: 1048576,
+    maxOutput: 65536,
+    reasoning: true,
+    toolCalling: true
+  },
+  {
+    id: "xai/grok-4.5",
+    name: "Grok 4.5",
+    version: "4.5",
+    inputPrice: 2.5,
+    outputPrice: 9,
+    contextWindow: 5e5,
+    maxOutput: 16384,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true
+  },
+  {
+    // Z.AI's flagship, live-probed by blockrun 2026-08-19 against api.z.ai
+    // (real completion in 2s, content alongside reasoning tokens). $1.40/$4.40,
+    // cached input $0.26, off the international USD price list.
+    // maxOutput is 131072, NOT the 1M context: that is the hard ceiling the API
+    // enforces (error 1210 above it), the same on every GLM-5 SKU.
+    // Thinking is ALWAYS ON here and cannot be disabled.
+    id: "zai/glm-5.3",
+    name: "GLM-5.3",
+    version: "5.3",
+    inputPrice: 1.4,
+    outputPrice: 4.4,
+    contextWindow: 1e6,
+    maxOutput: 131072,
+    reasoning: true,
+    toolCalling: true
+  },
+  {
+    // Z.AI's first natively multimodal GLM-5 — 320B/18B MoE. blockrun probed
+    // text, vision (base64 data URL → correct answer), tools
+    // (finish_reason=tool_calls with well-formed arguments) and streaming live
+    // on 2026-08-27 before listing it.
+    //
+    // MUST be in this catalog, not just router-core's: it is router-core's eco
+    // MEDIUM and COMPLEX primary, and estimateAmount() returns undefined for an
+    // id we do not carry — which makes the request skip the maxCostPerRun filter
+    // AND never accumulate into session cost. An uncatalogued routing target is
+    // a cost-cap hole, not a logging gap.
+    //
+    // Price is the LIST rate. Z.AI is running a 50% launch promo ($0.075/$0.25)
+    // that ENDS 2026-09-09; listing the promo rate would put us under COGS the
+    // morning it lapses. Thinking is always on, as on glm-5.3.
+    id: "zai/glm-5.3-flash",
+    name: "GLM-5.3 Flash",
+    version: "5.3-flash",
+    inputPrice: 0.15,
+    outputPrice: 0.5,
+    contextWindow: 1e6,
+    maxOutput: 131072,
+    reasoning: true,
+    vision: true,
+    toolCalling: true
+  },
+  {
+    // Launched 2026-06-16. Was Z.AI's flagship until glm-5.3 (above) took the
+    // slot on 2026-08-19. 1M-token context,
+    // beats GPT-5.5 on long-horizon coding at a fraction of the cost.
+    // Paid per-token at $1.40/$4.40 (same as glm-5.1, cached $0.26).
+    id: "zai/glm-5.2",
+    name: "GLM-5.2",
+    version: "5.2",
+    inputPrice: 1.4,
+    outputPrice: 4.4,
+    contextWindow: 1e6,
+    maxOutput: 131072,
+    reasoning: true,
+    toolCalling: true
+  },
+  {
+    // NOT a cheaper mimo-v2.5-pro — a different, natively multimodal SKU. The
+    // Pro entry is text-only upstream while this one takes images, at a third
+    // of the price. Keep both.
+    id: "xiaomi/mimo-v2.5",
+    name: "Xiaomi MiMo V2.5",
+    version: "2.5",
+    inputPrice: 0.14,
+    outputPrice: 0.28,
+    contextWindow: 1048576,
+    maxOutput: 131072,
+    reasoning: true,
+    vision: true,
+    toolCalling: true
+  },
+  {
+    id: "xiaomi/mimo-v2.5-pro",
+    name: "Xiaomi MiMo-V2.5 Pro",
+    version: "v2.5-pro",
+    inputPrice: 0.435,
+    outputPrice: 0.87,
+    contextWindow: 1048576,
+    maxOutput: 131072,
+    reasoning: true,
+    toolCalling: true
+  },
+  {
+    id: "moonshot/kimi-k3",
+    name: "Kimi K3",
+    version: "k3",
+    inputPrice: 3,
+    outputPrice: 15,
+    contextWindow: 1048576,
+    maxOutput: 65536,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true
+  },
+  {
+    id: "qwen/qwen3.7-max",
+    name: "Qwen3.7 Max",
+    version: "3.7-max",
+    inputPrice: 1.475,
+    outputPrice: 4.425,
+    contextWindow: 1e6,
+    maxOutput: 65536,
+    reasoning: true,
+    agentic: true,
+    toolCalling: true
+  },
+  {
+    // Alibaba's 3.8 generation: 125B MoE, one tier above the whole 3.7 line and
+    // cheaper than the qwen3.7-plus ($0.32/$1.28) it outperforms.
+    // Vision took two probes to establish upstream: the first 400'd with
+    // `invalid_parameter_error` on an 8x8 PNG because the model requires >10px
+    // per side; 64x64 answered correctly. A single 400 is not a capability gap.
+    id: "qwen/qwen3.8-flash",
+    name: "Qwen3.8 Flash",
+    version: "3.8-flash",
+    inputPrice: 0.15,
+    outputPrice: 0.47,
+    contextWindow: 1e6,
+    maxOutput: 131072,
+    reasoning: true,
+    vision: true,
+    toolCalling: true
+  },
+  {
+    id: "tencent/hy3",
+    name: "Tencent Hy3",
+    version: "hy3",
+    inputPrice: 0.132,
+    outputPrice: 0.528,
+    contextWindow: 262144,
+    maxOutput: 128e3,
+    reasoning: true,
+    toolCalling: true
+  },
+  {
+    // The first DeepSeek SKU that takes images. Priced at DeepSeek's PEAK rate
+    // on purpose: they now split peak/off-peak and off-peak is half, so listing
+    // the lower number would sell under cost for seven hours every weekday.
+    id: "deepseek/deepseek-v4-flash-vision-exp",
+    name: "DeepSeek V4 Flash Vision",
+    version: "v4-flash-vision-exp",
+    inputPrice: 0.44,
+    outputPrice: 1.32,
+    contextWindow: 1048576,
+    maxOutput: 65536,
+    reasoning: true,
+    vision: true,
+    toolCalling: true
+  },
   {
     id: "free/gpt-oss-120b",
     name: "[Free] GPT-OSS 120B",
@@ -76152,23 +76440,23 @@ var DEFAULT_ROUTING_CONFIG = {
         // 1,398ms, IQ 46 — smarter fallback
         "deepseek/deepseek-chat",
         // 1,431ms, IQ 32, 41% retention
-        "moonshot/kimi-k2.5",
-        // 1,646ms, IQ 47, strong quality
+        "moonshot/kimi-k3",
+        // $3/$15
         "google/gemini-3.1-flash-lite",
         // $0.25/$1.50, 1M context — newest flash-lite
         "google/gemini-2.5-flash-lite",
         // 1,353ms, $0.10/$0.40
         "openai/gpt-5.4-nano",
         // $0.20/$1.25, 1M context
-        "xai/grok-4-fast-non-reasoning",
-        // 1,143ms, $0.20/$0.50 — fast fallback
+        "qwen/qwen3.8-flash",
+        // $0.15/$0.47
         "free/nemotron-3.5-lightning"
         // FREE fallback
       ]
     },
     MEDIUM: {
-      primary: "moonshot/kimi-k2.5",
-      // 1,646ms, IQ 47, $0.60/$3.00 — strong tool use, quality output
+      primary: "moonshot/kimi-k3",
+      // $3/$15
       fallback: [
         "google/gemini-3-flash-preview",
         // 1,398ms, IQ 46 — nearly same IQ, faster + cheaper
@@ -76180,10 +76468,8 @@ var DEFAULT_ROUTING_CONFIG = {
         // $0.25/$1.50, 1M context
         "google/gemini-2.5-flash-lite",
         // 1,353ms, $0.10/$0.40
-        "xai/grok-4-1-fast-non-reasoning",
+        "zai/glm-5.3-flash"
         // 1,244ms, fast fallback
-        "xai/grok-3-mini"
-        // 1,202ms, $0.30/$0.50
       ]
     },
     COMPLEX: {
@@ -76192,8 +76478,8 @@ var DEFAULT_ROUTING_CONFIG = {
       fallback: [
         "google/gemini-3-flash-preview",
         // 1,398ms, IQ 46 — fast + smart
-        "xai/grok-4-0709",
-        // 1,348ms, IQ 41
+        "xai/grok-4.3",
+        // $1.5/$4
         "google/gemini-2.5-pro",
         // 1,294ms
         "anthropic/claude-sonnet-4.6",
@@ -76209,13 +76495,11 @@ var DEFAULT_ROUTING_CONFIG = {
       ]
     },
     REASONING: {
-      primary: "xai/grok-4-1-fast-reasoning",
-      // 1,454ms, $0.20/$0.50
+      primary: "deepseek/deepseek-reasoner",
+      // $0.14/$0.28
       fallback: [
-        "xai/grok-4-fast-reasoning",
-        // 1,298ms, $0.20/$0.50
-        "deepseek/deepseek-reasoner",
-        // V4 Flash thinking ($0.20/$0.40, 1M ctx)
+        "xiaomi/mimo-v2.5",
+        // $0.14/$0.28
         "deepseek/deepseek-v4-pro",
         // V4 Pro flagship ($0.50/$1.00 promo through 2026-05-31, list $2/$4)
         "openai/o4-mini",
@@ -76243,8 +76527,8 @@ var DEFAULT_ROUTING_CONFIG = {
         // $0.20/$1.25 — fast nano
         "google/gemini-2.5-flash-lite",
         // $0.10/$0.40
-        "xai/grok-4-fast-non-reasoning"
-        // $0.20/$0.50
+        "qwen/qwen3.8-flash"
+        // $0.15/$0.47
       ]
     },
     MEDIUM: {
@@ -76255,7 +76539,7 @@ var DEFAULT_ROUTING_CONFIG = {
         // $0.20/$1.25
         "google/gemini-2.5-flash-lite",
         // $0.10/$0.40
-        "xai/grok-4-fast-non-reasoning",
+        "qwen/qwen3.8-flash",
         "google/gemini-2.5-flash"
       ]
     },
@@ -76264,18 +76548,16 @@ var DEFAULT_ROUTING_CONFIG = {
       // $0.25/$1.50
       fallback: [
         "google/gemini-2.5-flash-lite",
-        "xai/grok-4-0709",
+        "xai/grok-4.3",
         "google/gemini-2.5-flash",
         "deepseek/deepseek-chat"
       ]
     },
     REASONING: {
-      primary: "xai/grok-4-1-fast-reasoning",
-      // $0.20/$0.50
+      primary: "deepseek/deepseek-reasoner",
+      // $0.14/$0.28
       fallback: [
-        "xai/grok-4-fast-reasoning",
-        "deepseek/deepseek-reasoner",
-        // V4 Flash thinking — $0.20/$0.40
+        "xiaomi/mimo-v2.5",
         "deepseek/deepseek-v4-pro"
         // V4 Pro flagship — $0.50/$1.00 promo, post-promo $2/$4
       ]
@@ -76285,11 +76567,9 @@ var DEFAULT_ROUTING_CONFIG = {
   // codex=complex coding, kimi=simple coding, sonnet=reasoning/instructions, opus=architecture/PM/audits
   premiumTiers: {
     SIMPLE: {
-      primary: "moonshot/kimi-k2.6",
-      // $0.95/$4.00 - Moonshot flagship (256K ctx, vision + reasoning)
+      primary: "moonshot/kimi-k3",
+      // $3/$15
       fallback: [
-        "moonshot/kimi-k2.5",
-        // $0.60/$3.00 - proven reliable NVIDIA fallback when Moonshot direct API falters
         "google/gemini-2.5-flash",
         // 60% retention, fast growth
         "anthropic/claude-haiku-4.5",
@@ -76301,19 +76581,18 @@ var DEFAULT_ROUTING_CONFIG = {
       primary: "openai/gpt-5.3-codex",
       // $1.75/$14 - 400K context, 128K output, replaces 5.2
       fallback: [
-        "moonshot/kimi-k2.6",
+        "moonshot/kimi-k3",
         // Moonshot flagship
-        "moonshot/kimi-k2.5",
         "google/gemini-2.5-flash",
         // 60% retention, good coding capability
         "google/gemini-2.5-pro",
-        "xai/grok-4-0709",
+        "xai/grok-4.3",
         "anthropic/claude-sonnet-4.6"
       ]
     },
     COMPLEX: {
       primary: "anthropic/claude-opus-4.8",
-      // Anthropic flagship (promoted 2026-06-05, same $5/$25 as 4.7)
+      // $5/$25
       // Fallback chain de-Gemini'd 2026-04-22: when Anthropic 503s, Gemini is
       // also prone to "high demand" 503s (correlated failure — everyone falls
       // back to Google at the same time). Prefer xAI Grok → Moonshot → OpenAI
@@ -76321,13 +76600,11 @@ var DEFAULT_ROUTING_CONFIG = {
       fallback: [
         "anthropic/claude-opus-4.7",
         // in-family hot swap first
-        "anthropic/claude-opus-4.6",
         "anthropic/claude-sonnet-4.6",
-        "xai/grok-4-0709",
+        "xai/grok-4.3",
         // 503-resistant flagship
-        "moonshot/kimi-k2.6",
+        "moonshot/kimi-k3",
         // Moonshot flagship, independent infra
-        "moonshot/kimi-k2.5",
         "openai/gpt-5.5",
         // Newest OpenAI flagship — 1M+ ctx, native agent + computer use
         "openai/gpt-5.4",
@@ -76346,9 +76623,7 @@ var DEFAULT_ROUTING_CONFIG = {
         "anthropic/claude-opus-4.8",
         // Flagship Opus w/ adaptive thinking
         "anthropic/claude-opus-4.7",
-        "anthropic/claude-opus-4.6",
-        // 2,139ms
-        "xai/grok-4-1-fast-reasoning",
+        "deepseek/deepseek-reasoner",
         // 1,454ms, cheap fast reasoning
         "openai/o4-mini",
         // 2,328ms ($1.10/$4.40)
@@ -76363,19 +76638,19 @@ var DEFAULT_ROUTING_CONFIG = {
       primary: "openai/gpt-4o-mini",
       // $0.15/$0.60 - best tool compliance at lowest cost
       fallback: [
-        "moonshot/kimi-k2.5",
+        "moonshot/kimi-k3",
         // 1,646ms, strong tool use quality
         "anthropic/claude-haiku-4.5",
         // 2,305ms
-        "xai/grok-4-1-fast-non-reasoning"
+        "zai/glm-5.3-flash"
         // 1,244ms, fast fallback
       ]
     },
     MEDIUM: {
-      primary: "moonshot/kimi-k2.5",
-      // 1,646ms, $0.60/$3.00 - strong tool use, proper function calls
+      primary: "moonshot/kimi-k3",
+      // $3/$15
       fallback: [
-        "xai/grok-4-1-fast-non-reasoning",
+        "zai/glm-5.3-flash",
         // 1,244ms, fast fallback
         "openai/gpt-4o-mini",
         // 2,764ms, reliable tool calling
@@ -76395,11 +76670,9 @@ var DEFAULT_ROUTING_CONFIG = {
         "anthropic/claude-opus-4.8",
         // Flagship Opus — in-family hot swap
         "anthropic/claude-opus-4.7",
-        "anthropic/claude-opus-4.6",
-        // 2,139ms
-        "xai/grok-4-0709",
+        "xai/grok-4.3",
         // 1,348ms — strong tool use, independent infra
-        "moonshot/kimi-k2.5",
+        "moonshot/kimi-k3",
         // strong tool use, independent infra
         "openai/gpt-5.5",
         // Newest flagship — native agent + computer use (exactly the agentic-tier use case)
@@ -76418,10 +76691,6 @@ var DEFAULT_ROUTING_CONFIG = {
         "anthropic/claude-opus-4.8",
         // Flagship Opus w/ adaptive thinking
         "anthropic/claude-opus-4.7",
-        "anthropic/claude-opus-4.6",
-        // 2,139ms
-        "xai/grok-4-1-fast-reasoning",
-        // 1,454ms
         "deepseek/deepseek-reasoner"
         // 1,454ms
       ]
@@ -83247,49 +83516,62 @@ import { readFile as readFileAsync } from "fs/promises";
 // src/top-models.json
 var top_models_default = [
   "auto",
-  "free",
-  "eco",
   "premium",
-  "anthropic/claude-sonnet-4.6",
+  "eco",
+  "free",
+  "anthropic/claude-fable-5",
+  "anthropic/claude-opus-5",
   "anthropic/claude-opus-4.8",
   "anthropic/claude-opus-4.7",
-  "anthropic/claude-opus-4.5",
+  "anthropic/claude-sonnet-5",
+  "anthropic/claude-sonnet-4.6",
   "anthropic/claude-haiku-4.5",
+  "anthropic/claude-opus-4.5",
+  "openai/gpt-5.6-terra",
+  "openai/gpt-5.6-sol",
+  "openai/gpt-5.6-luna",
   "openai/gpt-5.5",
+  "openai/gpt-5.5-pro",
+  "openai/gpt-5.4-pro",
   "openai/gpt-5.4",
   "openai/gpt-5.4-mini",
-  "openai/gpt-5.4-pro",
-  "openai/gpt-5.3",
+  "openai/gpt-5.4-nano",
   "openai/gpt-5.3-codex",
   "openai/gpt-5-mini",
-  "openai/gpt-5-nano",
-  "openai/gpt-5.4-nano",
   "openai/gpt-4o",
   "openai/gpt-4o-mini",
   "openai/o3",
   "openai/o4-mini",
   "google/gemini-3.1-pro",
-  "google/gemini-3.1-flash-lite",
+  "google/gemini-3.6-flash",
   "google/gemini-3.5-flash",
+  "google/gemini-3.5-flash-lite",
+  "google/gemini-3.1-flash-lite",
   "google/gemini-3-flash-preview",
   "google/gemini-2.5-pro",
   "google/gemini-2.5-flash",
   "google/gemini-2.5-flash-lite",
+  "xai/grok-4.5",
+  "xai/grok-4.3",
+  "xai/grok-build-0.1",
+  "zai/glm-5.3",
+  "zai/glm-5.3-flash",
+  "zai/glm-5.2",
+  "zai/glm-5.1",
+  "zai/glm-5-turbo",
+  "zai/glm-5",
+  "xiaomi/mimo-v2.5",
+  "xiaomi/mimo-v2.5-pro",
+  "minimax/minimax-m3",
+  "minimax/minimax-m2.7",
+  "moonshot/kimi-k3",
+  "qwen/qwen3.7-max",
+  "qwen/qwen3.8-flash",
+  "tencent/hy3",
+  "deepseek/deepseek-v4-flash-vision-exp",
   "deepseek/deepseek-v4-pro",
   "deepseek/deepseek-chat",
   "deepseek/deepseek-reasoner",
-  "moonshot/kimi-k2.6",
-  "moonshot/kimi-k2.5",
-  "xai/grok-4.3",
-  "xai/grok-build-0.1",
-  "xai/grok-3",
-  "xai/grok-4-0709",
-  "xai/grok-4-1-fast-reasoning",
-  "minimax/minimax-m3",
-  "minimax/minimax-m2.7",
-  "zai/glm-5.1",
-  "zai/glm-5",
-  "zai/glm-5-turbo",
   "free/nemotron-3.5-lightning",
   "free/nemotron-3-nano-30b",
   "free/laguna-xs-2.1",
