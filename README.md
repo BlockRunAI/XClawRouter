@@ -78,7 +78,7 @@ This is the stack that lets agents operate autonomously: **x402 + USDC + local r
 
 ## Quick Start
 
-> **No wallet? <!-- br:models.free -->7<!-- /br:models.free --> models work free out of the box.** Install, run, and pin `free/gpt-oss-120b` (or any of the 7) — no crypto, no signup, no balance required. Add USDC later when you want paid models.
+> **No wallet? <!-- br:models.free -->7<!-- /br:models.free --> models work free out of the box.** Install, run, and pin `free/nemotron-3.5-lightning` (or any of the 7) — no crypto, no signup, no balance required. Add USDC later when you want paid models.
 
 ### Option A — OpenClaw Agent
 
@@ -127,7 +127,7 @@ npx @blockrun/xclawrouter
 ```
 
 **2. Fund your wallet** — optional, skip for free tier
-Your wallet address is printed on first run. For paid models, send a few USDC on Base or Solana — $5 covers thousands of requests. To stay at $0, pin any of the 7 free models (e.g. `free/gpt-oss-120b`) or use `/model free` inside OpenClaw.
+Your wallet address is printed on first run. For paid models, send a few USDC on Base or Solana — $5 covers thousands of requests. To stay at $0, pin any of the 7 free models (e.g. `free/nemotron-3.5-lightning`) or use `/model free` inside OpenClaw.
 
 **3. Point your client at `http://localhost:8402`**
 
@@ -216,12 +216,12 @@ Choose your routing strategy with `/model <profile>`:
 Request → Weighted Scorer (15 dimensions) → Tier → Best Model → Response
 ```
 
-| Tier      | ECO Model                           | AUTO Model                            | PREMIUM Model                |
-| --------- | ----------------------------------- | ------------------------------------- | ---------------------------- |
-| SIMPLE    | free/gpt-oss-120b (**FREE**)        | gemini-2.5-flash ($0.30/$2.50)        | kimi-k2.6                    |
-| MEDIUM    | gemini-3.1-flash-lite ($0.25/$1.50) | kimi-k2.5 ($0.60/$3.00)               | gpt-5.3-codex ($1.75/$14.00) |
-| COMPLEX   | gemini-3.1-flash-lite ($0.25/$1.50) | gemini-3.1-pro ($2/$12)               | claude-opus-4.6 ($5/$25)     |
-| REASONING | grok-4-1-fast ($0.20/$0.50)         | grok-4-1-fast-reasoning ($0.20/$0.50) | claude-sonnet-4.6 ($3/$15)   |
+| Tier      | ECO Model                              | AUTO Model                            | PREMIUM Model                |
+| --------- | -------------------------------------- | ------------------------------------- | ---------------------------- |
+| SIMPLE    | free/nemotron-3.5-lightning (**FREE**) | gemini-2.5-flash ($0.30/$2.50)        | kimi-k2.6                    |
+| MEDIUM    | gemini-3.1-flash-lite ($0.25/$1.50)    | kimi-k2.5 ($0.60/$3.00)               | gpt-5.3-codex ($1.75/$14.00) |
+| COMPLEX   | gemini-3.1-flash-lite ($0.25/$1.50)    | gemini-3.1-pro ($2/$12)               | claude-opus-4.6 ($5/$25)     |
+| REASONING | grok-4-1-fast ($0.20/$0.50)            | grok-4-1-fast-reasoning ($0.20/$0.50) | claude-sonnet-4.6 ($3/$15)   |
 
 **Blended average: $2.05/M** vs $25/M for Claude Opus = **<!-- br:savings.autoVsBaselinePct -->84<!-- /br:savings.autoVsBaselinePct -->% savings**
 
@@ -305,13 +305,13 @@ Edit existing images with `/img2img`:
 
 | Model                                       | Input $/M | Output $/M | ~$/request | Context | Features                                     |
 | ------------------------------------------- | --------: | ---------: | ---------: | ------- | -------------------------------------------- |
-| free/gpt-oss-120b                           |  **FREE** |   **FREE** |     **$0** | 128K    | default free model                           |
-| free/gpt-oss-20b                            |  **FREE** |   **FREE** |     **$0** | 128K    | smaller, faster                              |
-| free/deepseek-v4-flash                      |  **FREE** |   **FREE** |     **$0** | 1M      | reasoning, ~5x faster than v4-pro            |
-| free/qwen3-coder-480b                       |  **FREE** |   **FREE** |     **$0** | 131K    | coding                                       |
-| free/llama-4-maverick                       |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                                    |
+| free/nemotron-3.5-lightning                 |  **FREE** |   **FREE** |     **$0** | 1M      | reasoning — default free model               |
+| free/nemotron-3-nano-30b                    |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning, fastest free model (~121 tok/s)   |
+| free/laguna-xs-2.1                          |  **FREE** |   **FREE** |     **$0** | 131K    | coding                                       |
+| free/north-mini-code                        |  **FREE** |   **FREE** |     **$0** | 256K    | coding                                       |
 | free/nemotron-3-nano-omni-30b-a3b-reasoning |  **FREE** |   **FREE** |     **$0** | 256K    | reasoning, **vision** (text+img+video+audio) |
-| free/glm-4.7                                |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning                                    |
+| free/nemotron-3-ultra-550b                  |  **FREE** |   **FREE** |     **$0** | 1M      | reasoning                                    |
+| free/llama-3.2-11b-vision                   |  **FREE** |   **FREE** |     **$0** | 128K    | **vision**                                   |
 | openai/gpt-5-nano                           |     $0.05 |      $0.40 |    $0.0002 | 128K    | tools                                        |
 | openai/gpt-4.1-nano                         |     $0.10 |      $0.40 |    $0.0003 | 128K    | tools                                        |
 | google/gemini-2.5-flash-lite                |     $0.10 |      $0.40 |    $0.0003 | 1M      | tools                                        |
@@ -382,7 +382,7 @@ Edit existing images with `/img2img`:
 | openai/gpt-5.2-pro          |    $21.00 |    $168.00 |    $0.0945 | 400K    | reasoning, tools                  |
 | openai/gpt-5.4-pro          |    $30.00 |    $180.00 |    $0.1050 | 400K    | reasoning, tools                  |
 
-> **Free tier:** <!-- br:models.free -->7<!-- /br:models.free --> models cost nothing — `/model free` points to gpt-oss-120b, or pick any free model directly (e.g., `/model nemotron-omni` for vision, `/model qwen-coder` for coding, `/model deepseek-v4-flash` for reasoning + 1M context, `/model maverick` for general chat).
+> **Free tier:** <!-- br:models.free -->7<!-- /br:models.free --> models cost nothing — `/model free` points to nemotron-3.5-lightning, or pick any free model directly (e.g., `/model nemotron-omni` for vision, `/model north-mini-code` for coding, `/model nemotron-3-ultra-550b` for reasoning + 1M context).
 > **Best value:** `gpt-5-nano` and `gemini-2.5-flash-lite` deliver strong results at ~$0.0003/request.
 
 ---
@@ -458,7 +458,7 @@ For basic usage, no configuration needed. For advanced options:
 Block specific models from being routed to. Useful if a model doesn't follow your agent instructions or you want to control costs.
 
 ```bash
-/exclude add free/gpt-oss-120b   # Block the default free model
+/exclude add free/nemotron-3.5-lightning   # Block the default free model
 /exclude add grok-4                # Aliases work — blocks all grok-4 variants
 /exclude add gpt-5.4               # Skip expensive models
 /exclude                           # Show current exclusions
@@ -622,7 +622,7 @@ ClawRouter works with any tool that makes OpenAI-compatible API calls — point 
 
 ### Is ClawRouter free?
 
-ClawRouter itself is free and MIT licensed. You pay only for the LLM API calls routed through it — and several NVIDIA-hosted models (`gpt-oss-120b`, `gpt-oss-20b`, `deepseek-v4-flash`, `qwen3-coder-480b`, `llama-4-maverick`, `nemotron-3-nano-omni-30b-a3b-reasoning`) are completely free. Use `/model free` to smart-route across them, or pick any by name.
+ClawRouter itself is free and MIT licensed. You pay only for the LLM API calls routed through it — and several models (`nemotron-3.5-lightning`, `nemotron-3-nano-30b`, `laguna-xs-2.1`, `north-mini-code`, `nemotron-3-nano-omni-30b-a3b-reasoning`, `nemotron-3-ultra-550b`, `llama-3.2-11b-vision`) are completely free. Use `/model free` to smart-route across them, or pick any by name.
 
 ---
 

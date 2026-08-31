@@ -40,13 +40,14 @@
   "xai/grok-4-1-fast-reasoning",
   "minimax/minimax-m3",
   "minimax/minimax-m2.7",
-  "free/gpt-oss-120b",
-  "free/gpt-oss-20b",
-  "free/deepseek-v4-flash",
-  "free/qwen3-coder-480b",
-  "free/llama-4-maverick",
-  "free/nemotron-3-nano-omni-30b-a3b-reasoning",
   "zai/glm-5.1",
   "zai/glm-5",
-  "zai/glm-5-turbo"
+  "zai/glm-5-turbo",
+  "free/nemotron-3.5-lightning",
+  "free/nemotron-3-nano-30b",
+  "free/laguna-xs-2.1",
+  "free/north-mini-code",
+  "free/nemotron-3-nano-omni-30b-a3b-reasoning",
+  "free/nemotron-3-ultra-550b",
+  "free/llama-3.2-11b-vision"
 ]

@@ -112,11 +112,14 @@ export const MODEL_ALIASES: Record<string, string> = {
   "xai/grok-3-fast": "xai/grok-4-fast-reasoning", // delisted (too expensive)
 
   // NVIDIA — backward compat aliases (nvidia/xxx → free/xxx)
-  // Default free model is gpt-oss-120b (heavy user demand). New free models
-  // added 2026-04-29 — deepseek-v4-pro/flash, nemotron-omni — are additions,
-  // not replacements. Retired-with-redirect entries below mirror BlockRun
-  // server-side decommissioning of slow models (nemotron family, etc.).
-  nvidia: "free/gpt-oss-120b",
+  // Default free model is nemotron-3.5-lightning as of the 2026-08-31 rebuild;
+  // gpt-oss-120b held this slot until it died upstream on 2026-08-16. The
+  // model-specific aliases below still resolve to their original targets even
+  // where those are retired — the entries stay in BLOCKRUN_MODELS so an
+  // explicit pin keeps working; they are simply off the picker and the
+  // auto-pick cascade. Retired-with-redirect entries mirror BlockRun's own
+  // server-side decommissioning.
+  nvidia: "free/nemotron-3.5-lightning",
   "gpt-120b": "free/gpt-oss-120b",
   "gpt-20b": "free/gpt-oss-20b",
   "nvidia/gpt-oss-120b": "free/gpt-oss-120b",
@@ -172,7 +175,7 @@ export const MODEL_ALIASES: Record<string, string> = {
   devstral: "free/qwen3-coder-480b",
   "devstral-2": "free/qwen3-coder-480b",
   maverick: "free/llama-4-maverick",
-  free: "free/gpt-oss-120b",
+  free: "free/nemotron-3.5-lightning",
 
   // MiniMax (minimax → current flagship: M3)
   minimax: "minimax/minimax-m3",
@@ -1135,6 +1138,98 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     maxOutput: 16384,
     reasoning: true,
     vision: true,
+  },
+  {
+    // Nemotron 3.5 Lightning 30B-A3B — the new free default. blockrun's own
+    // redirect target for the retired step-3.7-flash, so following it keeps the
+    // proxy and the gateway naming the same model. Served from OpenRouter's $0
+    // pool (4.9s median vs 16.3s direct) which also publishes a 1M window
+    // against the 131K the NVIDIA NIM path gives; blockrun carries a hidden
+    // "-nim" twin as its fallback. Probed 1.3s with tools.
+    id: "free/nemotron-3.5-lightning",
+    name: "[Free] Nemotron 3.5 Lightning",
+    version: "3.5-lightning",
+    inputPrice: 0,
+    outputPrice: 0,
+    contextWindow: 1000000,
+    maxOutput: 16384,
+    reasoning: true,
+  },
+  {
+    // Nemotron 3 Nano 30B-A3B — the fastest free model in the catalog
+    // (~121 tok/s on a realistic workload, not a 16-token ping). Returns
+    // reasoning_content. Also the tertiary rung of blockrun's own free cascade.
+    id: "free/nemotron-3-nano-30b",
+    name: "[Free] Nemotron 3 Nano 30B",
+    version: "3-nano-30b",
+    inputPrice: 0,
+    outputPrice: 0,
+    contextWindow: 131072,
+    maxOutput: 16384,
+    reasoning: true,
+  },
+  {
+    // Poolside Laguna XS 2.1 on OUR NVIDIA key (~161 tok/s). Deliberately not
+    // the OpenRouter twin, which 429s on every attempt — so this rung and
+    // north-mini-code sit on DIFFERENT capacity pools, which is why they are
+    // adjacent in the cascade.
+    // NOTE: NOT an nvidia/* id upstream — see FREE_UPSTREAM_OVERRIDES in proxy.ts.
+    id: "free/laguna-xs-2.1",
+    name: "[Free] Poolside Laguna XS 2.1",
+    version: "xs-2.1",
+    inputPrice: 0,
+    outputPrice: 0,
+    contextWindow: 131072,
+    maxOutput: 16384,
+  },
+  {
+    // Cohere North Mini Code, on OpenRouter's $0 pool — 607ms median, the
+    // fastest thing in the tier. Emits reasoning_content (content is clean once
+    // the budget is large enough to finish, verified live).
+    // NOTE: NOT an nvidia/* id upstream — see FREE_UPSTREAM_OVERRIDES in proxy.ts.
+    id: "free/north-mini-code",
+    name: "[Free] Cohere North Mini Code",
+    version: "north-mini-code",
+    inputPrice: 0,
+    outputPrice: 0,
+    contextWindow: 256000,
+    maxOutput: 16384,
+    reasoning: true,
+  },
+  {
+    // Nemotron 3 Ultra 550B-A55B — the largest free model ever listed, 1M ctx,
+    // reachable ONLY through OpenRouter's $0 pool (build.nvidia.com answers 503).
+    // Deliberately LOW in the cascade: 16.8s on the tools probe, and blockrun
+    // measured 3 of 15 calls coming back as an HTTP 200 carrying an upstream
+    // 502/503 error object instead of choices.
+    id: "free/nemotron-3-ultra-550b",
+    name: "[Free] Nemotron 3 Ultra 550B",
+    version: "3-ultra-550b",
+    inputPrice: 0,
+    outputPrice: 0,
+    contextWindow: 1000000,
+    maxOutput: 16384,
+    reasoning: true,
+  },
+  {
+    // Meta Llama 3.2 11B Vision — restores a free Llama after nemotron-super-49b
+    // (Llama-3.3-based) hit NVIDIA's 410 EOL. A 12-model sweep found exactly two
+    // survivors and only the 11B finishes a real completion. Older than the rest
+    // of the tier and deliberately so: it is a real Llama that actually answers.
+    // Slowest in the tier (~18 tok/s) — last rung of the cascade.
+    id: "free/llama-3.2-11b-vision",
+    name: "[Free] Llama 3.2 11B Vision",
+    version: "3.2-11b-vision",
+    inputPrice: 0,
+    outputPrice: 0,
+    contextWindow: 128000,
+    maxOutput: 16384,
+    // NO `vision: true` despite the name and blockrun's `categories:
+    // ["chat","vision"]` — 2026-08-31, three consecutive 64x64 PNG probes came
+    // back "I'm unable to see the image" / "you haven't provided an image",
+    // while a plain-text control on the same id answered fine. The model is
+    // alive; the image path is not. Mirroring the catalog's claim here would
+    // have routed image turns to it. See the nano-omni note above.
   },
 
   // Z.AI GLM-5 Models

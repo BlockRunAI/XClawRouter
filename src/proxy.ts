@@ -118,13 +118,23 @@ const ROUTING_PROFILES = new Set([
 // server-redirected to qwen3-coder), and mistral-small-4-119b (upstream
 // timing out, 3/3 probes >60s). gpt-oss-120b is the historical
 // default — heavy users rely on it. New entries appended in chain order.
+// 2026-08-31 rebuild. The previous cascade was frozen on 2026-06-08 and every
+// rung but nemotron-omni had died: gpt-oss-120b/20b dead upstream since
+// 2026-08-16 (the gateway 400s the free/ id) and withheld over NVIDIA's
+// prompt-retention terms, deepseek-v4-flash EOL 2026-08-12 (410 Gone),
+// qwen3-coder-480b EOL 2026-06-14, llama-4-maverick dropped 2026-07-17.
+// None of them failed loudly — blockrun server-redirects retired free ids, so
+// callers kept getting answers from a different model, which is exactly the
+// shape that silently defeats /exclude.
+// Insertion order IS the auto-pick order (pickFreeModel walks it).
 const FREE_MODELS = new Set([
-  "free/gpt-oss-120b",
-  "free/gpt-oss-20b",
-  "free/deepseek-v4-flash", // 1M ctx, 1M ctx — NVIDIA v4-pro down 2026-05-14
-  "free/qwen3-coder-480b",
-  "free/llama-4-maverick",
-  "free/nemotron-3-nano-omni-30b-a3b-reasoning", // first vision-capable free
+  "free/nemotron-3.5-lightning", // free-tier default — 1M ctx, thinking mode
+  "free/nemotron-3-nano-30b", // fastest free model (~121 tok/s)
+  "free/laguna-xs-2.1", // coding, ~161 tok/s — on our NVIDIA key
+  "free/north-mini-code", // coding, 607ms median — OpenRouter $0 pool
+  "free/nemotron-3-nano-omni-30b-a3b-reasoning", // vision (text/image/video/audio)
+  "free/nemotron-3-ultra-550b", // 1M ctx flagship
+  "free/llama-3.2-11b-vision", // vision
 ]);
 /** Pick the best available free model that isn't excluded. */
 function pickFreeModel(excludeList?: Set<string>): string | undefined {
@@ -134,13 +144,26 @@ function pickFreeModel(excludeList?: Set<string>): string | undefined {
   return undefined; // all free models excluded
 }
 // Keep backward-compat constant for places that don't have excludeList in scope
-const FREE_MODEL = "free/gpt-oss-120b";
+const FREE_MODEL = "free/nemotron-3.5-lightning";
 /**
- * Map free/xxx model IDs to nvidia/xxx for upstream BlockRun API.
- * The "free/" prefix is a XClawRouter convention for the /model picker;
- * BlockRun server expects "nvidia/" prefix.
+ * Upstream ids for free models that are not NVIDIA-hosted. The free/ prefix is
+ * an XClawRouter picker convention; upstream most of these are nvidia/xxx, but
+ * north-mini-code is Cohere's and laguna-xs-2.1 is Poolside's, so the blanket
+ * rewrite below would send both to an id the gateway does not serve.
+ */
+const FREE_UPSTREAM_OVERRIDES: Record<string, string> = {
+  "free/north-mini-code": "cohere/north-mini-code",
+  "free/laguna-xs-2.1": "poolside/laguna-xs-2.1",
+};
+
+/**
+ * Map free/xxx model IDs to their upstream BlockRun ID.
+ * The "free/" prefix is a XClawRouter convention for the /model picker; upstream
+ * they are `nvidia/xxx` by default, or whatever FREE_UPSTREAM_OVERRIDES says.
  */
 function toUpstreamModelId(modelId: string): string {
+  const override = FREE_UPSTREAM_OVERRIDES[modelId];
+  if (override) return override;
   if (modelId.startsWith("free/")) {
     return "nvidia/" + modelId.slice("free/".length);
   }
