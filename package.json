@@ -29,6 +29,7 @@
     "docs/*.md",
     "docs/*.png",
     "scripts",
+    "!scripts/sync-brand-numbers.mjs",
     "skills",
     "src/top-models.json",
     "openclaw.plugin.json"
