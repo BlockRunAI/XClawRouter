@@ -1069,7 +1069,7 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
       primary: "google/gemini-3.1-pro", // 1,609ms, IQ 57 — fast flagship quality
       fallback: [
         "google/gemini-3-flash-preview", // 1,398ms, IQ 46 — fast + smart
-        "xai/grok-4.3", // $1.5/$4
+        "xai/grok-4.3", // $1.25/$2.5
         "google/gemini-2.5-pro", // 1,294ms
         "anthropic/claude-sonnet-4.6", // 2,110ms, IQ 52 — quality fallback
         "deepseek/deepseek-chat", // 1,431ms, IQ 32

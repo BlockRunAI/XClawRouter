@@ -347,8 +347,8 @@ Edit existing images with `/img2img`:
 | openai/o4-mini               |     $1.10 |      $4.40 |    $0.0028 | 128K    | reasoning, tools                          |
 | google/gemini-2.5-pro        |     $1.25 |     $10.00 |    $0.0056 | 1M      | reasoning, vision, tools                  |
 | zai/glm-5.1                  |     $1.40 |      $4.40 |    $0.0029 | 200K    | reasoning, tools (promo ended 2026-06-05) |
-| xai/grok-4.3                 |     $1.50 |      $4.00 |    $0.0028 | 1M      | reasoning, vision, agentic, tools         |
-| xai/grok-build-0.1           |     $1.50 |      $3.00 |    $0.0023 | 256K    | agentic coding, tools                     |
+| xai/grok-4.3                 |     $1.25 |      $2.50 |    $0.0019 | 1M      | reasoning, vision, agentic, tools         |
+| xai/grok-build-0.1           |     $1.00 |      $2.00 |    $0.0015 | 256K    | agentic coding, tools                     |
 | openai/gpt-5.2               |     $1.75 |     $14.00 |    $0.0079 | 400K    | reasoning, vision, agentic, tools         |
 | openai/gpt-5.3-codex         |     $1.75 |     $14.00 |    $0.0079 | 400K    | agentic, tools                            |
 | openai/gpt-4.1               |     $2.00 |      $8.00 |    $0.0050 | 128K    | vision, tools                             |
@@ -361,7 +361,7 @@ Edit existing images with `/img2img`:
 | zai/glm-5.3                  |     $1.40 |      $4.40 |    $0.0032 | 1M      | reasoning, tools                          |
 | qwen/qwen3.7-max             |     $1.48 |      $4.42 |    $0.0032 | 1M      | reasoning, agentic, tools                 |
 | google/gemini-3.6-flash      |     $1.50 |      $7.50 |    $0.0045 | 1M      | reasoning, vision, tools                  |
-| xai/grok-4.5                 |     $2.50 |      $9.00 |    $0.0061 | 500K    | reasoning, vision, agentic, tools         |
+| xai/grok-4.5                 |     $2.00 |      $6.00 |    $0.0040 | 500K    | reasoning, vision, agentic, tools         |
 | openai/gpt-5.6-terra         |     $2.00 |     $12.00 |    $0.0068 | 1M      | reasoning, vision, agentic, tools         |
 | anthropic/claude-sonnet-5    |     $3.00 |     $15.00 |    $0.0090 | 1M      | reasoning, vision, agentic, tools         |
 | moonshot/kimi-k3             |     $3.00 |     $15.00 |    $0.0090 | 1M      | reasoning, vision, agentic, tools         |
