@@ -26,7 +26,8 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 // The x402 onAfterPaymentCreation hook writes the actual payment amount into the
 // request-scoped store, and the logging code reads it after payFetch completes.
 const paymentStore = new AsyncLocalStorage<{ amountUsd: number }>();
-import { finished } from "node:stream";
+import { finished, Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import type { AddressInfo } from "node:net";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -69,12 +70,21 @@ import { logUsage, type UsageEntry } from "./logger.js";
 import { getStats, clearStats } from "./stats.js";
 import { RequestDeduplicator } from "./dedup.js";
 import { ResponseCache, type ResponseCacheConfig } from "./response-cache.js";
-import { BalanceMonitor } from "./balance.js";
+import { BalanceMonitor, ApiKeyBalanceMonitor } from "./balance.js";
 import type { SolanaBalanceMonitor } from "./solana-balance.js";
 
 /** Union type for chain-agnostic balance monitoring */
-type AnyBalanceMonitor = BalanceMonitor | SolanaBalanceMonitor;
+type AnyBalanceMonitor = BalanceMonitor | SolanaBalanceMonitor | ApiKeyBalanceMonitor;
 import { resolvePaymentChain } from "./auth.js";
+import {
+  BLOCKRUN_API_KEY_API,
+  PORTAL_CREDITS_URL,
+  createApiKeyFetch,
+  isValidApiKey,
+  maskApiKey,
+  normalizeApiKeyBase,
+  pollApiKeyJob,
+} from "./api-key.js";
 import type { WalletResolution } from "./auth.js";
 import { OnchainOsAdapter } from "./onchainos-adapter.js";
 import { createOnchainosPayFetch } from "./okx-x402-fetch.js";
@@ -582,7 +592,7 @@ export function getProxyPort(): number {
  */
 async function checkExistingProxy(
   port: number,
-): Promise<{ wallet: string; paymentChain?: string } | undefined> {
+): Promise<{ wallet?: string; paymentChain?: string; authMode: AuthMode } | undefined> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT_MS);
 
@@ -597,9 +607,14 @@ async function checkExistingProxy(
         status?: string;
         wallet?: string;
         paymentChain?: string;
+        authMode?: AuthMode;
       };
-      if (data.status === "ok" && data.wallet) {
-        return { wallet: data.wallet, paymentChain: data.paymentChain };
+      if (data.status === "ok" && (data.wallet || data.authMode === "api-key")) {
+        return {
+          wallet: data.wallet,
+          paymentChain: data.paymentChain,
+          authMode: data.authMode === "api-key" ? "api-key" : "wallet",
+        };
       }
     }
     return undefined;
@@ -1191,13 +1206,20 @@ export type WalletConfig =
 
 export type PaymentChain = "base" | "solana";
 
+export type AuthMode = "wallet" | "api-key";
+
 export type ProxyOptions = {
-  wallet: WalletConfig;
+  /** Wallet material for x402 mode. Optional when apiKey is present. */
+  wallet?: WalletConfig;
+  /** BlockRun account API key. Takes priority over wallet settlement. */
+  apiKey?: string;
   apiBase?: string;
   /** Payment chain: "base" (default) or "solana". Can also be set via CLAWROUTER_PAYMENT_CHAIN env var. */
   paymentChain?: PaymentChain;
   /** Port to listen on (default: 8402) */
   port?: number;
+  /** Refuse to reuse an existing listener when false (used by tests). */
+  allowExistingProxy?: boolean;
   routingConfig?: Partial<RoutingConfig>;
   /** Request timeout in ms (default: 180000 = 3 minutes). Covers on-chain tx + LLM response. */
   requestTimeoutMs?: number;
@@ -1269,6 +1291,8 @@ export type ProxyHandle = {
   baseUrl: string;
   walletAddress: string;
   solanaAddress?: string;
+  authMode: AuthMode;
+  apiKeyLabel?: string;
   balanceMonitor: AnyBalanceMonitor;
   close: () => Promise<void>;
 };
@@ -1548,6 +1572,7 @@ async function proxyPaidApiRequest(
   apiBase: string,
   payFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
   getActualPaymentUsd: () => number,
+  accountPassthrough = false,
 ): Promise<void> {
   const startTime = Date.now();
   const upstreamUrl = `${apiBase}${req.url}`;
@@ -1598,6 +1623,16 @@ async function proxyPaidApiRequest(
   });
 
   res.writeHead(upstream.status, responseHeaders);
+
+  if (accountPassthrough) {
+    if (upstream.body) {
+      await pipeline(
+        Readable.fromWeb(upstream.body as import("node:stream/web").ReadableStream<Uint8Array>),
+        res,
+      );
+    } else res.end();
+    return;
+  }
 
   // Stream response body
   if (upstream.body) {
@@ -1704,12 +1739,27 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
     console.log(`[XClawRouter] Upstream proxy: ${upstreamProxy}`);
   }
 
+  // Account billing is explicit and wins over any legacy wallet on disk.
+  const apiKey = options.apiKey?.trim() || undefined;
+  if (apiKey && !isValidApiKey(apiKey)) {
+    throw new Error(
+      'BlockRun API key is malformed (expected brk_…). Create one at https://user.blockrun.ai/dashboard/keys',
+    );
+  }
+  const authMode: AuthMode = apiKey ? "api-key" : "wallet";
+  if (!apiKey && !options.wallet) {
+    throw new Error(
+      'startProxy needs a credential: either an API key (https://user.blockrun.ai/dashboard/keys) or an x402 wallet.',
+    );
+  }
+
   // Normalize wallet config. Three shapes:
   //   1. Plain string private key (legacy CLI/test path)
   //   2. Full resolution object with `key` (legacy local-key path)
   //   3. OKX resolution with `source: "okx"` and an `onchainos` adapter — no
   //      local key, signing happens via the onchainos CLI.
-  const walletObj = typeof options.wallet === "string" ? undefined : options.wallet;
+  const walletObj =
+    options.wallet === undefined || typeof options.wallet === "string" ? undefined : options.wallet;
   const isOkxWallet =
     walletObj !== undefined &&
     "source" in walletObj &&
@@ -1721,7 +1771,7 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
   const okxAddress: `0x${string}` | undefined = isOkxWallet
     ? (walletObj!.address as `0x${string}`)
     : undefined;
-  if (!walletKey && !okxAdapter) {
+  if (authMode === "wallet" && !walletKey && !okxAdapter) {
     throw new Error(
       "Wallet config has no signing backend: provide a private key or an OKX onchainos wallet.",
     );
@@ -1730,10 +1780,18 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
   // Payment chain: options > env var > persisted file > default "base".
   // No dynamic switching — user selects chain via /wallet solana or /wallet base.
   const paymentChain = options.paymentChain ?? (await resolvePaymentChain());
-  const apiBase =
+  const requestedApiBase =
     options.apiBase ??
-    (paymentChain === "solana" && solanaPrivateKeyBytes ? BLOCKRUN_SOLANA_API : BLOCKRUN_API);
-  if (paymentChain === "solana" && !solanaPrivateKeyBytes) {
+    (authMode === "api-key"
+      ? BLOCKRUN_API_KEY_API
+      : paymentChain === "solana" && solanaPrivateKeyBytes
+        ? BLOCKRUN_SOLANA_API
+        : BLOCKRUN_API);
+  const apiBase = authMode === "api-key" ? normalizeApiKeyBase(requestedApiBase) : requestedApiBase;
+  if (authMode === "api-key") {
+    console.log(`[XClawRouter] Auth: BlockRun API key ${maskApiKey(apiKey!)} (${apiBase})`);
+    console.log(`[XClawRouter] Billing: account credit — top up at ${PORTAL_CREDITS_URL}`);
+  } else if (paymentChain === "solana" && !solanaPrivateKeyBytes) {
     console.warn(
       `[XClawRouter] ⚠ Payment chain is Solana but no mnemonic found — falling back to Base (EVM).`,
     );
@@ -1749,12 +1807,33 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
   const listenPort = options.port ?? getProxyPort();
 
   // Check if a proxy is already running on this port
-  const existingProxy = await checkExistingProxy(listenPort);
+  const existingProxy =
+    options.allowExistingProxy === false ? undefined : await checkExistingProxy(listenPort);
   if (existingProxy) {
     // Proxy already running — reuse it instead of failing with EADDRINUSE
+    const baseUrl = `http://127.0.0.1:${listenPort}`;
+
+    if (existingProxy.authMode !== authMode) {
+      throw new Error(
+        `Existing proxy on port ${listenPort} uses ${existingProxy.authMode}, but ${authMode} was requested. Stop it or use another port.`,
+      );
+    }
+
+    if (authMode === "api-key") {
+      options.onReady?.(listenPort);
+      return {
+        port: listenPort,
+        baseUrl,
+        walletAddress: "",
+        authMode,
+        apiKeyLabel: maskApiKey(apiKey!),
+        balanceMonitor: new ApiKeyBalanceMonitor(),
+        close: async () => {},
+      };
+    }
+
     const expectedAddress: `0x${string}` =
       okxAddress ?? privateKeyToAccount(walletKey as `0x${string}`).address;
-    const baseUrl = `http://127.0.0.1:${listenPort}`;
 
     // Verify the existing proxy is using the same wallet (or warn if different)
     if (existingProxy.wallet !== expectedAddress) {
@@ -1804,8 +1883,9 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
     return {
       port: listenPort,
       baseUrl,
-      walletAddress: existingProxy.wallet,
+      walletAddress: existingProxy.wallet ?? expectedAddress,
       solanaAddress: reuseSolanaAddress,
+      authMode,
       balanceMonitor,
       close: async () => {
         // No-op: we didn't start this proxy, so we shouldn't close it
@@ -1817,25 +1897,25 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
   //   - OKX onchainos (when wallet source is "okx") — payments signed via the
   //     `onchainos payment pay` CLI, no private keys in this process.
   //   - Local viem account (default) — derived from BIP-39 / env private key.
-  const useOnchainos = !!okxAdapter;
-  const evmPublicClient = createPublicClient({ chain: base, transport: http() });
-  const x402 = new x402Client();
+  const useOnchainos = authMode === "wallet" && !!okxAdapter;
+  const x402 = authMode === "wallet" ? new x402Client() : undefined;
 
-  let account: { address: `0x${string}` };
+  let account: { address: `0x${string}` } | undefined;
   if (useOnchainos) {
     account = { address: okxAddress! };
     console.log(`[XClawRouter] OKX onchainos wallet — EVM ${okxAddress}`);
-  } else {
+  } else if (authMode === "wallet") {
     const acct = privateKeyToAccount(walletKey as `0x${string}`);
     account = { address: acct.address };
+    const evmPublicClient = createPublicClient({ chain: base, transport: http() });
     const evmSigner = toClientEvmSigner(acct, evmPublicClient);
-    registerExactEvmScheme(x402, { signer: evmSigner });
+    registerExactEvmScheme(x402!, { signer: evmSigner });
   }
 
   // Register Solana scheme if key is available. OKX onchainos focuses on Base
   // (EVM); Solana support stays on the legacy local-mnemonic path.
   let solanaAddress: string | undefined;
-  if (!useOnchainos && solanaPrivateKeyBytes) {
+  if (x402 && !useOnchainos && solanaPrivateKeyBytes) {
     const { registerExactSvmScheme } = await import("@x402/svm/exact/client");
     const { createKeyPairSignerFromPrivateKeyBytes } = await import("@solana/kit");
     const solanaSigner = await createKeyPairSignerFromPrivateKeyBytes(solanaPrivateKeyBytes);
@@ -1850,7 +1930,7 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
   }
 
   // Log which chain is used for each payment and capture actual payment amount
-  x402.onAfterPaymentCreation(async (context) => {
+  x402?.onAfterPaymentCreation(async (context) => {
     const network = context.selectedRequirements.network;
     const chain = network.startsWith("eip155")
       ? "Base (EVM)"
@@ -1869,21 +1949,26 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
   // OKX mode: bypass @x402/fetch — onchainos exposes only the high-level
   // `payment pay` command, not raw typed-data signing, so we hand-roll
   // 402-handling in createOnchainosPayFetch.
-  const payFetch = useOnchainos
-    ? createOnchainosPayFetch(fetch, okxAdapter!)
-    : createPayFetchWithPreAuth(fetch, x402, undefined, {
-        skipPreAuth: paymentChain === "solana",
-      });
+  const payFetch =
+    authMode === "api-key"
+      ? createApiKeyFetch(apiKey!, fetch, apiBase)
+      : useOnchainos
+        ? createOnchainosPayFetch(fetch, okxAdapter!)
+        : createPayFetchWithPreAuth(fetch, x402!, undefined, {
+            skipPreAuth: paymentChain === "solana",
+          });
 
   // Create balance monitor for pre-request checks (lazy import to avoid loading @solana/kit on Base chain)
   let balanceMonitor: AnyBalanceMonitor;
   if (options._balanceMonitorOverride) {
     balanceMonitor = options._balanceMonitorOverride;
+  } else if (authMode === "api-key") {
+    balanceMonitor = new ApiKeyBalanceMonitor();
   } else if (paymentChain === "solana" && solanaAddress) {
     const { SolanaBalanceMonitor } = await import("./solana-balance.js");
     balanceMonitor = new SolanaBalanceMonitor(solanaAddress);
   } else {
-    balanceMonitor = new BalanceMonitor(account.address);
+    balanceMonitor = new BalanceMonitor(account!.address);
   }
 
   // Build router options (100% local — no external API calls for routing)
@@ -1946,11 +2031,15 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
 
         const response: Record<string, unknown> = {
           status: "ok",
-          wallet: account.address,
-          paymentChain,
+          authMode,
         };
-        if (solanaAddress) {
-          response.solana = solanaAddress;
+        if (authMode === "api-key") {
+          response.apiKey = maskApiKey(apiKey!);
+          response.gateway = apiBase;
+        } else {
+          response.wallet = account!.address;
+          response.paymentChain = paymentChain;
+          if (solanaAddress) response.solana = solanaAddress;
         }
         if (upstreamProxy) {
           response.upstreamProxy = upstreamProxy;
@@ -1959,9 +2048,10 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
         if (full) {
           try {
             const balanceInfo = await balanceMonitor.checkBalance();
-            response.balance = balanceInfo.balanceUSD;
-            response.isLow = balanceInfo.isLow;
-            response.isEmpty = balanceInfo.isEmpty;
+            response.balance = authMode === "api-key" ? null : balanceInfo.balanceUSD;
+            response.isLow = authMode === "api-key" ? false : balanceInfo.isLow;
+            response.isEmpty = authMode === "api-key" ? false : balanceInfo.isEmpty;
+            if (authMode === "api-key") response.topUpUrl = PORTAL_CREDITS_URL;
           } catch {
             response.balanceError = "Could not fetch balance";
           }
@@ -2304,11 +2394,19 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
         }
 
         try {
-          const upstream = await payFetch(`${apiBase}/v1/images/image2image`, {
+          let upstream = await payFetch(`${apiBase}/v1/images/image2image`, {
             method: "POST",
             headers: { "content-type": "application/json", "user-agent": USER_AGENT },
             body: reqBody,
           });
+          if (authMode === "api-key") {
+            upstream = await pollApiKeyJob(
+              upstream,
+              payFetch,
+              apiBase,
+              AbortSignal.timeout(15 * 60_000),
+            );
+          }
           const text = await upstream.text();
           if (!upstream.ok) {
             res.writeHead(upstream.status, { "Content-Type": "application/json" });
@@ -2402,11 +2500,19 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
           /* use defaults */
         }
         try {
-          const upstream = await payFetch(`${apiBase}/v1/audio/generations`, {
+          let upstream = await payFetch(`${apiBase}/v1/audio/generations`, {
             method: "POST",
             headers: { "content-type": "application/json", "user-agent": USER_AGENT },
             body: reqBody,
           });
+          if (authMode === "api-key") {
+            upstream = await pollApiKeyJob(
+              upstream,
+              payFetch,
+              apiBase,
+              AbortSignal.timeout(15 * 60_000),
+            );
+          }
           const text = await upstream.text();
           if (!upstream.ok) {
             res.writeHead(upstream.status, { "Content-Type": "application/json" });
@@ -2655,6 +2761,29 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
         return;
       }
 
+      // Forward all other account-owned API surfaces without entering any x402
+      // signing or wallet accounting path. Specialized media handlers above
+      // retain their local-download behavior.
+      if (
+        authMode === "api-key" &&
+        /^\/v1\//.test(req.url ?? "") &&
+        !/^\/v1\/(?:chat\/completions|messages)(?:\?|$)/.test(req.url ?? "")
+      ) {
+        try {
+          await proxyPaidApiRequest(req, res, apiBase, payFetch, () => 0, true);
+        } catch (err) {
+          if (!res.headersSent) {
+            res.writeHead(502, { "Content-Type": "application/json" });
+            res.end(
+              JSON.stringify({
+                error: { message: err instanceof Error ? err.message : "Account API proxy failed" },
+              }),
+            );
+          } else res.destroy();
+        }
+        return;
+      }
+
       // --- Handle paid API paths (/v1/partner/*, /v1/pm/*, /v1/exa/*, /v1/modal/*,
       // /v1/stocks/*, /v1/usstock/*, /v1/crypto/*, /v1/fx/*, /v1/commodity/*) ---
       if (req.url?.match(/^\/v1\/(?:partner|pm|exa|modal|stocks|usstock|crypto|fx|commodity)\//)) {
@@ -2806,6 +2935,8 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
           port: listenPort,
           baseUrl,
           walletAddress: error.wallet,
+          authMode,
+          ...(authMode === "api-key" ? { apiKeyLabel: maskApiKey(apiKey!) } : {}),
           balanceMonitor,
           close: async () => {
             // No-op: we didn't start this proxy, so we shouldn't close it
@@ -2884,8 +3015,10 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
   return {
     port,
     baseUrl,
-    walletAddress: account.address,
+    walletAddress: account?.address ?? "",
     solanaAddress,
+    authMode,
+    ...(authMode === "api-key" ? { apiKeyLabel: maskApiKey(apiKey!) } : {}),
     balanceMonitor,
     close: () =>
       new Promise<void>((res, rej) => {

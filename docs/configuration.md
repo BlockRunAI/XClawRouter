@@ -5,6 +5,7 @@ Complete reference for XClawRouter configuration options.
 ## Table of Contents
 
 - [Environment Variables](#environment-variables)
+- [Account API Configuration](#account-api-configuration)
 - [Wallet Configuration](#wallet-configuration)
 - [Wallet Backup & Recovery](#wallet-backup--recovery)
 - [Proxy Settings](#proxy-settings)
@@ -20,6 +21,8 @@ Complete reference for XClawRouter configuration options.
 
 | Variable                    | Default                               | Description                                                              |
 | --------------------------- | ------------------------------------- | ------------------------------------------------------------------------ |
+| `BLOCKRUN_API_KEY`          | -                                     | Account API key; takes priority over wallet settlement.                   |
+| `BLOCKRUN_API_BASE_URL`     | `https://api.blockrun.ai`             | Account API root override.                                               |
 | `BLOCKRUN_WALLET_KEY`       | -                                     | Ethereum private key (hex, 0x-prefixed). Used if no saved wallet exists. |
 | `BLOCKRUN_PROXY_PORT`       | `8402`                                | Port for the local x402 proxy server.                                    |
 | `CLAWROUTER_SOLANA_RPC_URL` | `https://api.mainnet-beta.solana.com` | Solana RPC endpoint for USDC balance checks.                             |
@@ -72,9 +75,24 @@ Public RPC may rate-limit on heavy usage. Use a dedicated RPC for production.
 
 ---
 
+## Account API Configuration
+
+Register at [user.blockrun.ai](https://user.blockrun.ai), create a key at [user.blockrun.ai/dashboard/keys](https://user.blockrun.ai/dashboard/keys), and add credit at [user.blockrun.ai/dashboard/credits](https://user.blockrun.ai/dashboard/credits).
+
+```bash
+export BLOCKRUN_API_KEY=brk_...
+npx @blockrun/xclawrouter
+```
+
+The local proxy routes account calls to `https://api.blockrun.ai/v1` with bearer authentication. If an API key and wallet are both configured, the API key wins. A malformed API key fails instead of falling back to the wallet.
+
+OpenClaw can also store the value in the plugin's sensitive `apiKey` setting.
+
+---
+
 ## Wallet Configuration
 
-XClawRouter supports **two payment chains**: Base (EVM) and Solana. Both are USDC only — no SOL or ETH accepted for payments.
+XClawRouter supports **two wallet payment chains**: Solana and Base (EVM). Both are USDC only — no SOL or ETH accepted for payments.
 
 ### Check Active Wallet
 
@@ -225,7 +243,7 @@ Use XClawRouter without OpenClaw:
 import { startProxy } from "@blockrun/xclawrouter";
 
 const proxy = await startProxy({
-  walletKey: process.env.BLOCKRUN_WALLET_KEY!,
+  apiKey: process.env.BLOCKRUN_API_KEY!,
   onReady: (port) => console.log(`Proxy on port ${port}`),
   onRouted: (d) => console.log(`${d.model} saved ${(d.savings * 100).toFixed(0)}%`),
 });
@@ -278,7 +296,8 @@ All options for `startProxy()`:
 import { startProxy } from "@blockrun/xclawrouter";
 
 const proxy = await startProxy({
-  walletKey: "0x...",
+  apiKey: "brk_...", // preferred account mode
+  // wallet: "0x...", // optional x402 mode instead
 
   // Port configuration
   port: 8402, // Default: 8402 or BLOCKRUN_PROXY_PORT
@@ -287,7 +306,7 @@ const proxy = await startProxy({
   requestTimeoutMs: 180000, // 3 minutes (covers on-chain tx + LLM response)
 
   // API base (for testing)
-  apiBase: "https://blockrun.ai/api",
+  apiBase: "https://api.blockrun.ai",
 
   // Callbacks
   onReady: (port) => console.log(`Proxy ready on ${port}`),

@@ -28348,7 +28348,7 @@ var require_websocket = __commonJS({
     var net = __require("net");
     var tls = __require("tls");
     var { randomBytes: randomBytes7, createHash: createHash4 } = __require("crypto");
-    var { Duplex, Readable } = __require("stream");
+    var { Duplex, Readable: Readable2 } = __require("stream");
     var { URL: URL2 } = __require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
     var Receiver2 = require_receiver();
@@ -39595,7 +39595,7 @@ var require_client_h2 = __commonJS({
   "node_modules/undici/lib/dispatcher/client-h2.js"(exports, module) {
     "use strict";
     var assert8 = __require("assert");
-    var { pipeline } = __require("stream");
+    var { pipeline: pipeline2 } = __require("stream");
     var util2 = require_util();
     var {
       RequestContentLengthMismatchError,
@@ -40437,7 +40437,7 @@ var require_client_h2 = __commonJS({
     }
     function writeStream(abort, socket, expectsPayload, h2stream, body, client, request, contentLength) {
       assert8(contentLength !== 0 || client[kRunning] === 0, "stream body cannot be pipelined");
-      const pipe2 = pipeline(
+      const pipe2 = pipeline2(
         body,
         h2stream,
         (err) => {
@@ -43356,7 +43356,7 @@ var require_readable = __commonJS({
     "use strict";
     var assert8 = __require("assert");
     var { addAbortListener } = __require("events");
-    var { Readable } = __require("stream");
+    var { Readable: Readable2 } = __require("stream");
     var { RequestAbortedError, NotSupportedError, InvalidArgumentError, AbortError } = require_errors();
     var util2 = require_util();
     var { ReadableStreamFrom } = require_util();
@@ -43370,7 +43370,7 @@ var require_readable = __commonJS({
     var kBytesRead = /* @__PURE__ */ Symbol("kBytesRead");
     var noop = () => {
     };
-    var BodyReadable = class extends Readable {
+    var BodyReadable = class extends Readable2 {
       /**
        * @param {object} opts
        * @param {(this: Readable, size: number) => void} opts.resume
@@ -43759,7 +43759,7 @@ var require_api_request = __commonJS({
     "use strict";
     var assert8 = __require("assert");
     var { AsyncResource } = __require("async_hooks");
-    var { Readable } = require_readable();
+    var { Readable: Readable2 } = require_readable();
     var { InvalidArgumentError, RequestAbortedError } = require_errors();
     var util2 = require_util();
     function noop() {
@@ -43843,7 +43843,7 @@ var require_api_request = __commonJS({
         const parsedHeaders = headers;
         const contentType = parsedHeaders?.["content-type"];
         const contentLength = parsedHeaders?.["content-length"];
-        const res = new Readable({
+        const res = new Readable2({
           resume: () => controller.resume(),
           abort: (reason) => controller.abort(reason),
           contentType,
@@ -44182,7 +44182,7 @@ var require_api_pipeline = __commonJS({
   "node_modules/undici/lib/api/api-pipeline.js"(exports, module) {
     "use strict";
     var {
-      Readable,
+      Readable: Readable2,
       Duplex,
       PassThrough
     } = __require("stream");
@@ -44198,7 +44198,7 @@ var require_api_pipeline = __commonJS({
     function noop() {
     }
     var kResume = /* @__PURE__ */ Symbol("resume");
-    var PipelineRequest = class extends Readable {
+    var PipelineRequest = class extends Readable2 {
       constructor() {
         super({ autoDestroy: true });
         this[kResume] = null;
@@ -44215,7 +44215,7 @@ var require_api_pipeline = __commonJS({
         callback(err);
       }
     };
-    var PipelineResponse = class extends Readable {
+    var PipelineResponse = class extends Readable2 {
       constructor(resume) {
         super({ autoDestroy: true });
         this[kResume] = resume;
@@ -44369,7 +44369,7 @@ var require_api_pipeline = __commonJS({
         util2.destroy(ret, err);
       }
     };
-    function pipeline(opts, handler) {
+    function pipeline2(opts, handler) {
       try {
         const pipelineHandler = new PipelineHandler(opts, handler);
         this.dispatch({ ...opts, body: pipelineHandler.req }, pipelineHandler);
@@ -44378,7 +44378,7 @@ var require_api_pipeline = __commonJS({
         return new PassThrough().destroy(err);
       }
     }
-    module.exports = pipeline;
+    module.exports = pipeline2;
   }
 });
 
@@ -45838,7 +45838,7 @@ var require_snapshot_utils = __commonJS({
 var require_snapshot_recorder = __commonJS({
   "node_modules/undici/lib/mock/snapshot-recorder.js"(exports, module) {
     "use strict";
-    var { writeFile: writeFile3, readFile: readFile2, mkdir: mkdir4 } = __require("fs/promises");
+    var { writeFile: writeFile4, readFile: readFile2, mkdir: mkdir5 } = __require("fs/promises");
     var { dirname: dirname4, resolve } = __require("path");
     var { setTimeout: setTimeout2, clearTimeout: clearTimeout2 } = __require("timers");
     var { InvalidArgumentError, UndiciError } = require_errors();
@@ -46070,12 +46070,12 @@ var require_snapshot_recorder = __commonJS({
           throw new InvalidArgumentError("Snapshot path is required");
         }
         const resolvedPath = resolve(path2);
-        await mkdir4(dirname4(resolvedPath), { recursive: true });
+        await mkdir5(dirname4(resolvedPath), { recursive: true });
         const data = Array.from(this.#snapshots.entries()).map(([hash3, snapshot]) => ({
           hash: hash3,
           snapshot
         }));
-        await writeFile3(resolvedPath, JSON.stringify(data, null, 2), { flush: true });
+        await writeFile4(resolvedPath, JSON.stringify(data, null, 2), { flush: true });
       }
       /**
        * Clears all recorded snapshots
@@ -48815,7 +48815,7 @@ var require_cache2 = __commonJS({
   "node_modules/undici/lib/interceptor/cache.js"(exports, module) {
     "use strict";
     var assert8 = __require("assert");
-    var { Readable } = __require("stream");
+    var { Readable: Readable2 } = __require("stream");
     var util2 = require_util();
     var CacheHandler = require_cache_handler();
     var MemoryCacheStore = require_memory_cache_store();
@@ -48911,7 +48911,7 @@ var require_cache2 = __commonJS({
       return dispatch(opts, new CacheHandler(globalOpts, cacheKey2, handler));
     }
     function sendCachedValue(handler, opts, result, age, context, isStale2) {
-      const stream = util2.isStream(result.body) ? result.body : Readable.from(result.body ?? []);
+      const stream = util2.isStream(result.body) ? result.body : Readable2.from(result.body ?? []);
       assert8(!stream.destroyed, "stream should not be destroyed");
       assert8(!stream.readableDidRead, "stream should not be readableDidRead");
       const controller = {
@@ -49161,7 +49161,7 @@ var require_decompress = __commonJS({
   "node_modules/undici/lib/interceptor/decompress.js"(exports, module) {
     "use strict";
     var { createInflate, createGunzip, createBrotliDecompress, createZstdDecompress } = __require("zlib");
-    var { pipeline } = __require("stream");
+    var { pipeline: pipeline2 } = __require("stream");
     var DecoratorHandler = require_decorator_handler();
     var supportedEncodings = {
       gzip: createGunzip,
@@ -49269,7 +49269,7 @@ var require_decompress = __commonJS({
       #setupMultipleDecompressors(controller) {
         const lastDecompressor = this.#decompressors[this.#decompressors.length - 1];
         this.#setupDecompressorEvents(lastDecompressor, controller);
-        pipeline(this.#decompressors, (err) => {
+        pipeline2(this.#decompressors, (err) => {
           if (err) {
             super.onResponseError(controller, err);
             return;
@@ -52034,7 +52034,7 @@ var require_fetch = __commonJS({
       subresourceSet
     } = require_constants4();
     var EE = __require("events");
-    var { Readable, pipeline, finished: finished2, isErrored, isReadable } = __require("stream");
+    var { Readable: Readable2, pipeline: pipeline2, finished: finished2, isErrored, isReadable } = __require("stream");
     var { addAbortListener, bufferToLowerCasedHeaderName } = require_util();
     var { dataURLProcessor, serializeAMimeType, minimizeSupportedMimeType } = require_data_url();
     var { getGlobalDispatcher } = require_global2();
@@ -52994,7 +52994,7 @@ var require_fetch = __commonJS({
                 const headersList = new HeadersList();
                 appendHeadersListFromResponseHeaders(headersList, headers, rawHeaders);
                 const location = headersList.get("location", true);
-                this.body = new Readable({ read: () => controller.resume() });
+                this.body = new Readable2({ read: () => controller.resume() });
                 const willFollow = location && request.redirect === "follow" && redirectStatusSet.has(status);
                 const decoders = [];
                 if (request.method !== "HEAD" && request.method !== "CONNECT" && !nullBodyStatus.includes(status) && !willFollow) {
@@ -53042,7 +53042,7 @@ var require_fetch = __commonJS({
                   status,
                   statusText,
                   headersList,
-                  body: decoders.length ? pipeline(this.body, ...decoders, (err) => {
+                  body: decoders.length ? pipeline2(this.body, ...decoders, (err) => {
                     if (err) {
                       this.onResponseError(controller, err);
                     }
@@ -56765,7 +56765,7 @@ ${value}`;
 var require_eventsource = __commonJS({
   "node_modules/undici/lib/web/eventsource/eventsource.js"(exports, module) {
     "use strict";
-    var { pipeline } = __require("stream");
+    var { pipeline: pipeline2 } = __require("stream");
     var { fetching } = require_fetch();
     var { makeRequest } = require_request2();
     var { webidl } = require_webidl();
@@ -56923,7 +56923,7 @@ var require_eventsource = __commonJS({
               ));
             }
           });
-          pipeline(
+          pipeline2(
             response.body.stream,
             eventSourceStream,
             (error) => {
@@ -60080,10 +60080,11 @@ function isReasoningModel(modelId) {
 // src/proxy.ts
 import { AsyncLocalStorage } from "async_hooks";
 import { createServer } from "http";
-import { finished } from "stream";
-import { homedir as homedir6 } from "os";
-import { join as join8 } from "path";
-import { mkdir as mkdir3, writeFile as writeFile2, readFile, stat as fsStat } from "fs/promises";
+import { finished, Readable } from "stream";
+import { pipeline } from "stream/promises";
+import { homedir as homedir7 } from "os";
+import { join as join9 } from "path";
+import { mkdir as mkdir4, writeFile as writeFile3, readFile, stat as fsStat } from "fs/promises";
 import { readFileSync as readFileSync2, existsSync as existsSync2 } from "fs";
 
 // node_modules/viem/_esm/utils/getAction.js
@@ -76479,7 +76480,7 @@ var DEFAULT_ROUTING_CONFIG = {
         "google/gemini-3-flash-preview",
         // 1,398ms, IQ 46 — fast + smart
         "xai/grok-4.3",
-        // $1.5/$4
+        // $1.25/$2.5
         "google/gemini-2.5-pro",
         // 1,294ms
         "anthropic/claude-sonnet-4.6",
@@ -77499,6 +77500,34 @@ var BalanceMonitor = class {
     };
   }
 };
+var ApiKeyBalanceMonitor = class _ApiKeyBalanceMonitor {
+  static UNMETERED = BigInt(Number.MAX_SAFE_INTEGER);
+  async checkBalance() {
+    return {
+      balance: _ApiKeyBalanceMonitor.UNMETERED,
+      balanceUSD: "account credit",
+      isLow: false,
+      isEmpty: false,
+      walletAddress: ""
+    };
+  }
+  async checkSufficient() {
+    return { sufficient: true, info: await this.checkBalance() };
+  }
+  deductEstimated() {
+  }
+  invalidate() {
+  }
+  async refresh() {
+    return this.checkBalance();
+  }
+  formatUSDC(amountMicros) {
+    return `$${(Number(amountMicros) / 1e6).toFixed(2)}`;
+  }
+  getWalletAddress() {
+    return "";
+  }
+};
 
 // src/auth.ts
 import { writeFile, mkdir as mkdir2 } from "fs/promises";
@@ -77938,6 +77967,165 @@ async function setupSolana() {
   await saveMnemonic(mnemonic);
   return { mnemonic, solanaPrivateKeyBytes: solanaKeyBytes };
 }
+
+// src/api-key.ts
+import { writeFile as writeFile2, mkdir as mkdir3, rm } from "fs/promises";
+import { join as join7 } from "path";
+import { homedir as homedir5 } from "os";
+var API_KEY_FILE = join7(homedir5(), ".openclaw", "blockrun", "api-key");
+var CORE_API_KEY_FILE = join7(homedir5(), ".blockrun", ".api-key");
+var PORTAL_URL = "https://user.blockrun.ai";
+var PORTAL_KEYS_URL = `${PORTAL_URL}/dashboard/keys`;
+var PORTAL_CREDITS_URL = `${PORTAL_URL}/dashboard/credits`;
+var BLOCKRUN_API_KEY_API = process["env"].BLOCKRUN_API_BASE_URL?.replace(/\/+$/, "").replace(/\/v1$/, "") || "https://api.blockrun.ai";
+function isValidApiKey(value) {
+  if (typeof value !== "string") return false;
+  return /^brk_[A-Za-z0-9_-]{8,}$/.test(value.trim());
+}
+function maskApiKey(key) {
+  const trimmed = key.trim();
+  if (trimmed.length <= 18) return `${trimmed.slice(0, 8)}\u2026`;
+  return `${trimmed.slice(0, 14)}\u2026${trimmed.slice(-4)}`;
+}
+async function readOptional(path2) {
+  try {
+    return (await readTextFile(path2)).trim() || void 0;
+  } catch {
+    return void 0;
+  }
+}
+async function resolveApiKey() {
+  const envKey = process["env"].BLOCKRUN_API_KEY?.trim();
+  if (process["env"].BLOCKRUN_API_KEY !== void 0) {
+    if (isValidApiKey(envKey)) return { key: envKey, source: "env" };
+    throw new Error(
+      `BLOCKRUN_API_KEY is malformed (expected brk_\u2026). Check ${PORTAL_KEYS_URL}; refusing to fall back to a wallet.`
+    );
+  }
+  for (const [path2, source] of [
+    [CORE_API_KEY_FILE, "core"],
+    [API_KEY_FILE, "saved"]
+  ]) {
+    const stored = await readOptional(path2);
+    if (stored === void 0) continue;
+    if (isValidApiKey(stored)) return { key: stored, source };
+    console.warn(
+      `[ClawRouter] \u26A0 ${path2} does not contain a BlockRun key (expected brk_\u2026) \u2014 ignoring.`
+    );
+  }
+  return void 0;
+}
+function resolveApiKeySync() {
+  const envKey = process["env"].BLOCKRUN_API_KEY?.trim();
+  if (process["env"].BLOCKRUN_API_KEY !== void 0) {
+    if (isValidApiKey(envKey)) return { key: envKey, source: "env" };
+    throw new Error(
+      `BLOCKRUN_API_KEY is malformed (expected brk_\u2026). Check ${PORTAL_KEYS_URL}; refusing to fall back to a wallet.`
+    );
+  }
+  for (const [path2, source] of [
+    [CORE_API_KEY_FILE, "core"],
+    [API_KEY_FILE, "saved"]
+  ]) {
+    let stored;
+    try {
+      stored = readTextFileSync(path2).trim() || void 0;
+    } catch {
+      stored = void 0;
+    }
+    if (stored === void 0) continue;
+    if (isValidApiKey(stored)) return { key: stored, source };
+    console.warn(`[XClawRouter] \u26A0 ${path2} does not contain a BlockRun key (expected brk_\u2026) \u2014 ignoring.`);
+  }
+  return void 0;
+}
+function normalizeApiKeyBase(raw) {
+  const base2 = raw.replace(/\/+$/, "").replace(/\/v1$/, "");
+  const url = new URL(base2);
+  if (url.username || url.password || url.search || url.hash || url.protocol !== "https:" && !(url.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname))) {
+    throw new Error(
+      "Account API URL requires HTTPS (except localhost) and no credentials, query or fragment."
+    );
+  }
+  return base2;
+}
+function createApiKeyFetch(apiKey, baseFetch = fetch, apiBase = BLOCKRUN_API_KEY_API) {
+  const base2 = new URL(normalizeApiKeyBase(apiBase));
+  return async (input, init) => {
+    const request = input instanceof Request ? input : void 0;
+    const url = new URL(request?.url ?? String(input), `${base2}/`);
+    if (url.origin !== base2.origin || url.username || url.password)
+      throw new Error("Refusing to forward a BlockRun account key to another origin.");
+    if (base2.pathname === "/" && url.pathname.startsWith("/api/v1/"))
+      url.pathname = url.pathname.slice(4);
+    const headers = new Headers(init?.headers ?? request?.headers);
+    for (const name of [...headers.keys()])
+      if (/payment/i.test(name) || name.toLowerCase() === "x-api-key") headers.delete(name);
+    headers.set("authorization", `Bearer ${apiKey}`);
+    const response = await baseFetch(request ? new Request(url, request) : url.href, {
+      ...init,
+      headers,
+      redirect: "error"
+    });
+    return response.ok ? response : explainApiKeyFailure(response);
+  };
+}
+async function pollApiKeyJob(response, payFetch, apiBase, signal, intervalMs = 2e3) {
+  if (response.status !== 202) return response;
+  const initial = await response.clone().json();
+  if (!initial.poll_url) throw new Error("Async account response missing poll_url");
+  const pollUrl = new URL(initial.poll_url, `${normalizeApiKeyBase(apiBase)}/`).href;
+  const abort = AbortSignal.any([signal, AbortSignal.timeout(15 * 6e4)]);
+  while (!abort.aborted) {
+    const polled = await payFetch(pollUrl, { signal: abort });
+    if (!polled.ok) return polled;
+    const data = await polled.clone().json();
+    if (data.status === "completed") return polled;
+    if (["failed", "cancelled", "canceled"].includes(data.status || ""))
+      throw new Error("Account job failed or was cancelled");
+    await new Promise((resolve, reject) => {
+      const onAbort = () => {
+        clearTimeout(timer);
+        reject(abort.reason);
+      };
+      const timer = setTimeout(() => {
+        abort.removeEventListener("abort", onAbort);
+        resolve();
+      }, intervalMs);
+      abort.addEventListener("abort", onAbort, { once: true });
+      if (abort.aborted) onAbort();
+    });
+  }
+  throw new Error("Account job polling stopped; check job before resubmitting.");
+}
+async function explainApiKeyFailure(response) {
+  const hint = HINTS[response.status];
+  if (!hint) return response;
+  if (!(response.headers.get("content-type") ?? "").includes("json")) return response;
+  let parsed;
+  try {
+    parsed = await response.clone().json();
+  } catch {
+    return response;
+  }
+  if (!parsed?.error || typeof parsed.error.message !== "string") return response;
+  if (response.status === 404 && !/unsupported endpoint/i.test(parsed.error.message)) {
+    return response;
+  }
+  parsed.error.message = `${parsed.error.message} ${hint}`;
+  const headers = new Headers(response.headers);
+  headers.delete("content-length");
+  return new Response(JSON.stringify(parsed), {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+}
+var HINTS = {
+  401: `Check BLOCKRUN_API_KEY, or mint a new key at ${PORTAL_KEYS_URL}.`,
+  402: `Top up your BlockRun credit at ${PORTAL_CREDITS_URL}.`,
+  404: `Check the endpoint path and API availability at ${PORTAL_URL}. Account mode does not switch to wallet payment.`
+};
 
 // src/okx-x402-fetch.ts
 function createOnchainosPayFetch(baseFetch, onchainos) {
@@ -79032,9 +79220,9 @@ async function checkForUpdates() {
 
 // src/exclude-models.ts
 import { readFileSync, writeFileSync, mkdirSync } from "fs";
-import { join as join7, dirname as dirname2 } from "path";
-import { homedir as homedir5 } from "os";
-var DEFAULT_FILE_PATH = join7(homedir5(), ".openclaw", "blockrun", "exclude-models.json");
+import { join as join8, dirname as dirname2 } from "path";
+import { homedir as homedir6 } from "os";
+var DEFAULT_FILE_PATH = join8(homedir6(), ".openclaw", "blockrun", "exclude-models.json");
 function loadExcludeList(filePath = DEFAULT_FILE_PATH) {
   try {
     const raw = readFileSync(filePath, "utf-8");
@@ -79406,9 +79594,9 @@ function extractTextualToolCalls(content) {
 var paymentStore = new AsyncLocalStorage();
 var BLOCKRUN_API = "https://blockrun.ai/api";
 var BLOCKRUN_SOLANA_API = "https://sol.blockrun.ai/api";
-var IMAGE_DIR = join8(homedir6(), ".openclaw", "blockrun", "images");
-var AUDIO_DIR = join8(homedir6(), ".openclaw", "blockrun", "audio");
-var VIDEO_DIR = join8(homedir6(), ".openclaw", "blockrun", "videos");
+var IMAGE_DIR = join9(homedir7(), ".openclaw", "blockrun", "images");
+var AUDIO_DIR = join9(homedir7(), ".openclaw", "blockrun", "audio");
+var VIDEO_DIR = join9(homedir7(), ".openclaw", "blockrun", "videos");
 var AUTO_MODEL = "blockrun/auto";
 var ROUTING_PROFILES = /* @__PURE__ */ new Set([
   "blockrun/eco",
@@ -79710,8 +79898,12 @@ async function checkExistingProxy(port) {
     clearTimeout(timeoutId);
     if (response.ok) {
       const data = await response.json();
-      if (data.status === "ok" && data.wallet) {
-        return { wallet: data.wallet, paymentChain: data.paymentChain };
+      if (data.status === "ok" && (data.wallet || data.authMode === "api-key")) {
+        return {
+          wallet: data.wallet,
+          paymentChain: data.paymentChain,
+          authMode: data.authMode === "api-key" ? "api-key" : "wallet"
+        };
       }
     }
     return void 0;
@@ -80164,7 +80356,7 @@ function estimateImageCost(model, size5, n = 1) {
   const pricePerImage = sizePrice ?? pricing.default;
   return pricePerImage * n * 1.05;
 }
-async function proxyPaidApiRequest(req, res, apiBase, payFetch, getActualPaymentUsd) {
+async function proxyPaidApiRequest(req, res, apiBase, payFetch, getActualPaymentUsd, accountPassthrough = false) {
   const startTime = Date.now();
   const upstreamUrl = `${apiBase}${req.url}`;
   const isBlockrunExa = req.url?.startsWith("/v1/exa/") ?? false;
@@ -80196,6 +80388,15 @@ async function proxyPaidApiRequest(req, res, apiBase, payFetch, getActualPayment
     responseHeaders[key] = value;
   });
   res.writeHead(upstream.status, responseHeaders);
+  if (accountPassthrough) {
+    if (upstream.body) {
+      await pipeline(
+        Readable.fromWeb(upstream.body),
+        res
+      );
+    } else res.end();
+    return;
+  }
   if (upstream.body) {
     const chunks = await readBodyWithTimeout(upstream.body, ERROR_BODY_READ_TIMEOUT_MS);
     for (const chunk of chunks) {
@@ -80220,7 +80421,7 @@ async function proxyPaidApiRequest(req, res, apiBase, payFetch, getActualPayment
   });
 }
 function readImageFileAsDataUri(filePath) {
-  const resolved = filePath.startsWith("~/") ? join8(homedir6(), filePath.slice(2)) : filePath;
+  const resolved = filePath.startsWith("~/") ? join9(homedir7(), filePath.slice(2)) : filePath;
   if (!existsSync2(resolved)) {
     throw new Error(`Image file not found: ${resolved}`);
   }
@@ -80268,20 +80469,36 @@ async function startProxy(options) {
   if (upstreamProxy) {
     console.log(`[XClawRouter] Upstream proxy: ${upstreamProxy}`);
   }
-  const walletObj = typeof options.wallet === "string" ? void 0 : options.wallet;
+  const apiKey = options.apiKey?.trim() || void 0;
+  if (apiKey && !isValidApiKey(apiKey)) {
+    throw new Error(
+      "BlockRun API key is malformed (expected brk_\u2026). Create one at https://user.blockrun.ai/dashboard/keys"
+    );
+  }
+  const authMode = apiKey ? "api-key" : "wallet";
+  if (!apiKey && !options.wallet) {
+    throw new Error(
+      "startProxy needs a credential: either an API key (https://user.blockrun.ai/dashboard/keys) or an x402 wallet."
+    );
+  }
+  const walletObj = options.wallet === void 0 || typeof options.wallet === "string" ? void 0 : options.wallet;
   const isOkxWallet = walletObj !== void 0 && "source" in walletObj && walletObj.source === "okx" && walletObj.onchainos !== void 0;
   const walletKey = typeof options.wallet === "string" ? options.wallet : walletObj?.key;
   const solanaPrivateKeyBytes = walletObj?.solanaPrivateKeyBytes;
   const okxAdapter = isOkxWallet ? walletObj?.onchainos : void 0;
   const okxAddress = isOkxWallet ? walletObj.address : void 0;
-  if (!walletKey && !okxAdapter) {
+  if (authMode === "wallet" && !walletKey && !okxAdapter) {
     throw new Error(
       "Wallet config has no signing backend: provide a private key or an OKX onchainos wallet."
     );
   }
   const paymentChain = options.paymentChain ?? await resolvePaymentChain();
-  const apiBase = options.apiBase ?? (paymentChain === "solana" && solanaPrivateKeyBytes ? BLOCKRUN_SOLANA_API : BLOCKRUN_API);
-  if (paymentChain === "solana" && !solanaPrivateKeyBytes) {
+  const requestedApiBase = options.apiBase ?? (authMode === "api-key" ? BLOCKRUN_API_KEY_API : paymentChain === "solana" && solanaPrivateKeyBytes ? BLOCKRUN_SOLANA_API : BLOCKRUN_API);
+  const apiBase = authMode === "api-key" ? normalizeApiKeyBase(requestedApiBase) : requestedApiBase;
+  if (authMode === "api-key") {
+    console.log(`[XClawRouter] Auth: BlockRun API key ${maskApiKey(apiKey)} (${apiBase})`);
+    console.log(`[XClawRouter] Billing: account credit \u2014 top up at ${PORTAL_CREDITS_URL}`);
+  } else if (paymentChain === "solana" && !solanaPrivateKeyBytes) {
     console.warn(
       `[XClawRouter] \u26A0 Payment chain is Solana but no mnemonic found \u2014 falling back to Base (EVM).`
     );
@@ -80293,10 +80510,28 @@ async function startProxy(options) {
     console.log(`[XClawRouter] Payment chain: Solana (${BLOCKRUN_SOLANA_API})`);
   }
   const listenPort = options.port ?? getProxyPort();
-  const existingProxy = await checkExistingProxy(listenPort);
+  const existingProxy = options.allowExistingProxy === false ? void 0 : await checkExistingProxy(listenPort);
   if (existingProxy) {
-    const expectedAddress = okxAddress ?? privateKeyToAccount(walletKey).address;
     const baseUrl2 = `http://127.0.0.1:${listenPort}`;
+    if (existingProxy.authMode !== authMode) {
+      throw new Error(
+        `Existing proxy on port ${listenPort} uses ${existingProxy.authMode}, but ${authMode} was requested. Stop it or use another port.`
+      );
+    }
+    if (authMode === "api-key") {
+      options.onReady?.(listenPort);
+      return {
+        port: listenPort,
+        baseUrl: baseUrl2,
+        walletAddress: "",
+        authMode,
+        apiKeyLabel: maskApiKey(apiKey),
+        balanceMonitor: new ApiKeyBalanceMonitor(),
+        close: async () => {
+        }
+      };
+    }
+    const expectedAddress = okxAddress ?? privateKeyToAccount(walletKey).address;
     if (existingProxy.wallet !== expectedAddress) {
       console.warn(
         `[XClawRouter] Existing proxy on port ${listenPort} uses wallet ${existingProxy.wallet}, but current config uses ${expectedAddress}. Reusing existing proxy.`
@@ -80333,28 +80568,29 @@ async function startProxy(options) {
     return {
       port: listenPort,
       baseUrl: baseUrl2,
-      walletAddress: existingProxy.wallet,
+      walletAddress: existingProxy.wallet ?? expectedAddress,
       solanaAddress: reuseSolanaAddress,
+      authMode,
       balanceMonitor: balanceMonitor2,
       close: async () => {
       }
     };
   }
-  const useOnchainos = !!okxAdapter;
-  const evmPublicClient = createPublicClient({ chain: base, transport: http() });
-  const x402 = new x402Client();
+  const useOnchainos = authMode === "wallet" && !!okxAdapter;
+  const x402 = authMode === "wallet" ? new x402Client() : void 0;
   let account;
   if (useOnchainos) {
     account = { address: okxAddress };
     console.log(`[XClawRouter] OKX onchainos wallet \u2014 EVM ${okxAddress}`);
-  } else {
+  } else if (authMode === "wallet") {
     const acct = privateKeyToAccount(walletKey);
     account = { address: acct.address };
+    const evmPublicClient = createPublicClient({ chain: base, transport: http() });
     const evmSigner = toClientEvmSigner(acct, evmPublicClient);
     registerExactEvmScheme(x402, { signer: evmSigner });
   }
   let solanaAddress;
-  if (!useOnchainos && solanaPrivateKeyBytes) {
+  if (x402 && !useOnchainos && solanaPrivateKeyBytes) {
     const { registerExactSvmScheme: registerExactSvmScheme2 } = await Promise.resolve().then(() => (init_client(), client_exports));
     const { createKeyPairSignerFromPrivateKeyBytes: createKeyPairSignerFromPrivateKeyBytes2 } = await Promise.resolve().then(() => (init_index_node37(), index_node_exports));
     const solanaSigner = await createKeyPairSignerFromPrivateKeyBytes2(solanaPrivateKeyBytes);
@@ -80366,7 +80602,7 @@ async function startProxy(options) {
       `[XClawRouter] \u26A0 Solana signing via onchainos is not yet implemented. Run "/chain base" to switch chains, or wait for an onchainos release that supports Solana.`
     );
   }
-  x402.onAfterPaymentCreation(async (context) => {
+  x402?.onAfterPaymentCreation(async (context) => {
     const network = context.selectedRequirements.network;
     const chain3 = network.startsWith("eip155") ? "Base (EVM)" : network.startsWith("solana") ? "Solana" : network;
     const amountMicros = parseInt(context.selectedRequirements.amount || "0", 10);
@@ -80375,12 +80611,14 @@ async function startProxy(options) {
     if (store) store.amountUsd = amountUsd;
     console.log(`[XClawRouter] Payment signed on ${chain3} (${network}) \u2014 $${amountUsd.toFixed(6)}`);
   });
-  const payFetch = useOnchainos ? createOnchainosPayFetch(fetch, okxAdapter) : createPayFetchWithPreAuth(fetch, x402, void 0, {
+  const payFetch = authMode === "api-key" ? createApiKeyFetch(apiKey, fetch, apiBase) : useOnchainos ? createOnchainosPayFetch(fetch, okxAdapter) : createPayFetchWithPreAuth(fetch, x402, void 0, {
     skipPreAuth: paymentChain === "solana"
   });
   let balanceMonitor;
   if (options._balanceMonitorOverride) {
     balanceMonitor = options._balanceMonitorOverride;
+  } else if (authMode === "api-key") {
+    balanceMonitor = new ApiKeyBalanceMonitor();
   } else if (paymentChain === "solana" && solanaAddress) {
     const { SolanaBalanceMonitor: SolanaBalanceMonitor2 } = await Promise.resolve().then(() => (init_solana_balance(), solana_balance_exports));
     balanceMonitor = new SolanaBalanceMonitor2(solanaAddress);
@@ -80421,11 +80659,15 @@ async function startProxy(options) {
         const full = url.searchParams.get("full") === "true";
         const response = {
           status: "ok",
-          wallet: account.address,
-          paymentChain
+          authMode
         };
-        if (solanaAddress) {
-          response.solana = solanaAddress;
+        if (authMode === "api-key") {
+          response.apiKey = maskApiKey(apiKey);
+          response.gateway = apiBase;
+        } else {
+          response.wallet = account.address;
+          response.paymentChain = paymentChain;
+          if (solanaAddress) response.solana = solanaAddress;
         }
         if (upstreamProxy) {
           response.upstreamProxy = upstreamProxy;
@@ -80433,9 +80675,10 @@ async function startProxy(options) {
         if (full) {
           try {
             const balanceInfo = await balanceMonitor.checkBalance();
-            response.balance = balanceInfo.balanceUSD;
-            response.isLow = balanceInfo.isLow;
-            response.isEmpty = balanceInfo.isEmpty;
+            response.balance = authMode === "api-key" ? null : balanceInfo.balanceUSD;
+            response.isLow = authMode === "api-key" ? false : balanceInfo.isLow;
+            response.isEmpty = authMode === "api-key" ? false : balanceInfo.isEmpty;
+            if (authMode === "api-key") response.topUpUrl = PORTAL_CREDITS_URL;
           } catch {
             response.balanceError = "Could not fetch balance";
           }
@@ -80510,7 +80753,7 @@ async function startProxy(options) {
           res.end("Bad request");
           return;
         }
-        const filePath = join8(IMAGE_DIR, filename);
+        const filePath = join9(IMAGE_DIR, filename);
         try {
           const s3 = await fsStat(filePath);
           if (!s3.isFile()) throw new Error("not a file");
@@ -80541,7 +80784,7 @@ async function startProxy(options) {
           res.end("Bad request");
           return;
         }
-        const filePath = join8(AUDIO_DIR, filename);
+        const filePath = join9(AUDIO_DIR, filename);
         try {
           const s3 = await fsStat(filePath);
           if (!s3.isFile()) throw new Error("not a file");
@@ -80571,7 +80814,7 @@ async function startProxy(options) {
           res.end("Bad request");
           return;
         }
-        const filePath = join8(VIDEO_DIR, filename);
+        const filePath = join9(VIDEO_DIR, filename);
         try {
           const s3 = await fsStat(filePath);
           if (!s3.isFile()) throw new Error("not a file");
@@ -80630,7 +80873,7 @@ async function startProxy(options) {
             return;
           }
           if (result.data?.length) {
-            await mkdir3(IMAGE_DIR, { recursive: true });
+            await mkdir4(IMAGE_DIR, { recursive: true });
             const port2 = server.address()?.port ?? 8402;
             for (const img of result.data) {
               const dataUriMatch = img.url?.match(/^data:(image\/\w+);base64,(.+)$/);
@@ -80638,7 +80881,7 @@ async function startProxy(options) {
                 const [, mimeType, b64] = dataUriMatch;
                 const ext = mimeType === "image/jpeg" ? "jpg" : mimeType.split("/")[1] ?? "png";
                 const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
-                await writeFile2(join8(IMAGE_DIR, filename), Buffer.from(b64, "base64"));
+                await writeFile3(join9(IMAGE_DIR, filename), Buffer.from(b64, "base64"));
                 img.url = `http://localhost:${port2}/images/${filename}`;
                 console.log(`[XClawRouter] Image saved \u2192 ${img.url}`);
               } else if (img.url?.startsWith("https://") || img.url?.startsWith("http://")) {
@@ -80649,7 +80892,7 @@ async function startProxy(options) {
                     const ext = contentType.includes("jpeg") || contentType.includes("jpg") ? "jpg" : contentType.includes("webp") ? "webp" : "png";
                     const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
                     const buf = Buffer.from(await imgResp.arrayBuffer());
-                    await writeFile2(join8(IMAGE_DIR, filename), buf);
+                    await writeFile3(join9(IMAGE_DIR, filename), buf);
                     img.url = `http://localhost:${port2}/images/${filename}`;
                     console.log(`[XClawRouter] Image downloaded & saved \u2192 ${img.url}`);
                   }
@@ -80726,11 +80969,19 @@ async function startProxy(options) {
           return;
         }
         try {
-          const upstream = await payFetch(`${apiBase}/v1/images/image2image`, {
+          let upstream = await payFetch(`${apiBase}/v1/images/image2image`, {
             method: "POST",
             headers: { "content-type": "application/json", "user-agent": USER_AGENT },
             body: reqBody
           });
+          if (authMode === "api-key") {
+            upstream = await pollApiKeyJob(
+              upstream,
+              payFetch,
+              apiBase,
+              AbortSignal.timeout(15 * 6e4)
+            );
+          }
           const text = await upstream.text();
           if (!upstream.ok) {
             res.writeHead(upstream.status, { "Content-Type": "application/json" });
@@ -80746,7 +80997,7 @@ async function startProxy(options) {
             return;
           }
           if (result.data?.length) {
-            await mkdir3(IMAGE_DIR, { recursive: true });
+            await mkdir4(IMAGE_DIR, { recursive: true });
             const port2 = server.address()?.port ?? 8402;
             for (const img of result.data) {
               const dataUriMatch = img.url?.match(/^data:(image\/\w+);base64,(.+)$/);
@@ -80754,7 +81005,7 @@ async function startProxy(options) {
                 const [, mimeType, b64] = dataUriMatch;
                 const ext = mimeType === "image/jpeg" ? "jpg" : mimeType.split("/")[1] ?? "png";
                 const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
-                await writeFile2(join8(IMAGE_DIR, filename), Buffer.from(b64, "base64"));
+                await writeFile3(join9(IMAGE_DIR, filename), Buffer.from(b64, "base64"));
                 img.url = `http://localhost:${port2}/images/${filename}`;
                 console.log(`[XClawRouter] Image saved \u2192 ${img.url}`);
               } else if (img.url?.startsWith("https://") || img.url?.startsWith("http://")) {
@@ -80765,7 +81016,7 @@ async function startProxy(options) {
                     const ext = contentType.includes("jpeg") || contentType.includes("jpg") ? "jpg" : contentType.includes("webp") ? "webp" : "png";
                     const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
                     const buf = Buffer.from(await imgResp.arrayBuffer());
-                    await writeFile2(join8(IMAGE_DIR, filename), buf);
+                    await writeFile3(join9(IMAGE_DIR, filename), buf);
                     img.url = `http://localhost:${port2}/images/${filename}`;
                     console.log(`[XClawRouter] Image downloaded & saved \u2192 ${img.url}`);
                   }
@@ -80814,11 +81065,19 @@ async function startProxy(options) {
         } catch {
         }
         try {
-          const upstream = await payFetch(`${apiBase}/v1/audio/generations`, {
+          let upstream = await payFetch(`${apiBase}/v1/audio/generations`, {
             method: "POST",
             headers: { "content-type": "application/json", "user-agent": USER_AGENT },
             body: reqBody
           });
+          if (authMode === "api-key") {
+            upstream = await pollApiKeyJob(
+              upstream,
+              payFetch,
+              apiBase,
+              AbortSignal.timeout(15 * 6e4)
+            );
+          }
           const text = await upstream.text();
           if (!upstream.ok) {
             res.writeHead(upstream.status, { "Content-Type": "application/json" });
@@ -80834,7 +81093,7 @@ async function startProxy(options) {
             return;
           }
           if (result.data?.length) {
-            await mkdir3(AUDIO_DIR, { recursive: true });
+            await mkdir4(AUDIO_DIR, { recursive: true });
             const port2 = server.address()?.port ?? 8402;
             for (const track of result.data) {
               if (track.url?.startsWith("https://") || track.url?.startsWith("http://")) {
@@ -80845,7 +81104,7 @@ async function startProxy(options) {
                     const ext = contentType.includes("wav") ? "wav" : "mp3";
                     const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
                     const buf = Buffer.from(await audioResp.arrayBuffer());
-                    await writeFile2(join8(AUDIO_DIR, filename), buf);
+                    await writeFile3(join9(AUDIO_DIR, filename), buf);
                     track.url = `http://localhost:${port2}/audio/${filename}`;
                     console.log(`[XClawRouter] Audio saved \u2192 ${track.url}`);
                   }
@@ -80976,7 +81235,7 @@ async function startProxy(options) {
             }
           }
           if (finalResult.data?.length) {
-            await mkdir3(VIDEO_DIR, { recursive: true });
+            await mkdir4(VIDEO_DIR, { recursive: true });
             const port2 = server.address()?.port ?? 8402;
             for (const clip of finalResult.data) {
               if (clip.url?.startsWith("https://") || clip.url?.startsWith("http://")) {
@@ -80987,7 +81246,7 @@ async function startProxy(options) {
                     const ext = contentType.includes("webm") ? "webm" : contentType.includes("quicktime") ? "mov" : "mp4";
                     const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
                     const buf = Buffer.from(await videoResp.arrayBuffer());
-                    await writeFile2(join8(VIDEO_DIR, filename), buf);
+                    await writeFile3(join9(VIDEO_DIR, filename), buf);
                     clip.url = `http://localhost:${port2}/videos/${filename}`;
                     console.log(`[XClawRouter] Video saved \u2192 ${clip.url}`);
                   }
@@ -81019,6 +81278,21 @@ async function startProxy(options) {
             res.writeHead(502, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ error: "Video generation failed", details: msg }));
           }
+        }
+        return;
+      }
+      if (authMode === "api-key" && /^\/v1\//.test(req.url ?? "") && !/^\/v1\/(?:chat\/completions|messages)(?:\?|$)/.test(req.url ?? "")) {
+        try {
+          await proxyPaidApiRequest(req, res, apiBase, payFetch, () => 0, true);
+        } catch (err) {
+          if (!res.headersSent) {
+            res.writeHead(502, { "Content-Type": "application/json" });
+            res.end(
+              JSON.stringify({
+                error: { message: err instanceof Error ? err.message : "Account API proxy failed" }
+              })
+            );
+          } else res.destroy();
         }
         return;
       }
@@ -81143,6 +81417,8 @@ async function startProxy(options) {
           port: listenPort,
           baseUrl: baseUrl2,
           walletAddress: error.wallet,
+          authMode,
+          ...authMode === "api-key" ? { apiKeyLabel: maskApiKey(apiKey) } : {},
           balanceMonitor,
           close: async () => {
           }
@@ -81193,8 +81469,10 @@ async function startProxy(options) {
   return {
     port,
     baseUrl,
-    walletAddress: account.address,
+    walletAddress: account?.address ?? "",
     solanaAddress,
+    authMode,
+    ...authMode === "api-key" ? { apiKeyLabel: maskApiKey(apiKey) } : {},
     balanceMonitor,
     close: () => new Promise((res, rej) => {
       const timeout = setTimeout(() => {
@@ -83592,8 +83870,8 @@ function loadTopModels() {
 var TOP_MODELS = Object.freeze(loadTopModels());
 
 // src/index.ts
-import { homedir as homedir8 } from "os";
-import { join as join10, dirname as dirname3 } from "path";
+import { homedir as homedir9 } from "os";
+import { join as join11, dirname as dirname3 } from "path";
 import { fileURLToPath as fileURLToPath2 } from "url";
 init_accounts();
 
@@ -84373,8 +84651,8 @@ init_solana_balance();
 // src/spend-control.ts
 import * as fs from "fs";
 import * as path from "path";
-import { homedir as homedir7 } from "os";
-var WALLET_DIR2 = path.join(homedir7(), ".openclaw", "blockrun");
+import { homedir as homedir8 } from "os";
+var WALLET_DIR2 = path.join(homedir8(), ".openclaw", "blockrun");
 var HOUR_MS = 60 * 60 * 1e3;
 var DAY_MS = 24 * HOUR_MS;
 var FileSpendControlStorage = class {
@@ -84691,7 +84969,7 @@ async function waitForProxyHealth(port, timeoutMs = 3e3) {
   return false;
 }
 function getPackageRoot() {
-  return join10(dirname3(fileURLToPath2(import.meta.url)), "..");
+  return join11(dirname3(fileURLToPath2(import.meta.url)), "..");
 }
 function emitAgenticWalletStatusViaLogger(logger, wallet) {
   if (process.env.XCLAW_QUIET === "1") return;
@@ -84709,13 +84987,13 @@ function logOnchainOsRequiredError(logger, err) {
 function installSkillsToWorkspace(logger) {
   try {
     const packageRoot = getPackageRoot();
-    const bundledSkillsDir = join10(packageRoot, "skills");
+    const bundledSkillsDir = join11(packageRoot, "skills");
     if (!existsSync4(bundledSkillsDir)) {
       return;
     }
     const profile = (process["env"].OPENCLAW_PROFILE ?? "").trim().toLowerCase();
     const workspaceDirName = profile && profile !== "default" ? `workspace-${profile}` : "workspace";
-    const workspaceSkillsDir = join10(homedir8(), ".openclaw", workspaceDirName, "skills");
+    const workspaceSkillsDir = join11(homedir9(), ".openclaw", workspaceDirName, "skills");
     mkdirSync3(workspaceSkillsDir, { recursive: true });
     const INTERNAL_SKILLS = /* @__PURE__ */ new Set(["release"]);
     const entries = readdirSync(bundledSkillsDir, { withFileTypes: true });
@@ -84724,10 +85002,10 @@ function installSkillsToWorkspace(logger) {
       if (!entry.isDirectory()) continue;
       const skillName = entry.name;
       if (INTERNAL_SKILLS.has(skillName)) continue;
-      const srcSkillFile = join10(bundledSkillsDir, skillName, "SKILL.md");
+      const srcSkillFile = join11(bundledSkillsDir, skillName, "SKILL.md");
       if (!existsSync4(srcSkillFile)) continue;
-      const destDir = join10(workspaceSkillsDir, skillName);
-      const destSkillFile = join10(destDir, "SKILL.md");
+      const destDir = join11(workspaceSkillsDir, skillName);
+      const destSkillFile = join11(destDir, "SKILL.md");
       let needsUpdate = true;
       if (existsSync4(destSkillFile)) {
         try {
@@ -84763,8 +85041,8 @@ function isPluginInstallMode() {
   return args.includes("plugins");
 }
 function injectModelsConfig(logger) {
-  const configDir = join10(homedir8(), ".openclaw");
-  const configPath = join10(configDir, "openclaw.json");
+  const configDir = join11(homedir9(), ".openclaw");
+  const configPath = join11(configDir, "openclaw.json");
   let config = {};
   let needsWrite = false;
   if (!existsSync4(configDir)) {
@@ -84954,7 +85232,7 @@ function injectModelsConfig(logger) {
   }
 }
 function injectAuthProfile(logger) {
-  const agentsDir = join10(homedir8(), ".openclaw", "agents");
+  const agentsDir = join11(homedir9(), ".openclaw", "agents");
   if (!existsSync4(agentsDir)) {
     try {
       mkdirSync3(agentsDir, { recursive: true });
@@ -84971,8 +85249,8 @@ function injectAuthProfile(logger) {
       agents = ["main", ...agents];
     }
     for (const agentId of agents) {
-      const authDir = join10(agentsDir, agentId, "agent");
-      const authPath = join10(authDir, "auth-profiles.json");
+      const authDir = join11(agentsDir, agentId, "agent");
+      const authPath = join11(authDir, "auth-profiles.json");
       if (!existsSync4(authDir)) {
         try {
           mkdirSync3(authDir, { recursive: true });
@@ -85094,12 +85372,18 @@ async function startProxyInBackground(api, startupGeneration) {
   if (startupGeneration !== void 0 && isProxyStartupCurrent(startupGeneration, proc)) {
     proc.__clawrouterStartupPhase = "starting";
   }
+  const configApiKey = api.pluginConfig?.apiKey;
+  if (configApiKey !== void 0 && !isValidApiKey(configApiKey)) {
+    api.logger.warn(`pluginConfig.apiKey is invalid (expected brk_\u2026). Create one at ${PORTAL_KEYS_URL}`);
+    return false;
+  }
+  const account = configApiKey ? { key: configApiKey.trim(), source: "config" } : resolveApiKeySync();
   const configKey = api.pluginConfig?.walletKey;
   let wallet;
-  if (typeof configKey === "string" && /^0x[0-9a-fA-F]{64}$/.test(configKey)) {
-    const account = privateKeyToAccount(configKey);
-    wallet = { key: configKey, address: account.address, source: "config" };
-  } else {
+  if (!account && typeof configKey === "string" && /^0x[0-9a-fA-F]{64}$/.test(configKey)) {
+    const account2 = privateKeyToAccount(configKey);
+    wallet = { key: configKey, address: account2.address, source: "config" };
+  } else if (!account) {
     if (configKey !== void 0) {
       api.logger.warn(
         `pluginConfig.walletKey is set but invalid (expected 0x + 64 hex chars) \u2014 falling back to saved wallet`
@@ -85115,23 +85399,26 @@ async function startProxyInBackground(api, startupGeneration) {
       throw err;
     }
   }
-  emitAgenticWalletStatusViaLogger(api.logger, wallet);
-  if (wallet.source === "okx") {
+  if (wallet) emitAgenticWalletStatusViaLogger(api.logger, wallet);
+  if (account) {
+    api.logger.info(`Using BlockRun API key ${maskApiKey(account.key)}`);
+    api.logger.info(`Billing: account credit \u2014 ${PORTAL_CREDITS_URL}`);
+  } else if (wallet?.source === "okx") {
     api.logger.info(
       `Using OKX onchainos wallet: ${wallet.address}${wallet.email ? ` (${wallet.email})` : ""}`
     );
-  } else if (wallet.source === "generated") {
+  } else if (wallet?.source === "generated") {
     api.logger.warn(`\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`);
     api.logger.warn(`  NEW WALLET GENERATED \u2014 BACK UP YOUR KEY NOW!`);
     api.logger.warn(`  Address : ${wallet.address}`);
     api.logger.warn(`  Run /wallet export to get your private key`);
     api.logger.warn(`  Losing this key = losing your USDC funds`);
     api.logger.warn(`\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`);
-  } else if (wallet.source === "saved") {
+  } else if (wallet?.source === "saved") {
     api.logger.info(`Using saved wallet: ${wallet.address}`);
-  } else if (wallet.source === "config") {
+  } else if (wallet?.source === "config") {
     api.logger.info(`Using wallet from plugin config: ${wallet.address}`);
-  } else {
+  } else if (wallet) {
     api.logger.info(`Using wallet from BLOCKRUN_WALLET_KEY: ${wallet.address}`);
   }
   const routingConfig = api.pluginConfig?.routing;
@@ -85144,6 +85431,7 @@ async function startProxyInBackground(api, startupGeneration) {
   }
   const proxy = await startProxy({
     wallet,
+    ...account ? { apiKey: account.key } : {},
     routingConfig,
     maxCostPerRunUsd,
     maxCostPerRunMode,
@@ -85190,7 +85478,7 @@ async function startProxyInBackground(api, startupGeneration) {
   api.logger.info(`XClawRouter ready \u2014 smart routing enabled`);
   api.logger.info(`Pricing: Simple ~$0.001 | Code ~$0.01 | Complex ~$0.05 | Free: $0`);
   const currentChain = await resolvePaymentChain();
-  const displayAddress = currentChain === "solana" && proxy.solanaAddress ? proxy.solanaAddress : wallet.address;
+  const displayAddress = account ? "" : currentChain === "solana" && proxy.solanaAddress ? proxy.solanaAddress : wallet.address;
   const network = currentChain === "solana" ? "Solana" : "Base";
   proxy.balanceMonitor.checkBalance().then(async (balance) => {
     if (balance.isEmpty) {
@@ -85269,8 +85557,8 @@ function startProxyAfterPortProbe(api, startupGeneration) {
     );
   });
 }
-var IMAGE_DIR2 = join10(homedir8(), ".openclaw", "blockrun", "images");
-var AUDIO_DIR2 = join10(homedir8(), ".openclaw", "blockrun", "audio");
+var IMAGE_DIR2 = join11(homedir9(), ".openclaw", "blockrun", "images");
+var AUDIO_DIR2 = join11(homedir9(), ".openclaw", "blockrun", "audio");
 function parseGenArgs(raw) {
   const promptParts = [];
   let model;
@@ -85366,7 +85654,7 @@ function buildImageGenerationProvider() {
         (result.data ?? []).map(async (img) => {
           const filename = img.url?.split("/images/").pop();
           if (!filename) throw new Error(`Unexpected image URL format: ${img.url}`);
-          const filePath = join10(IMAGE_DIR2, filename);
+          const filePath = join11(IMAGE_DIR2, filename);
           const buffer2 = await readFileAsync(filePath);
           const ext = filename.split(".").pop()?.toLowerCase() ?? "png";
           const mimeType = ext === "jpg" || ext === "jpeg" ? "image/jpeg" : ext === "webp" ? "image/webp" : "image/png";
@@ -85418,7 +85706,7 @@ function buildMusicGenerationProvider() {
         (result.data ?? []).map(async (track) => {
           const filename = track.url?.split("/audio/").pop();
           if (!filename) throw new Error(`Unexpected audio URL format: ${track.url}`);
-          const filePath = join10(AUDIO_DIR2, filename);
+          const filePath = join11(AUDIO_DIR2, filename);
           const buffer2 = await readFileAsync(filePath);
           const ext = filename.split(".").pop()?.toLowerCase() ?? "mp3";
           const mimeType = ext === "wav" ? "audio/wav" : "audio/mpeg";
@@ -85442,7 +85730,7 @@ function buildMusicGenerationProvider() {
     }
   };
 }
-var VIDEO_DIR2 = join10(homedir8(), ".openclaw", "blockrun", "videos");
+var VIDEO_DIR2 = join11(homedir9(), ".openclaw", "blockrun", "videos");
 function buildVideoGenerationProvider() {
   return {
     id: "blockrun",
@@ -85493,7 +85781,7 @@ function buildVideoGenerationProvider() {
         (result.data ?? []).map(async (clip) => {
           const filename = clip.url?.split("/videos/").pop();
           if (!filename) throw new Error(`Unexpected video URL format: ${clip.url}`);
-          const filePath = join10(VIDEO_DIR2, filename);
+          const filePath = join11(VIDEO_DIR2, filename);
           const buffer2 = await readFileAsync(filePath);
           const ext = filename.split(".").pop()?.toLowerCase() ?? "mp4";
           const mimeType = ext === "webm" ? "video/webm" : ext === "mov" ? "video/quicktime" : "video/mp4";
@@ -86069,7 +86357,15 @@ ${errText}`
     });
     if (!isGatewayMode()) {
       if (shouldLogRegistration) {
-        resolveOrGenerateWalletKey().then((wallet) => {
+        resolveApiKey().then((account) => {
+          if (account) {
+            api.logger.info(`Using BlockRun API key ${maskApiKey(account.key)}`);
+            api.logger.info(`Billing: account credit \u2014 ${PORTAL_CREDITS_URL}`);
+            return void 0;
+          }
+          return resolveOrGenerateWalletKey();
+        }).then((wallet) => {
+          if (!wallet) return;
           emitAgenticWalletStatusViaLogger(api.logger, wallet);
           const { address: address2, source, email } = wallet;
           if (source === "okx") {
@@ -86158,7 +86454,7 @@ ${errText}`
           "Skipping in-process config cleanup (openclaw plugins is managing the file)"
         );
       } else {
-        const configPath = join10(homedir8(), ".openclaw", "openclaw.json");
+        const configPath = join11(homedir9(), ".openclaw", "openclaw.json");
         if (existsSync4(configPath)) {
           const config = JSON.parse(readTextFileSync(configPath));
           if (config.models?.providers?.blockrun) {
@@ -86195,11 +86491,11 @@ ${errText}`
       api.logger.warn(`Config cleanup failed: ${err instanceof Error ? err.message : String(err)}`);
     }
     try {
-      const agentsDir = join10(homedir8(), ".openclaw", "agents");
+      const agentsDir = join11(homedir9(), ".openclaw", "agents");
       if (existsSync4(agentsDir)) {
         for (const entry of readdirSync(agentsDir, { withFileTypes: true })) {
           if (!entry.isDirectory()) continue;
-          const authPath = join10(agentsDir, entry.name, "agent", "auth-profiles.json");
+          const authPath = join11(agentsDir, entry.name, "agent", "auth-profiles.json");
           if (!existsSync4(authPath)) continue;
           try {
             const store = JSON.parse(readTextFileSync(authPath));

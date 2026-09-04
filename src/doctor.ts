@@ -24,6 +24,13 @@ import { getSolanaAddress } from "./wallet.js";
 import { getStats } from "./stats.js";
 import { getProxyPort } from "./proxy.js";
 import { VERSION } from "./version.js";
+import {
+  BLOCKRUN_API_KEY_API,
+  PORTAL_CREDITS_URL,
+  createApiKeyFetch,
+  maskApiKey,
+  resolveApiKey,
+} from "./api-key.js";
 
 // Types
 interface SystemInfo {
@@ -63,6 +70,7 @@ interface DiagnosticResult {
   timestamp: string;
   system: SystemInfo;
   wallet: WalletInfo;
+  account: { configured: boolean; keyLabel: string | null };
   network: NetworkInfo;
   logs: LogInfo;
   issues: string[];
@@ -199,8 +207,11 @@ async function collectNetworkInfo(): Promise<NetworkInfo> {
   let blockrunReachable = false;
   let blockrunLatency: number | null = null;
   try {
+    const account = await resolveApiKey();
+    const baseUrl = account ? BLOCKRUN_API_KEY_API : "https://blockrun.ai/api";
+    const request = account ? createApiKeyFetch(account.key, fetch, baseUrl) : fetch;
     const start = Date.now();
-    const response = await fetch("https://blockrun.ai/api/v1/models", {
+    const response = await request(`${baseUrl}/v1/models`, {
       method: "GET",
       signal: AbortSignal.timeout(10000),
     });
@@ -250,10 +261,10 @@ async function collectLogInfo(): Promise<LogInfo> {
 function identifyIssues(result: DiagnosticResult): string[] {
   const issues: string[] = [];
 
-  if (!result.wallet.exists) {
+  if (!result.account.configured && !result.wallet.exists) {
     issues.push("No wallet found");
   }
-  if (result.wallet.isEmpty) {
+  if (!result.account.configured && result.wallet.isEmpty) {
     const chain = result.wallet.paymentChain === "solana" ? "Solana" : "Base";
     issues.push(`Wallet is empty - need to fund with USDC on ${chain}`);
     if (result.wallet.paymentChain === "base" && result.wallet.solanaAddress) {
@@ -304,6 +315,14 @@ function printDiagnostics(result: DiagnosticResult): void {
   );
 
   // Wallet
+  console.log("\nAccount API");
+  if (result.account.configured) {
+    console.log(`  ${green(`Key: ${result.account.keyLabel}`)}`);
+    console.log(`  ${green(`Billing: ${PORTAL_CREDITS_URL}`)}`);
+  } else {
+    console.log(`  Not configured (wallet mode)`);
+  }
+
   console.log("\nWallet");
   if (result.wallet.exists && result.wallet.valid) {
     console.log(`  ${green(`Key: ${WALLET_FILE} (${result.wallet.source})`)}`);
@@ -387,7 +406,8 @@ async function analyzeWithAI(
   model: DoctorModel = "sonnet",
 ): Promise<void> {
   // Check if wallet has funds
-  if (diagnostics.wallet.isEmpty) {
+  const accountAuth = await resolveApiKey();
+  if (!accountAuth && diagnostics.wallet.isEmpty) {
     console.log("\n💳 Wallet is empty - cannot call AI for analysis.");
     console.log(`   Fund your EVM wallet with USDC on Base: ${diagnostics.wallet.address}`);
     if (diagnostics.wallet.solanaAddress) {
@@ -402,16 +422,22 @@ async function analyzeWithAI(
   console.log(`\n📤 Sending to ${modelConfig.name} (${modelConfig.cost})...\n`);
 
   try {
-    const { key } = await resolveOrGenerateWalletKey();
-    const account = privateKeyToAccount(key as `0x${string}`);
-    const publicClient = createPublicClient({ chain: base, transport: http() });
-    const evmSigner = toClientEvmSigner(account, publicClient);
-    const x402 = new x402Client();
-    registerExactEvmScheme(x402, { signer: evmSigner });
+    let paymentFetch: typeof fetch;
+    let apiUrl: string;
+    if (accountAuth) {
+      paymentFetch = createApiKeyFetch(accountAuth.key, fetch, BLOCKRUN_API_KEY_API);
+      apiUrl = `${BLOCKRUN_API_KEY_API}/v1/chat/completions`;
+    } else {
+      const { key } = await resolveOrGenerateWalletKey();
+      const account = privateKeyToAccount(key as `0x${string}`);
+      const publicClient = createPublicClient({ chain: base, transport: http() });
+      const evmSigner = toClientEvmSigner(account, publicClient);
+      const x402 = new x402Client();
+      registerExactEvmScheme(x402, { signer: evmSigner });
 
-    // Register Solana scheme if user is on Solana chain
-    const paymentChain = diagnostics.wallet.paymentChain;
-    if (paymentChain === "solana") {
+      // Register Solana scheme if user is on Solana chain
+      const paymentChain = diagnostics.wallet.paymentChain;
+      if (paymentChain === "solana") {
       try {
         if (!existsSync(MNEMONIC_FILE)) {
           throw new Error(`mnemonic file missing at ${MNEMONIC_FILE}`);
@@ -430,13 +456,13 @@ async function analyzeWithAI(
         );
         console.log(`  ⚠ Falling back to Base (EVM) — doctor request may fail on Solana chain\n`);
       }
+      }
+      paymentFetch = wrapFetchWithPayment(fetch, x402);
+      apiUrl =
+        paymentChain === "solana"
+          ? "https://sol.blockrun.ai/api/v1/chat/completions"
+          : "https://blockrun.ai/api/v1/chat/completions";
     }
-
-    const paymentFetch = wrapFetchWithPayment(fetch, x402);
-    const apiUrl =
-      paymentChain === "solana"
-        ? "https://sol.blockrun.ai/api/v1/chat/completions"
-        : "https://blockrun.ai/api/v1/chat/completions";
 
     const response = await paymentFetch(apiUrl, {
       method: "POST",
@@ -484,7 +510,7 @@ Analyze the diagnostics and:
     }
   } catch (err) {
     console.log(`\nError calling AI: ${err instanceof Error ? err.message : String(err)}`);
-    console.log("Try again or check your wallet balance.\n");
+    console.log(`Try again or check ${accountAuth ? "your account credits" : "your wallet balance"}.\n`);
   }
 }
 
@@ -496,12 +522,13 @@ export async function runDoctor(
   console.log(`\n🩺 BlockRun Doctor v${VERSION}\n`);
 
   // Collect all diagnostics
-  const [system, wallet, network, logs, latestVersion] = await Promise.all([
+  const [system, wallet, network, logs, latestVersion, accountAuth] = await Promise.all([
     collectSystemInfo(),
     collectWalletInfo(),
     collectNetworkInfo(),
     collectLogInfo(),
     fetchLatestVersion(),
+    resolveApiKey(),
   ]);
 
   const result: DiagnosticResult = {
@@ -510,6 +537,10 @@ export async function runDoctor(
     timestamp: new Date().toISOString(),
     system,
     wallet,
+    account: {
+      configured: accountAuth !== undefined,
+      keyLabel: accountAuth ? maskApiKey(accountAuth.key) : null,
+    },
     network,
     logs,
     issues: [],

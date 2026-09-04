@@ -37,6 +37,12 @@ import { generateReport } from "./report.js";
 import { formatRecentLogs } from "./stats.js";
 import { runDoctor } from "./doctor.js";
 import { PARTNER_SERVICES } from "./partners/index.js";
+import {
+  PORTAL_CREDITS_URL,
+  PORTAL_KEYS_URL,
+  maskApiKey,
+  resolveApiKey,
+} from "./api-key.js";
 
 function printHelp(): void {
   console.log(`
@@ -80,6 +86,7 @@ Management Commands:
   chain base        Switch to Base EVM (persists)
 
 Environment Variables:
+  BLOCKRUN_API_KEY                 Account API key (brk_...); wins over wallet mode
   BLOCKRUN_WALLET_KEY              Override wallet key (legacy local-key path)
   BLOCKRUN_PROXY_PORT              Default proxy port (default: 8402)
   XCLAWROUTER_USE_LOCAL_WALLET=1   Opt into legacy local BIP-39 wallet generation
@@ -87,6 +94,7 @@ Environment Variables:
   XCLAWROUTER_ONCHAINOS_BIN        Override onchainos CLI path
 
 For more info: https://blockrun.ai/clawrouter.md
+Create an account/API key: ${PORTAL_KEYS_URL}
 `);
 }
 
@@ -745,7 +753,11 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
-  // Resolve wallet key.
+  // A configured account key wins over wallet resolution. This lets a fresh
+  // install start without creating or logging into a wallet.
+  const account = await resolveApiKey();
+
+  // Resolve wallet key only for x402 mode.
   //
   // On a fresh install with no OKX wallet, `resolveOrGenerateWalletKey`
   // throws `OnchainOsRequiredError` instead of silently generating a local
@@ -756,7 +768,7 @@ async function main(): Promise<void> {
   // we keep the old error+exit-2 behaviour so automation isn't left hanging
   // on a stdin prompt that no one will ever answer.
   let wallet;
-  try {
+  if (!account) try {
     wallet = await resolveOrGenerateWalletKey();
   } catch (err) {
     if (err instanceof OnchainOsRequiredError) {
@@ -790,6 +802,11 @@ async function main(): Promise<void> {
     }
   }
 
+  if (account) {
+    console.log(`[XClawRouter] Using BlockRun API key ${maskApiKey(account.key)}`);
+    console.log(`[XClawRouter] Billing: account credit — ${PORTAL_CREDITS_URL}`);
+  }
+
   // Agentic Wallet status block. Tells the user, on every launch, whether
   // onchainos is installed and what their login state is, with the literal
   // next-step command/URL. Emitted BEFORE the "Using ... wallet:" line so the
@@ -798,7 +815,7 @@ async function main(): Promise<void> {
   // (`src/index.ts` emits the same block through OpenClaw's structured
   // logger — keep these two sites in sync when changing the block shape.)
   const quiet = process.env.XCLAW_QUIET === "1";
-  const detection = wallet.onchainosDetection;
+  const detection = wallet?.onchainosDetection;
   let printedStatus = false;
   if (!quiet && detection) {
     const lines = formatAgenticWalletStatus(detection);
@@ -811,17 +828,17 @@ async function main(): Promise<void> {
     printedStatus = lines.length > 0;
   }
 
-  if (wallet.source === "okx") {
+  if (wallet?.source === "okx") {
     console.log(
       `[XClawRouter] Using OKX onchainos wallet: ${wallet.address}${wallet.email ? ` (${wallet.email})` : ""}`,
     );
-  } else if (wallet.source === "generated") {
+  } else if (wallet?.source === "generated") {
     console.log(`[XClawRouter] Generated new wallet: ${wallet.address}`);
-  } else if (wallet.source === "saved") {
+  } else if (wallet?.source === "saved") {
     console.log(`[XClawRouter] Using saved wallet: ${wallet.address}`);
-  } else if (wallet.source === "config") {
+  } else if (wallet?.source === "config") {
     console.log(`[XClawRouter] Using wallet from plugin config: ${wallet.address}`);
-  } else {
+  } else if (wallet) {
     console.log(`[XClawRouter] Using wallet from BLOCKRUN_WALLET_KEY: ${wallet.address}`);
   }
 
@@ -837,7 +854,7 @@ async function main(): Promise<void> {
   // we're on an OKX wallet — unless the user explicitly pinned a chain via env
   // var (XCLAWROUTER_PAYMENT_CHAIN / legacy CLAWROUTER_PAYMENT_CHAIN), which we
   // always honour.
-  if (wallet.source === "okx") {
+  if (wallet?.source === "okx") {
     const pinnedChain =
       process.env.XCLAWROUTER_PAYMENT_CHAIN ?? process.env.CLAWROUTER_PAYMENT_CHAIN;
     const autoChain = resolveAutoBaseChain({
@@ -852,7 +869,7 @@ async function main(): Promise<void> {
   }
 
   // Show Solana address if available
-  if (wallet.solanaPrivateKeyBytes) {
+  if (wallet?.solanaPrivateKeyBytes) {
     try {
       const solAddr = await getSolanaAddress(wallet.solanaPrivateKeyBytes);
       console.log(`[XClawRouter] Solana address: ${solAddr}`);
@@ -864,6 +881,7 @@ async function main(): Promise<void> {
   // Start the proxy
   const proxy = await startProxy({
     wallet,
+    ...(account ? { apiKey: account.key } : {}),
     port: args.port,
     onReady: (port) => {
       console.log(`[XClawRouter] v${VERSION} | Proxy listening on http://127.0.0.1:${port}`);
@@ -890,13 +908,16 @@ async function main(): Promise<void> {
 
   // Check balance on the active payment chain
   const paymentChain = await resolvePaymentChain();
-  const displayAddress =
-    paymentChain === "solana" && proxy.solanaAddress ? proxy.solanaAddress : wallet.address;
+  const displayAddress = account
+    ? ""
+    : paymentChain === "solana" && proxy.solanaAddress ? proxy.solanaAddress : wallet!.address;
   try {
     const balance = await proxy.balanceMonitor.checkBalance();
-    if (balance.isEmpty) {
+    if (account) {
+      console.log(`[XClawRouter] Account billing active. Manage credit: ${PORTAL_CREDITS_URL}`);
+    } else if (balance.isEmpty) {
       console.log(`[XClawRouter] Wallet balance: $0.00 (using FREE model)`);
-      for (const line of formatFundingHint(wallet.source, displayAddress)) {
+      for (const line of formatFundingHint(wallet!.source, displayAddress)) {
         console.log(`[XClawRouter] ${line}`);
       }
     } else if (balance.isLow) {

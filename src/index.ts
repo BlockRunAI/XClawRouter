@@ -87,6 +87,14 @@ import { buildPartnerTools, PARTNER_SERVICES } from "./partners/index.js";
 import { createStatsCommand } from "./commands/stats.js";
 import { createExcludeCommand } from "./commands/exclude.js";
 import { BLOCKRUN_MCP_SERVER_NAME, removeManagedBlockrunMcpServerConfig } from "./mcp-config.js";
+import {
+  PORTAL_CREDITS_URL,
+  PORTAL_KEYS_URL,
+  isValidApiKey,
+  maskApiKey,
+  resolveApiKey,
+  resolveApiKeySync,
+} from "./api-key.js";
 
 function getPackageRoot(): string {
   return join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -737,16 +745,27 @@ async function startProxyInBackground(
     proc.__clawrouterStartupPhase = "starting";
   }
 
-  // Resolve wallet key: plugin config → saved file → env var → auto-generate.
+  // Resolve account auth first. An explicit malformed key is fatal and never
+  // falls back to a wallet that would charge a different billing plane.
+  const configApiKey = api.pluginConfig?.apiKey as string | undefined;
+  if (configApiKey !== undefined && !isValidApiKey(configApiKey)) {
+    api.logger.warn(`pluginConfig.apiKey is invalid (expected brk_…). Create one at ${PORTAL_KEYS_URL}`);
+    return false;
+  }
+  const account = configApiKey
+    ? { key: configApiKey.trim(), source: "config" as const }
+    : resolveApiKeySync();
+
+  // Resolve wallet key only when account auth is absent.
   // pluginConfig.walletKey is declared in openclaw.plugin.json configSchema but
   // was previously never read here — that was a bug.
   const configKey = api.pluginConfig?.walletKey as string | undefined;
-  let wallet: WalletResolution;
+  let wallet: WalletResolution | undefined;
 
-  if (typeof configKey === "string" && /^0x[0-9a-fA-F]{64}$/.test(configKey)) {
+  if (!account && typeof configKey === "string" && /^0x[0-9a-fA-F]{64}$/.test(configKey)) {
     const account = privateKeyToAccount(configKey as `0x${string}`);
     wallet = { key: configKey, address: account.address, source: "config" };
-  } else {
+  } else if (!account) {
     if (configKey !== undefined) {
       api.logger.warn(
         `pluginConfig.walletKey is set but invalid (expected 0x + 64 hex chars) — falling back to saved wallet`,
@@ -767,25 +786,28 @@ async function startProxyInBackground(
   // reads "OKX wallet not installed / not logged in / etc." before learning
   // which local fallback we picked. Silently skips on `kind: "ok"` and on
   // the plugin-config path (which has no detection result).
-  emitAgenticWalletStatusViaLogger(api.logger, wallet);
+  if (wallet) emitAgenticWalletStatusViaLogger(api.logger, wallet);
 
   // Log wallet source
-  if (wallet.source === "okx") {
+  if (account) {
+    api.logger.info(`Using BlockRun API key ${maskApiKey(account.key)}`);
+    api.logger.info(`Billing: account credit — ${PORTAL_CREDITS_URL}`);
+  } else if (wallet?.source === "okx") {
     api.logger.info(
       `Using OKX onchainos wallet: ${wallet.address}${wallet.email ? ` (${wallet.email})` : ""}`,
     );
-  } else if (wallet.source === "generated") {
+  } else if (wallet?.source === "generated") {
     api.logger.warn(`════════════════════════════════════════════════`);
     api.logger.warn(`  NEW WALLET GENERATED — BACK UP YOUR KEY NOW!`);
     api.logger.warn(`  Address : ${wallet.address}`);
     api.logger.warn(`  Run /wallet export to get your private key`);
     api.logger.warn(`  Losing this key = losing your USDC funds`);
     api.logger.warn(`════════════════════════════════════════════════`);
-  } else if (wallet.source === "saved") {
+  } else if (wallet?.source === "saved") {
     api.logger.info(`Using saved wallet: ${wallet.address}`);
-  } else if (wallet.source === "config") {
+  } else if (wallet?.source === "config") {
     api.logger.info(`Using wallet from plugin config: ${wallet.address}`);
-  } else {
+  } else if (wallet) {
     api.logger.info(`Using wallet from BLOCKRUN_WALLET_KEY: ${wallet.address}`);
   }
 
@@ -808,6 +830,7 @@ async function startProxyInBackground(
 
   const proxy = await startProxy({
     wallet,
+    ...(account ? { apiKey: account.key } : {}),
     routingConfig,
     maxCostPerRunUsd,
     maxCostPerRunMode,
@@ -862,8 +885,9 @@ async function startProxyInBackground(
   // Non-blocking balance check AFTER proxy is ready (won't hang startup)
   // Uses the proxy's chain-aware balance monitor and matching active-chain address.
   const currentChain = await resolvePaymentChain();
-  const displayAddress =
-    currentChain === "solana" && proxy.solanaAddress ? proxy.solanaAddress : wallet.address;
+  const displayAddress = account
+    ? ""
+    : currentChain === "solana" && proxy.solanaAddress ? proxy.solanaAddress : wallet!.address;
   const network = currentChain === "solana" ? "Solana" : "Base";
   proxy.balanceMonitor
     .checkBalance()
@@ -1954,8 +1978,17 @@ const plugin: OpenClawPluginDefinition = {
       if (shouldLogRegistration) {
         // Generate wallet on first install (even outside gateway mode)
         // This ensures users can see their wallet address immediately after install
-        resolveOrGenerateWalletKey()
+        resolveApiKey()
+          .then((account) => {
+            if (account) {
+              api.logger.info(`Using BlockRun API key ${maskApiKey(account.key)}`);
+              api.logger.info(`Billing: account credit — ${PORTAL_CREDITS_URL}`);
+              return undefined;
+            }
+            return resolveOrGenerateWalletKey();
+          })
           .then((wallet) => {
+            if (!wallet) return;
             // Mirror the standalone CLI: emit the Agentic Wallet status
             // block before the wallet-source log so onchainos detection
             // failures aren't silent on the plugin path either.
