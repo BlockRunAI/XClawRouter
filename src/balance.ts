@@ -200,3 +200,41 @@ export class BalanceMonitor {
     };
   }
 }
+
+/**
+ * Account credit is authoritative on the BlockRun server and has no public
+ * key-authenticated balance endpoint. This monitor disables wallet-only
+ * preflight fallbacks while preserving the proxy's balance-monitor contract.
+ */
+export class ApiKeyBalanceMonitor {
+  private static readonly UNMETERED = BigInt(Number.MAX_SAFE_INTEGER);
+
+  async checkBalance(): Promise<BalanceInfo> {
+    return {
+      balance: ApiKeyBalanceMonitor.UNMETERED,
+      balanceUSD: "account credit",
+      isLow: false,
+      isEmpty: false,
+      walletAddress: "",
+    };
+  }
+
+  async checkSufficient(): Promise<SufficiencyResult> {
+    return { sufficient: true, info: await this.checkBalance() };
+  }
+
+  deductEstimated(): void {}
+  invalidate(): void {}
+
+  async refresh(): Promise<BalanceInfo> {
+    return this.checkBalance();
+  }
+
+  formatUSDC(amountMicros: bigint): string {
+    return `$${(Number(amountMicros) / 1_000_000).toFixed(2)}`;
+  }
+
+  getWalletAddress(): string {
+    return "";
+  }
+}

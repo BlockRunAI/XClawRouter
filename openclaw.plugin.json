@@ -1,7 +1,7 @@
 {
   "id": "xclawrouter",
   "name": "XClawRouter",
-  "description": "Smart LLM router for OKX — agentic wallet, 60+ models, x402 micropayments on Base + Solana",
+  "description": "Smart LLM router — BlockRun account API key or x402 micropayments on Solana + Base",
   "skills": ["./skills"],
   "contracts": {
     "tools": [
@@ -35,6 +35,10 @@
         "type": "string",
         "description": "Path to OKX's onchainos CLI. Defaults to `onchainos` on PATH."
       },
+      "apiKey": {
+        "type": "string",
+        "description": "BlockRun account API key (brk_...). Takes priority over x402 wallet billing."
+      },
       "routing": {
         "type": "object",
         "description": "Override default routing configuration"
@@ -42,6 +46,11 @@
     }
   },
   "uiHints": {
+    "apiKey": {
+      "label": "BlockRun API key",
+      "sensitive": true,
+      "placeholder": "brk_live_..."
+    },
     "onchainosBin": {
       "label": "onchainos CLI path",
       "sensitive": false,

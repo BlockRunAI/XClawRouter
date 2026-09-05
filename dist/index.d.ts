@@ -724,6 +724,21 @@ declare class BalanceMonitor {
     /** Build BalanceInfo from raw balance */
     private buildInfo;
 }
+/**
+ * Account credit is authoritative on the BlockRun server and has no public
+ * key-authenticated balance endpoint. This monitor disables wallet-only
+ * preflight fallbacks while preserving the proxy's balance-monitor contract.
+ */
+declare class ApiKeyBalanceMonitor {
+    private static readonly UNMETERED;
+    checkBalance(): Promise<BalanceInfo>;
+    checkSufficient(): Promise<SufficiencyResult>;
+    deductEstimated(): void;
+    invalidate(): void;
+    refresh(): Promise<BalanceInfo>;
+    formatUSDC(amountMicros: bigint): string;
+    getWalletAddress(): string;
+}
 
 /**
  * Solana USDC Balance Monitor
@@ -1095,7 +1110,7 @@ declare function hashRequestContent(lastUserContent: string, toolCallNames?: str
  */
 
 /** Union type for chain-agnostic balance monitoring */
-type AnyBalanceMonitor = BalanceMonitor | SolanaBalanceMonitor;
+type AnyBalanceMonitor = BalanceMonitor | SolanaBalanceMonitor | ApiKeyBalanceMonitor;
 
 /**
  * Get the proxy port from pre-loaded configuration.
@@ -1131,13 +1146,19 @@ type WalletConfig = string | {
     solanaPrivateKeyBytes?: Uint8Array;
 } | WalletResolution;
 type PaymentChain = "base" | "solana";
+type AuthMode = "wallet" | "api-key";
 type ProxyOptions = {
-    wallet: WalletConfig;
+    /** Wallet material for x402 mode. Optional when apiKey is present. */
+    wallet?: WalletConfig;
+    /** BlockRun account API key. Takes priority over wallet settlement. */
+    apiKey?: string;
     apiBase?: string;
     /** Payment chain: "base" (default) or "solana". Can also be set via CLAWROUTER_PAYMENT_CHAIN env var. */
     paymentChain?: PaymentChain;
     /** Port to listen on (default: 8402) */
     port?: number;
+    /** Refuse to reuse an existing listener when false (used by tests). */
+    allowExistingProxy?: boolean;
     routingConfig?: Partial<RoutingConfig>;
     /** Request timeout in ms (default: 180000 = 3 minutes). Covers on-chain tx + LLM response. */
     requestTimeoutMs?: number;
@@ -1212,6 +1233,8 @@ type ProxyHandle = {
     baseUrl: string;
     walletAddress: string;
     solanaAddress?: string;
+    authMode: AuthMode;
+    apiKeyLabel?: string;
     balanceMonitor: AnyBalanceMonitor;
     close: () => Promise<void>;
 };

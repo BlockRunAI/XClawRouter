@@ -4,16 +4,15 @@
 
 <h1>The LLM router built for autonomous agents</h1>
 
-<p>Agents can't sign up for accounts. Agents can't enter credit cards.<br>
-Agents can only sign transactions.<br><br>
-<strong>ClawRouter is the only LLM router that lets agents operate independently.</strong><br><br>
-<em><!-- br:models.free -->7<!-- /br:models.free --> models free, no crypto required. No signup. No API key. No credit card.</em></p>
+<p>Use one BlockRun account API key or let an agent settle each request over x402.<br><br>
+<strong>Local smart routing across <!-- br:models.chatVisible -->76<!-- /br:models.chatVisible --> models.</strong><br><br>
+<em><!-- br:models.free -->7<!-- /br:models.free --> models free, no crypto required.</em></p>
 
 <br>
 
 <img src="https://img.shields.io/badge/🆓_7_Free_Models-success?style=for-the-badge" alt="7 free models">&nbsp;
 <img src="https://img.shields.io/badge/🤖_Agent--Native-black?style=for-the-badge" alt="Agent native">&nbsp;
-<img src="https://img.shields.io/badge/🔑_Zero_API_Keys-blue?style=for-the-badge" alt="No API keys">&nbsp;
+<img src="https://img.shields.io/badge/🔑_Account_API_Keys-blue?style=for-the-badge" alt="Account API keys">&nbsp;
 <img src="https://img.shields.io/badge/⚡_Local_Routing-yellow?style=for-the-badge" alt="Local routing">&nbsp;
 <img src="https://img.shields.io/badge/💰_x402_USDC-purple?style=for-the-badge" alt="x402 USDC">&nbsp;
 <img src="https://img.shields.io/badge/🔓_Open_Source-green?style=for-the-badge" alt="Open source">
@@ -27,33 +26,29 @@ Agents can only sign transactions.<br><br>
 
 [![USDC Hackathon Winner](https://img.shields.io/badge/🏆_USDC_Hackathon-Agentic_Commerce_Winner-gold?style=flat-square)](https://x.com/USDC/status/2021625822294216977)
 [![x402 Protocol](https://img.shields.io/badge/x402-Micropayments-purple?style=flat-square)](https://x402.org)
-[![Base Network](https://img.shields.io/badge/Base-USDC-0052FF?style=flat-square&logo=coinbase&logoColor=white)](https://base.org)
 [![Solana](https://img.shields.io/badge/Solana-USDC-9945FF?style=flat-square&logo=solana&logoColor=white)](https://solana.com)
+[![Base Network](https://img.shields.io/badge/Base-USDC-0052FF?style=flat-square&logo=coinbase&logoColor=white)](https://base.org)
 [![OpenClaw Plugin](https://img.shields.io/badge/OpenClaw-Plugin-orange?style=flat-square)](https://openclaw.ai)
 [![Telegram](https://img.shields.io/badge/Telegram-Community-26A5E4?style=flat-square&logo=telegram)](https://t.me/blockrunAI)
 
 </div>
 
-> **ClawRouter** is an open-source smart LLM router that reduces AI API costs by <!-- br:savings.autoVsBaselinePct -->84<!-- /br:savings.autoVsBaselinePct -->%. It analyzes each request across 15 dimensions and routes to the cheapest capable model in under 1ms, entirely locally. ClawRouter is the only LLM router built for autonomous AI agents — it uses wallet signatures for authentication (no API keys) and USDC micropayments via the x402 protocol (no credit cards). <!-- br:models.chatVisible -->76<!-- /br:models.chatVisible --> models from OpenAI, Anthropic, Google, xAI, DeepSeek, and more. MIT licensed.
+> **XClawRouter** is an open-source smart LLM router that reduces AI API costs by <!-- br:savings.autoVsBaselinePct -->84<!-- /br:savings.autoVsBaselinePct -->%. It analyzes each request across 15 dimensions and routes locally to the cheapest capable model in under 1ms. Use a BlockRun account API key with prepaid credit, or settle requests with USDC over x402 on Solana or Base. <!-- br:models.chatVisible -->76<!-- /br:models.chatVisible --> models from OpenAI, Anthropic, Google, xAI, DeepSeek, and more. MIT licensed.
 
 ---
 
 ## Why ClawRouter exists
 
-Every other LLM router was built for **human developers** — create an account, get an API key, pick a model from a dashboard, pay with a credit card.
-
-**Agents can't do any of that.**
-
-ClawRouter is built for the agent-first world:
+XClawRouter supports both teams that want a familiar account API and agents that pay autonomously:
 
 - **Starts at $0** — 7 NVIDIA models are free forever (incl. 1M-context DeepSeek V4 + a vision-capable Nemotron Omni)
-- **No accounts** — a wallet is generated locally, no signup
-- **No API keys** — your wallet signature IS authentication
+- **One account API key** — prepaid BlockRun credit across supported products
+- **Optional x402 wallet** — the wallet signature is authentication
 - **No model selection** — 15-dimension scoring picks the right model automatically
 - **No credit cards** — agents pay per-request with USDC via [x402](https://x402.org)
 - **No trust required** — runs locally, <1ms routing, zero external dependencies
 
-This is the stack that lets agents operate autonomously: **x402 + USDC + local routing**.
+Both modes use the same local router and model IDs.
 
 ---
 
@@ -64,8 +59,8 @@ This is the stack that lets agents operate autonomously: **x402 + USDC + local r
 | **Models**       | 200+              | 100+             | Smart routing     | Gateway           | **60+**                                                                |
 | **Free tier**    | Rate-limited      | BYO keys         | No                | No                | **<!-- br:models.free -->7<!-- /br:models.free --> models, no signup** |
 | **Routing**      | Manual selection  | Manual selection | Smart (closed)    | Observability     | **Smart (open source)**                                                |
-| **Auth**         | Account + API key | Your API keys    | Account + API key | Account + API key | **Wallet signature**                                                   |
-| **Payment**      | Credit card       | BYO keys         | Credit card       | $49-499/mo        | **USDC per-request**                                                   |
+| **Auth**         | Account + API key | Your API keys    | Account + API key | Account + API key | **BlockRun API key or wallet signature**                               |
+| **Payment**      | Credit card       | BYO keys         | Credit card       | $49-499/mo        | **Account credit or USDC per-request**                                 |
 | **Runs locally** | No                | Yes              | No                | No                | **Yes**                                                                |
 | **Open source**  | No                | Yes              | No                | Partial           | **Yes**                                                                |
 | **Agent-ready**  | No                | No               | No                | No                | **Yes**                                                                |
@@ -78,7 +73,7 @@ This is the stack that lets agents operate autonomously: **x402 + USDC + local r
 
 ## Quick Start
 
-> **No wallet? <!-- br:models.free -->7<!-- /br:models.free --> models work free out of the box.** Install, run, and pin `free/nemotron-3.5-lightning` (or any of the 7) — no crypto, no signup, no balance required. Add USDC later when you want paid models.
+> **Recommended:** [create a BlockRun account](https://user.blockrun.ai), [create an API key](https://user.blockrun.ai/dashboard/keys), and [add credits](https://user.blockrun.ai/dashboard/credits). Export the key as `BLOCKRUN_API_KEY`; XClawRouter will use it instead of a wallet.
 
 ### Option A — OpenClaw Agent
 
@@ -88,8 +83,8 @@ This is the stack that lets agents operate autonomously: **x402 + USDC + local r
 
 ```bash
 curl -fsSL https://blockrun.ai/XClawRouter-update | bash
+export BLOCKRUN_API_KEY=brk_...
 openclaw gateway restart
-npx @blockrun/xclawrouter setup        # email + OTP login to your OKX Agentic Wallet
 ```
 
 **2. Manual via OpenClaw plugin manager** — if you want to see each step:
@@ -97,8 +92,8 @@ npx @blockrun/xclawrouter setup        # email + OTP login to your OKX Agentic W
 ```bash
 openclaw plugins install @blockrun/xclawrouter
 openclaw plugins enable xclawrouter    # add to plugins.allow so the gateway loads it
+export BLOCKRUN_API_KEY=brk_...
 openclaw gateway restart
-npx @blockrun/xclawrouter setup        # email + OTP login to your OKX Agentic Wallet
 ```
 
 **3. Global npm install** — same effect as #2, useful for CI or pinned deployments:
@@ -106,11 +101,11 @@ npx @blockrun/xclawrouter setup        # email + OTP login to your OKX Agentic W
 ```bash
 npm install -g @blockrun/xclawrouter
 openclaw plugins enable xclawrouter    # add to plugins.allow so the gateway loads it
+export BLOCKRUN_API_KEY=brk_...
 openclaw gateway restart
-xclawrouter setup                      # email + OTP login to your OKX Agentic Wallet
 ```
 
-`setup` walks you through two prompts (email, then the OTP it mails you) and is a no-op if you're already signed in — safe to re-run. Signing happens in OKX's TEE; no local private key is stored.
+For x402 instead, omit `BLOCKRUN_API_KEY` and run `npx @blockrun/xclawrouter setup` to connect an OKX Agentic Wallet. Local wallet users can choose Solana before Base.
 
 Done. Smart routing (`blockrun/auto`) is now your default model.
 
@@ -123,11 +118,13 @@ No OpenClaw required. XClawRouter runs as a local proxy on port 8402.
 **1. Start the proxy**
 
 ```bash
+export BLOCKRUN_API_KEY=brk_...
 npx @blockrun/xclawrouter
 ```
 
-**2. Fund your wallet** — optional, skip for free tier
-Your wallet address is printed on first run. For paid models, send a few USDC on Base or Solana — $5 covers thousands of requests. To stay at $0, pin any of the 7 free models (e.g. `free/nemotron-3.5-lightning`) or use `/model free` inside OpenClaw.
+**2. Fund your account or wallet**
+
+Account users add prepaid credit at [user.blockrun.ai/dashboard/credits](https://user.blockrun.ai/dashboard/credits). For x402, fund USDC on Solana or Base. To stay at $0, pin a free model such as `free/nemotron-3.5-lightning`.
 
 **3. Point your client at `http://localhost:8402`**
 
@@ -297,7 +294,7 @@ Edit existing images with `/img2img`:
 
 ## Models & Pricing
 
-<!-- br:models.chatVisible -->76<!-- /br:models.chatVisible --> models across 9 providers, one wallet. **Starting at $0.0002/request.**
+<!-- br:models.chatVisible -->76<!-- /br:models.chatVisible --> models across 9 providers, one BlockRun API key or x402 wallet. **Starting at $0.0002/request.**
 
 > **💡 "Cost per request"** = estimated cost for a typical chat message (~500 input + 500 output tokens).
 
@@ -388,9 +385,11 @@ Edit existing images with `/img2img`:
 
 ---
 
-## Payment
+## Authentication and payment
 
-No account. No API key. **Payment IS authentication** via [x402](https://x402.org).
+**Account API (recommended):** send `BLOCKRUN_API_KEY` as a bearer token to `https://api.blockrun.ai/v1`. XClawRouter handles this when the variable or `apiKey` plugin setting is present. Manage keys at [user.blockrun.ai/dashboard/keys](https://user.blockrun.ai/dashboard/keys) and credit at [user.blockrun.ai/dashboard/credits](https://user.blockrun.ai/dashboard/credits).
+
+**x402 wallet:** payment is authentication via [x402](https://x402.org).
 
 ```
 Request → 402 (price: $0.003) → wallet signs USDC → retry → response
@@ -398,7 +397,7 @@ Request → 402 (price: $0.003) → wallet signs USDC → retry → response
 
 USDC stays in your wallet until spent — non-custodial. Price is visible in the 402 header before signing.
 
-**Dual-chain support:** Pay with **USDC** on **Base (EVM)** or **USDC on Solana**. Both wallets are derived from a single BIP-39 mnemonic on first run.
+**Dual-chain support:** Pay with **USDC on Solana** or **USDC on Base (EVM)**. Both wallets are derived from a single BIP-39 mnemonic on first run.
 
 ```bash
 /wallet              # Check balance and address (both chains)
@@ -417,8 +416,8 @@ USDC stays in your wallet until spent — non-custodial. Price is visible in the
 
 **Fund your wallet:**
 
-- **Base (EVM):** Send USDC on Base to your EVM address
 - **Solana:** Send USDC on Solana to your Solana address
+- **Base (EVM):** Send USDC on Base to your EVM address
 - **Coinbase/CEX:** Withdraw USDC to either network
 - **Credit card:** Reach out to [@bc1max on Telegram](https://t.me/bc1max)
 
@@ -445,12 +444,14 @@ USDC stays in your wallet until spent — non-custodial. Price is visible in the
 
 For basic usage, no configuration needed. For advanced options:
 
-| Variable                    | Default                               | Description             |
-| --------------------------- | ------------------------------------- | ----------------------- |
-| `BLOCKRUN_WALLET_KEY`       | auto-generated                        | Your wallet private key |
-| `BLOCKRUN_PROXY_PORT`       | `8402`                                | Local proxy port        |
-| `CLAWROUTER_DISABLED`       | `false`                               | Disable smart routing   |
-| `CLAWROUTER_SOLANA_RPC_URL` | `https://api.mainnet-beta.solana.com` | Solana RPC endpoint     |
+| Variable                    | Default                               | Description                                      |
+| --------------------------- | ------------------------------------- | ------------------------------------------------ |
+| `BLOCKRUN_API_KEY`          | unset                                 | Account API key; takes priority over wallet mode |
+| `BLOCKRUN_API_BASE_URL`     | `https://api.blockrun.ai`             | Account API root for staging/private deployments |
+| `BLOCKRUN_WALLET_KEY`       | auto-generated                        | x402 wallet private key                          |
+| `BLOCKRUN_PROXY_PORT`       | `8402`                                | Local proxy port                                 |
+| `CLAWROUTER_DISABLED`       | `false`                               | Disable smart routing                            |
+| `CLAWROUTER_SOLANA_RPC_URL` | `https://api.mainnet-beta.solana.com` | Solana RPC endpoint                              |
 
 **Full reference:** [docs/configuration.md](docs/configuration.md)
 
@@ -611,11 +612,11 @@ ClawRouter's blended average cost is $2.05 per million tokens compared to $25/M 
 
 ### How does ClawRouter compare to OpenRouter?
 
-ClawRouter is open source and runs locally. It uses wallet-based authentication (no API keys) and USDC per-request payments (no credit cards or subscriptions). OpenRouter requires an account, API key, and credit card. ClawRouter also features smart routing — it automatically picks the best model for each request, while OpenRouter requires manual model selection.
+XClawRouter is open source and runs locally. It supports either one BlockRun account API key or autonomous USDC x402 settlement, and automatically picks the best model for each request.
 
 ### How does ClawRouter compare to LiteLLM?
 
-Both are open source and run locally. But ClawRouter adds smart routing (automatic model selection), wallet-based auth, and USDC payments. LiteLLM requires you to bring your own API keys and manually choose models.
+Both are open source and run locally. XClawRouter adds automatic model selection and accepts one BlockRun API key or an x402 wallet; LiteLLM typically requires separate provider keys and manual model selection.
 
 ### What agents does ClawRouter work with?
 
