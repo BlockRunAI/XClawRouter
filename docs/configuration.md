@@ -21,7 +21,7 @@ Complete reference for XClawRouter configuration options.
 
 | Variable                    | Default                               | Description                                                              |
 | --------------------------- | ------------------------------------- | ------------------------------------------------------------------------ |
-| `BLOCKRUN_API_KEY`          | -                                     | Account API key; takes priority over wallet settlement.                   |
+| `BLOCKRUN_API_KEY`          | -                                     | Account API key; takes priority over wallet settlement.                  |
 | `BLOCKRUN_API_BASE_URL`     | `https://api.blockrun.ai`             | Account API root override.                                               |
 | `BLOCKRUN_WALLET_KEY`       | -                                     | Ethereum private key (hex, 0x-prefixed). Used if no saved wallet exists. |
 | `BLOCKRUN_PROXY_PORT`       | `8402`                                | Port for the local x402 proxy server.                                    |

@@ -444,14 +444,14 @@ USDC stays in your wallet until spent — non-custodial. Price is visible in the
 
 For basic usage, no configuration needed. For advanced options:
 
-| Variable                    | Default                               | Description             |
-| --------------------------- | ------------------------------------- | ----------------------- |
+| Variable                    | Default                               | Description                                      |
+| --------------------------- | ------------------------------------- | ------------------------------------------------ |
 | `BLOCKRUN_API_KEY`          | unset                                 | Account API key; takes priority over wallet mode |
 | `BLOCKRUN_API_BASE_URL`     | `https://api.blockrun.ai`             | Account API root for staging/private deployments |
-| `BLOCKRUN_WALLET_KEY`       | auto-generated                        | x402 wallet private key |
-| `BLOCKRUN_PROXY_PORT`       | `8402`                                | Local proxy port        |
-| `CLAWROUTER_DISABLED`       | `false`                               | Disable smart routing   |
-| `CLAWROUTER_SOLANA_RPC_URL` | `https://api.mainnet-beta.solana.com` | Solana RPC endpoint     |
+| `BLOCKRUN_WALLET_KEY`       | auto-generated                        | x402 wallet private key                          |
+| `BLOCKRUN_PROXY_PORT`       | `8402`                                | Local proxy port                                 |
+| `CLAWROUTER_DISABLED`       | `false`                               | Disable smart routing                            |
+| `CLAWROUTER_SOLANA_RPC_URL` | `https://api.mainnet-beta.solana.com` | Solana RPC endpoint                              |
 
 **Full reference:** [docs/configuration.md](docs/configuration.md)
 

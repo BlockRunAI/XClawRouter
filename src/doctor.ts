@@ -438,24 +438,24 @@ async function analyzeWithAI(
       // Register Solana scheme if user is on Solana chain
       const paymentChain = diagnostics.wallet.paymentChain;
       if (paymentChain === "solana") {
-      try {
-        if (!existsSync(MNEMONIC_FILE)) {
-          throw new Error(`mnemonic file missing at ${MNEMONIC_FILE}`);
+        try {
+          if (!existsSync(MNEMONIC_FILE)) {
+            throw new Error(`mnemonic file missing at ${MNEMONIC_FILE}`);
+          }
+          const mnemonic = readFileSync(MNEMONIC_FILE, "utf8").trim();
+          if (!mnemonic) throw new Error("mnemonic file empty");
+          const { deriveSolanaKeyBytes } = await import("./wallet.js");
+          const { registerExactSvmScheme } = await import("@x402/svm/exact/client");
+          const { createKeyPairSignerFromPrivateKeyBytes } = await import("@solana/kit");
+          const solanaKeyBytes = deriveSolanaKeyBytes(mnemonic);
+          const solanaSigner = await createKeyPairSignerFromPrivateKeyBytes(solanaKeyBytes);
+          registerExactSvmScheme(x402, { signer: solanaSigner });
+        } catch (err) {
+          console.log(
+            `  ⚠ Could not register Solana signer: ${err instanceof Error ? err.message : String(err)}`,
+          );
+          console.log(`  ⚠ Falling back to Base (EVM) — doctor request may fail on Solana chain\n`);
         }
-        const mnemonic = readFileSync(MNEMONIC_FILE, "utf8").trim();
-        if (!mnemonic) throw new Error("mnemonic file empty");
-        const { deriveSolanaKeyBytes } = await import("./wallet.js");
-        const { registerExactSvmScheme } = await import("@x402/svm/exact/client");
-        const { createKeyPairSignerFromPrivateKeyBytes } = await import("@solana/kit");
-        const solanaKeyBytes = deriveSolanaKeyBytes(mnemonic);
-        const solanaSigner = await createKeyPairSignerFromPrivateKeyBytes(solanaKeyBytes);
-        registerExactSvmScheme(x402, { signer: solanaSigner });
-      } catch (err) {
-        console.log(
-          `  ⚠ Could not register Solana signer: ${err instanceof Error ? err.message : String(err)}`,
-        );
-        console.log(`  ⚠ Falling back to Base (EVM) — doctor request may fail on Solana chain\n`);
-      }
       }
       paymentFetch = wrapFetchWithPayment(fetch, x402);
       apiUrl =
@@ -510,7 +510,9 @@ Analyze the diagnostics and:
     }
   } catch (err) {
     console.log(`\nError calling AI: ${err instanceof Error ? err.message : String(err)}`);
-    console.log(`Try again or check ${accountAuth ? "your account credits" : "your wallet balance"}.\n`);
+    console.log(
+      `Try again or check ${accountAuth ? "your account credits" : "your wallet balance"}.\n`,
+    );
   }
 }
 

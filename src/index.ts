@@ -749,7 +749,9 @@ async function startProxyInBackground(
   // falls back to a wallet that would charge a different billing plane.
   const configApiKey = api.pluginConfig?.apiKey as string | undefined;
   if (configApiKey !== undefined && !isValidApiKey(configApiKey)) {
-    api.logger.warn(`pluginConfig.apiKey is invalid (expected brk_…). Create one at ${PORTAL_KEYS_URL}`);
+    api.logger.warn(
+      `pluginConfig.apiKey is invalid (expected brk_…). Create one at ${PORTAL_KEYS_URL}`,
+    );
     return false;
   }
   const account = configApiKey
@@ -887,7 +889,9 @@ async function startProxyInBackground(
   const currentChain = await resolvePaymentChain();
   const displayAddress = account
     ? ""
-    : currentChain === "solana" && proxy.solanaAddress ? proxy.solanaAddress : wallet!.address;
+    : currentChain === "solana" && proxy.solanaAddress
+      ? proxy.solanaAddress
+      : wallet!.address;
   const network = currentChain === "solana" ? "Solana" : "Base";
   proxy.balanceMonitor
     .checkBalance()

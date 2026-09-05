@@ -1743,13 +1743,13 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
   const apiKey = options.apiKey?.trim() || undefined;
   if (apiKey && !isValidApiKey(apiKey)) {
     throw new Error(
-      'BlockRun API key is malformed (expected brk_…). Create one at https://user.blockrun.ai/dashboard/keys',
+      "BlockRun API key is malformed (expected brk_…). Create one at https://user.blockrun.ai/dashboard/keys",
     );
   }
   const authMode: AuthMode = apiKey ? "api-key" : "wallet";
   if (!apiKey && !options.wallet) {
     throw new Error(
-      'startProxy needs a credential: either an API key (https://user.blockrun.ai/dashboard/keys) or an x402 wallet.',
+      "startProxy needs a credential: either an API key (https://user.blockrun.ai/dashboard/keys) or an x402 wallet.",
     );
   }
 

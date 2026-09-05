@@ -143,7 +143,9 @@ export function resolveApiKeySync(): ApiKeyResolution | undefined {
     }
     if (stored === undefined) continue;
     if (isValidApiKey(stored)) return { key: stored, source };
-    console.warn(`[XClawRouter] ⚠ ${path} does not contain a BlockRun key (expected brk_…) — ignoring.`);
+    console.warn(
+      `[XClawRouter] ⚠ ${path} does not contain a BlockRun key (expected brk_…) — ignoring.`,
+    );
   }
   return undefined;
 }

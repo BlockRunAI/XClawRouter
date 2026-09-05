@@ -37,12 +37,7 @@ import { generateReport } from "./report.js";
 import { formatRecentLogs } from "./stats.js";
 import { runDoctor } from "./doctor.js";
 import { PARTNER_SERVICES } from "./partners/index.js";
-import {
-  PORTAL_CREDITS_URL,
-  PORTAL_KEYS_URL,
-  maskApiKey,
-  resolveApiKey,
-} from "./api-key.js";
+import { PORTAL_CREDITS_URL, PORTAL_KEYS_URL, maskApiKey, resolveApiKey } from "./api-key.js";
 
 function printHelp(): void {
   console.log(`
@@ -768,39 +763,40 @@ async function main(): Promise<void> {
   // we keep the old error+exit-2 behaviour so automation isn't left hanging
   // on a stdin prompt that no one will ever answer.
   let wallet;
-  if (!account) try {
-    wallet = await resolveOrGenerateWalletKey();
-  } catch (err) {
-    if (err instanceof OnchainOsRequiredError) {
-      const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY);
-      if (interactive) {
-        console.log("\n[XClawRouter] No wallet detected — launching guided setup\n");
-        await cmdSetup();
-        // cmdSetup exits non-zero on its own failure paths, so if we got here
-        // it claims the OKX login completed. Guard the re-resolve anyway:
-        // a TEE blip or stale onchainos session could still leave us without
-        // a usable wallet, and we'd rather print a targeted hint than fall
-        // through to main()'s generic "Fatal error" handler.
-        try {
-          wallet = await resolveOrGenerateWalletKey();
-        } catch (err2) {
-          if (err2 instanceof OnchainOsRequiredError) {
-            console.error("[XClawRouter] Setup completed but the wallet still isn't detected.");
-            console.error(
-              "[XClawRouter] Diagnose with: onchainos wallet status   (and re-run setup if needed)",
-            );
-            process.exit(1);
+  if (!account)
+    try {
+      wallet = await resolveOrGenerateWalletKey();
+    } catch (err) {
+      if (err instanceof OnchainOsRequiredError) {
+        const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY);
+        if (interactive) {
+          console.log("\n[XClawRouter] No wallet detected — launching guided setup\n");
+          await cmdSetup();
+          // cmdSetup exits non-zero on its own failure paths, so if we got here
+          // it claims the OKX login completed. Guard the re-resolve anyway:
+          // a TEE blip or stale onchainos session could still leave us without
+          // a usable wallet, and we'd rather print a targeted hint than fall
+          // through to main()'s generic "Fatal error" handler.
+          try {
+            wallet = await resolveOrGenerateWalletKey();
+          } catch (err2) {
+            if (err2 instanceof OnchainOsRequiredError) {
+              console.error("[XClawRouter] Setup completed but the wallet still isn't detected.");
+              console.error(
+                "[XClawRouter] Diagnose with: onchainos wallet status   (and re-run setup if needed)",
+              );
+              process.exit(1);
+            }
+            throw err2;
           }
-          throw err2;
+        } else {
+          console.error(`[XClawRouter] ${err.message}`);
+          process.exit(2);
         }
       } else {
-        console.error(`[XClawRouter] ${err.message}`);
-        process.exit(2);
+        throw err;
       }
-    } else {
-      throw err;
     }
-  }
 
   if (account) {
     console.log(`[XClawRouter] Using BlockRun API key ${maskApiKey(account.key)}`);
@@ -910,7 +906,9 @@ async function main(): Promise<void> {
   const paymentChain = await resolvePaymentChain();
   const displayAddress = account
     ? ""
-    : paymentChain === "solana" && proxy.solanaAddress ? proxy.solanaAddress : wallet!.address;
+    : paymentChain === "solana" && proxy.solanaAddress
+      ? proxy.solanaAddress
+      : wallet!.address;
   try {
     const balance = await proxy.balanceMonitor.checkBalance();
     if (account) {
