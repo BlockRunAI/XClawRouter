@@ -5,8 +5,8 @@
 <h1>The LLM router built for autonomous agents</h1>
 
 <p>Use one BlockRun account API key or let an agent settle each request over x402.<br><br>
-<strong>Local smart routing across <!-- br:models.chatVisible -->76<!-- /br:models.chatVisible --> models.</strong><br><br>
-<em><!-- br:models.free -->7<!-- /br:models.free --> models free, no crypto required.</em></p>
+<strong>Local smart routing across <!-- br:models.chatVisible -->78<!-- /br:models.chatVisible --> models.</strong><br><br>
+<em><!-- br:models.free -->6<!-- /br:models.free --> models free, no crypto required.</em></p>
 
 <br>
 
@@ -33,7 +33,7 @@
 
 </div>
 
-> **XClawRouter** is an open-source smart LLM router that reduces AI API costs by <!-- br:savings.autoVsBaselinePct -->84<!-- /br:savings.autoVsBaselinePct -->%. It analyzes each request across 15 dimensions and routes locally to the cheapest capable model in under 1ms. Use a BlockRun account API key with prepaid credit, or settle requests with USDC over x402 on Solana or Base. <!-- br:models.chatVisible -->76<!-- /br:models.chatVisible --> models from OpenAI, Anthropic, Google, xAI, DeepSeek, and more. MIT licensed.
+> **XClawRouter** is an open-source smart LLM router that reduces AI API costs by <!-- br:savings.autoVsBaselinePct -->84<!-- /br:savings.autoVsBaselinePct -->%. It analyzes each request across 15 dimensions and routes locally to the cheapest capable model in under 1ms. Use a BlockRun account API key with prepaid credit, or settle requests with USDC over x402 on Solana or Base. <!-- br:models.chatVisible -->78<!-- /br:models.chatVisible --> models from OpenAI, Anthropic, Google, xAI, DeepSeek, and more. MIT licensed.
 
 ---
 
@@ -57,7 +57,7 @@ Both modes use the same local router and model IDs.
 |                  | OpenRouter        | LiteLLM          | Martian           | Portkey           | **ClawRouter**                                                         |
 | ---------------- | ----------------- | ---------------- | ----------------- | ----------------- | ---------------------------------------------------------------------- |
 | **Models**       | 200+              | 100+             | Smart routing     | Gateway           | **60+**                                                                |
-| **Free tier**    | Rate-limited      | BYO keys         | No                | No                | **<!-- br:models.free -->7<!-- /br:models.free --> models, no signup** |
+| **Free tier**    | Rate-limited      | BYO keys         | No                | No                | **<!-- br:models.free -->6<!-- /br:models.free --> models, no signup** |
 | **Routing**      | Manual selection  | Manual selection | Smart (closed)    | Observability     | **Smart (open source)**                                                |
 | **Auth**         | Account + API key | Your API keys    | Account + API key | Account + API key | **BlockRun API key or wallet signature**                               |
 | **Payment**      | Credit card       | BYO keys         | Credit card       | $49-499/mo        | **Account credit or USDC per-request**                                 |
@@ -294,7 +294,7 @@ Edit existing images with `/img2img`:
 
 ## Models & Pricing
 
-<!-- br:models.chatVisible -->76<!-- /br:models.chatVisible --> models across 9 providers, one BlockRun API key or x402 wallet. **Starting at $0.0002/request.**
+<!-- br:models.chatVisible -->78<!-- /br:models.chatVisible --> models across 9 providers, one BlockRun API key or x402 wallet. **Starting at $0.0002/request.**
 
 > **💡 "Cost per request"** = estimated cost for a typical chat message (~500 input + 500 output tokens).
 
@@ -380,7 +380,7 @@ Edit existing images with `/img2img`:
 | anthropic/claude-fable-5    |    $10.00 |     $50.00 |    $0.0300 | 1M      | reasoning, vision, agentic, tools |
 | openai/gpt-5.5-pro          |    $30.00 |    $180.00 |    $0.1020 | 1M      | reasoning, vision, tools          |
 
-> **Free tier:** <!-- br:models.free -->7<!-- /br:models.free --> models cost nothing — `/model free` points to nemotron-3.5-lightning, or pick any free model directly (e.g., `/model nemotron-omni` for vision, `/model north-mini-code` for coding, `/model nemotron-3-ultra-550b` for reasoning + 1M context).
+> **Free tier:** <!-- br:models.free -->6<!-- /br:models.free --> models cost nothing — `/model free` points to nemotron-3.5-lightning, or pick any free model directly (e.g., `/model nemotron-omni` for vision, `/model north-mini-code` for coding, `/model nemotron-3-ultra-550b` for reasoning + 1M context).
 > **Best value:** `xiaomi/mimo-v2.5`, `qwen/qwen3.8-flash` and `zai/glm-5.3-flash` deliver strong results at ~$0.0003/request.
 
 ---
@@ -554,7 +554,7 @@ npm test
 
 **The LLM router built for autonomous agents**
 
-You're here. <!-- br:models.chatVisible -->76<!-- /br:models.chatVisible --> models, local smart routing, x402 USDC payments — the only stack that lets agents operate independently.
+You're here. <!-- br:models.chatVisible -->78<!-- /br:models.chatVisible --> models, local smart routing, x402 USDC payments — the only stack that lets agents operate independently.
 
 `curl -fsSL https://blockrun.ai/XClawRouter-update | bash`
 
@@ -565,7 +565,7 @@ You're here. <!-- br:models.chatVisible -->76<!-- /br:models.chatVisible --> mod
 
 **BlockRun for Claude Code**
 
-Run Claude Code with <!-- br:models.chatVisible -->76<!-- /br:models.chatVisible --> models, no rate limits, no Anthropic account, no phone verification. Pay per request with USDC — your wallet is your identity.
+Run Claude Code with <!-- br:models.chatVisible -->78<!-- /br:models.chatVisible --> models, no rate limits, no Anthropic account, no phone verification. Pay per request with USDC — your wallet is your identity.
 
 `curl -fsSL https://blockrun.ai/brcc-install | bash`
 
