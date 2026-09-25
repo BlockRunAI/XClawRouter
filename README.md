@@ -5,7 +5,7 @@
 <h1>The LLM router built for autonomous agents</h1>
 
 <p>Use one BlockRun account API key or let an agent settle each request over x402.<br><br>
-<strong>Local smart routing across <!-- br:models.chatVisible -->77<!-- /br:models.chatVisible --> models.</strong><br><br>
+<strong>Local smart routing across <!-- br:models.chatVisible -->79<!-- /br:models.chatVisible --> models.</strong><br><br>
 <em><!-- br:models.free -->6<!-- /br:models.free --> models free, no crypto required.</em></p>
 
 <br>
@@ -33,7 +33,7 @@
 
 </div>
 
-> **XClawRouter** is an open-source smart LLM router that reduces AI API costs by <!-- br:savings.autoVsBaselinePct -->84<!-- /br:savings.autoVsBaselinePct -->%. It analyzes each request across 15 dimensions and routes locally to the cheapest capable model in under 1ms. Use a BlockRun account API key with prepaid credit, or settle requests with USDC over x402 on Solana or Base. <!-- br:models.chatVisible -->77<!-- /br:models.chatVisible --> models from OpenAI, Anthropic, Google, xAI, DeepSeek, and more. MIT licensed.
+> **XClawRouter** is an open-source smart LLM router that reduces AI API costs by <!-- br:savings.autoVsBaselinePct -->84<!-- /br:savings.autoVsBaselinePct -->%. It analyzes each request across 15 dimensions and routes locally to the cheapest capable model in under 1ms. Use a BlockRun account API key with prepaid credit, or settle requests with USDC over x402 on Solana or Base. <!-- br:models.chatVisible -->79<!-- /br:models.chatVisible --> models from OpenAI, Anthropic, Google, xAI, DeepSeek, and more. MIT licensed.
 
 ---
 
@@ -294,7 +294,7 @@ Edit existing images with `/img2img`:
 
 ## Models & Pricing
 
-<!-- br:models.chatVisible -->77<!-- /br:models.chatVisible --> models across 9 providers, one BlockRun API key or x402 wallet. **Starting at $0.0002/request.**
+<!-- br:models.chatVisible -->79<!-- /br:models.chatVisible --> models across 9 providers, one BlockRun API key or x402 wallet. **Starting at $0.0002/request.**
 
 > **💡 "Cost per request"** = estimated cost for a typical chat message (~500 input + 500 output tokens).
 
@@ -554,7 +554,7 @@ npm test
 
 **The LLM router built for autonomous agents**
 
-You're here. <!-- br:models.chatVisible -->77<!-- /br:models.chatVisible --> models, local smart routing, x402 USDC payments — the only stack that lets agents operate independently.
+You're here. <!-- br:models.chatVisible -->79<!-- /br:models.chatVisible --> models, local smart routing, x402 USDC payments — the only stack that lets agents operate independently.
 
 `curl -fsSL https://blockrun.ai/XClawRouter-update | bash`
 
@@ -565,7 +565,7 @@ You're here. <!-- br:models.chatVisible -->77<!-- /br:models.chatVisible --> mod
 
 **BlockRun for Claude Code**
 
-Run Claude Code with <!-- br:models.chatVisible -->77<!-- /br:models.chatVisible --> models, no rate limits, no Anthropic account, no phone verification. Pay per request with USDC — your wallet is your identity.
+Run Claude Code with <!-- br:models.chatVisible -->79<!-- /br:models.chatVisible --> models, no rate limits, no Anthropic account, no phone verification. Pay per request with USDC — your wallet is your identity.
 
 `curl -fsSL https://blockrun.ai/brcc-install | bash`
 
