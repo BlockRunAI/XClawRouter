@@ -250,7 +250,7 @@ XClawRouter maintains a curated catalog of <!-- br:models.chatVisible -->82<!-- 
 
 No silent drops. No stale catalog. Models are benchmarked for speed, quality, and tool support before inclusion.
 
-![The Cost/Transparency Nexus — Local routing engine + direct connections + x402 micropayments = 100% transparency = 92% cost savings. Direct Opus routing: $25.00/M tokens. XClawRouter auto-routed: $2.05/M tokens. Transparency and cost savings are two sides of the same architectural coin.](./assets/clawrouter-cost-transparency-nexus-92-savings.png)
+![The Cost/Transparency Nexus — Local routing engine + direct connections + x402 micropayments = 100% transparency = 84% cost savings. XClawRouter auto-routing vs. pinning Claude Opus 5 on every request: 84% lower cost (98% on eco). Transparency and cost savings are two sides of the same architectural coin.](./assets/clawrouter-cost-transparency-nexus-84-savings.png)
 
 ---
 
