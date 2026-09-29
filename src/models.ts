@@ -1,7 +1,7 @@
 /**
  * BlockRun Model Definitions for OpenClaw
  *
- * Maps BlockRun's 55+ AI models to OpenClaw's ModelDefinitionConfig format.
+ * Maps BlockRun's model catalog to OpenClaw's ModelDefinitionConfig format.
  * All models use the "openai-completions" API since BlockRun is OpenAI-compatible.
  *
  * Pricing is in USD per 1M tokens. Operators pay these rates via x402;
