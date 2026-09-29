@@ -1,6 +1,6 @@
 ---
 name: xclawrouter
-description: Smart LLM router for OKX — agentic wallet, 66 models, x402 micropayments on Base + Solana. Routes every request to the cheapest capable model. 11 free NVIDIA models included.
+description: Smart LLM router for OKX — agentic wallet, 82 models, x402 micropayments on Base + Solana. Routes every request to the cheapest capable model. 6 free models included.
 triggers:
   - "xclawrouter"
   - "x claw router"

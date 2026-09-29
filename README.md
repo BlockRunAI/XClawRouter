@@ -10,7 +10,7 @@
 
 <br>
 
-<img src="https://img.shields.io/badge/🆓_7_Free_Models-success?style=for-the-badge" alt="7 free models">&nbsp;
+<img src="https://img.shields.io/badge/🆓_6_Free_Models-success?style=for-the-badge" alt="6 free models">&nbsp;
 <img src="https://img.shields.io/badge/🤖_Agent--Native-black?style=for-the-badge" alt="Agent native">&nbsp;
 <img src="https://img.shields.io/badge/🔑_Account_API_Keys-blue?style=for-the-badge" alt="Account API keys">&nbsp;
 <img src="https://img.shields.io/badge/⚡_Local_Routing-yellow?style=for-the-badge" alt="Local routing">&nbsp;
