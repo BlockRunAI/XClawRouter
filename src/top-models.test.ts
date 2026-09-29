@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { BLOCKRUN_MODELS } from "./models.js";
+import { DEFAULT_ROUTING_CONFIG } from "./router/config.js";
 import topModelsJson from "./top-models.json";
 import { TOP_MODELS } from "./top-models.js";
 
@@ -28,6 +29,7 @@ const RETIRED_FREE_IDS = [
   "free/step-3.7-flash", // NVIDIA sweep 2026-08-30
   "free/nemotron-nano-9b-v2", // NVIDIA sweep 2026-08-30
   "free/nemotron-nano-12b-v2-vl", // NVIDIA sweep 2026-08-30
+  "free/nemotron-3-nano-30b", // delisted 2026-09-08 — NVIDIA per-account 404
 ] as const;
 
 /**
@@ -46,10 +48,9 @@ const RETIRED_PAID_IDS = [
   "xai/grok-4-1-fast-reasoning",
 ] as const;
 
-/** The live free tier as of the 2026-08-31 rebuild, in auto-pick order. */
+/** The live free tier as of 2026-09-29 (/v1/models), in auto-pick order. */
 const LIVE_FREE_IDS = [
   "free/nemotron-3.5-lightning",
-  "free/nemotron-3-nano-30b",
   "free/laguna-xs-2.1",
   "free/north-mini-code",
   "free/nemotron-3-nano-omni-30b-a3b-reasoning",
@@ -89,6 +90,27 @@ describe("TOP_MODELS", () => {
     const freeTail = TOP_MODELS.filter((id) => id.startsWith("free/"));
     expect(freeTail).toEqual([...LIVE_FREE_IDS]);
     expect(TOP_MODELS.slice(-freeTail.length)).toEqual(freeTail);
+  });
+
+  it("routes no tier to a free model outside the live free tier", () => {
+    // The picker and the router tiers are separate lists. nemotron-3-nano-30b
+    // left the picker's source of truth on 2026-09-08 but stayed as
+    // ecoTiers.SIMPLE.fallback[0] for three weeks, because nothing compared them.
+    const cfg = DEFAULT_ROUTING_CONFIG as unknown as Record<string, unknown>;
+    const freeRungs: string[] = [];
+    for (const [key, tiers] of Object.entries(cfg)) {
+      if (!/tiers$/i.test(key) || !tiers || typeof tiers !== "object") continue;
+      for (const tier of Object.values(tiers as Record<string, unknown>)) {
+        const { primary, fallback } = tier as { primary?: string; fallback?: string[] };
+        for (const id of [primary, ...(fallback ?? [])]) {
+          if (id?.startsWith("free/")) freeRungs.push(id);
+        }
+      }
+    }
+    // Guard against a vacuous pass if the config shape changes.
+    expect(freeRungs.length).toBeGreaterThan(0);
+    const live = new Set<string>(LIVE_FREE_IDS);
+    expect(freeRungs.filter((id) => !live.has(id))).toEqual([]);
   });
 
   it("defines every advertised model, so no picker entry is a phantom id", () => {
