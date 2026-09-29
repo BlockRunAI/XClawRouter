@@ -1,7 +1,7 @@
 /**
  * @blockrun/xclawrouter
  *
- * Smart LLM router for OpenClaw — 82 models, x402 micropayments, 78% cost savings.
+ * Smart LLM router for OpenClaw — 82 models, x402 micropayments, 84% cost savings.
  * Routes each request to the cheapest model that can handle it.
  *
  * Usage:
@@ -1621,7 +1621,7 @@ const plugin: OpenClawPluginDefinition = {
   // declares "xclawrouter", so this must too.
   id: "xclawrouter",
   name: "XClawRouter",
-  description: "Smart LLM router — 82 models, x402 micropayments, 78% cost savings",
+  description: "Smart LLM router — 82 models, x402 micropayments, 84% cost savings",
   version: VERSION,
 
   // OpenClaw 2026.5.7+ requires plugins to declare upfront every tool name

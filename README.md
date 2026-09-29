@@ -303,7 +303,6 @@ Edit existing images with `/img2img`:
 | Model                                       | Input $/M | Output $/M | ~$/request | Context | Features                                     |
 | ------------------------------------------- | --------: | ---------: | ---------: | ------- | -------------------------------------------- |
 | free/nemotron-3.5-lightning                 |  **FREE** |   **FREE** |     **$0** | 1M      | reasoning — default free model               |
-| free/nemotron-3-nano-30b                    |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning, fastest free model (~121 tok/s)   |
 | free/laguna-xs-2.1                          |  **FREE** |   **FREE** |     **$0** | 131K    | coding                                       |
 | free/north-mini-code                        |  **FREE** |   **FREE** |     **$0** | 256K    | coding                                       |
 | free/nemotron-3-nano-omni-30b-a3b-reasoning |  **FREE** |   **FREE** |     **$0** | 256K    | reasoning, **vision** (text+img+video+audio) |
@@ -624,7 +623,7 @@ ClawRouter works with any tool that makes OpenAI-compatible API calls — point 
 
 ### Is ClawRouter free?
 
-ClawRouter itself is free and MIT licensed. You pay only for the LLM API calls routed through it — and several models (`nemotron-3.5-lightning`, `nemotron-3-nano-30b`, `laguna-xs-2.1`, `north-mini-code`, `nemotron-3-nano-omni-30b-a3b-reasoning`, `nemotron-3-ultra-550b`, `llama-3.2-11b-vision`) are completely free. Use `/model free` to smart-route across them, or pick any by name.
+ClawRouter itself is free and MIT licensed. You pay only for the LLM API calls routed through it — and several models (`nemotron-3.5-lightning`, `laguna-xs-2.1`, `north-mini-code`, `nemotron-3-nano-omni-30b-a3b-reasoning`, `nemotron-3-ultra-550b`, `llama-3.2-11b-vision`) are completely free. Use `/model free` to smart-route across them, or pick any by name.
 
 ---
 

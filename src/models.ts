@@ -1444,9 +1444,11 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     reasoning: true,
   },
   {
-    // Nemotron 3 Nano 30B-A3B — the fastest free model in the catalog
-    // (~121 tok/s on a realistic workload, not a 16-token ping). Returns
-    // reasoning_content. Also the tertiary rung of blockrun's own free cascade.
+    // Nemotron 3 Nano 30B-A3B — was the fastest free model in the catalog
+    // (~121 tok/s). DELISTED 2026-09-08: NVIDIA deprovisioned it for
+    // blockrun's account, and the gateway now redirects it to nano-omni. Entry
+    // kept so an explicit pin keeps resolving; off the picker, the FREE_MODELS
+    // cascade and the router tiers.
     id: "free/nemotron-3-nano-30b",
     name: "[Free] Nemotron 3 Nano 30B",
     version: "3-nano-30b",

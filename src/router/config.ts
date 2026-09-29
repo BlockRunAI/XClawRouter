@@ -1098,7 +1098,15 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
         // 410 on 2026-08-12, gpt-oss-120b/20b dead since 2026-08-16, and on
         // 2026-08-30 four of the five then-visible free models went at once.
         // Each retirement retargets these free rungs; the paid rungs never move.
-        "free/nemotron-3-nano-30b", // FREE — fastest free model (~121 tok/s)
+        // 2026-09-08: nemotron-3-nano-30b was delisted (NVIDIA deprovisioned it
+        // for blockrun's account). Laguna takes its place because it matches
+        // on everything this rung was chosen for: text-only, 131K context, on
+        // the NVIDIA key rather than lightning's OpenRouter pool, and faster
+        // still. It is also the next rung of proxy.ts FREE_MODELS. The gateway
+        // redirects nano-30b to nano-omni, but nano-omni carries `vision: true`
+        // here, so it would pull eco SIMPLE image turns onto a free model whose
+        // image path fails real probes.
+        "free/laguna-xs-2.1", // FREE — ~161 tok/s, 131K ctx, our NVIDIA key
         "google/gemini-3.1-flash-lite", // $0.25/$1.50 — newest flash-lite
         "openai/gpt-5.4-nano", // $0.20/$1.25 — fast nano
         "google/gemini-2.5-flash-lite", // $0.10/$0.40

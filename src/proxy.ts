@@ -136,10 +136,11 @@ const ROUTING_PROFILES = new Set([
 // None of them failed loudly — blockrun server-redirects retired free ids, so
 // callers kept getting answers from a different model, which is exactly the
 // shape that silently defeats /exclude.
+// 2026-09-08: nemotron-3-nano-30b (was rung 2) delisted. NVIDIA deprovisioned
+// it for blockrun's account and the gateway redirects it to nano-omni.
 // Insertion order IS the auto-pick order (pickFreeModel walks it).
 const FREE_MODELS = new Set([
   "free/nemotron-3.5-lightning", // free-tier default — 1M ctx, thinking mode
-  "free/nemotron-3-nano-30b", // fastest free model (~121 tok/s)
   "free/laguna-xs-2.1", // coding, ~161 tok/s — on our NVIDIA key
   "free/north-mini-code", // coding, 607ms median — OpenRouter $0 pool
   "free/nemotron-3-nano-omni-30b-a3b-reasoning", // vision (text/image/video/audio)
