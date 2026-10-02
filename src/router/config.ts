@@ -1082,7 +1082,7 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
       primary: "deepseek/deepseek-reasoner", // $0.14/$0.28
       fallback: [
         "xiaomi/mimo-v2.5", // $0.14/$0.28
-        "deepseek/deepseek-v4-pro", // V4 Pro flagship ($0.50/$1.00 promo through 2026-05-31, list $2/$4)
+        "deepseek/deepseek-v4-pro", // V4 Pro flagship ($1.32/$3.96)
         "openai/o4-mini", // 2,328ms ($1.10/$4.40)
         "openai/o3", // 2,862ms
       ],
@@ -1135,7 +1135,7 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
       primary: "deepseek/deepseek-reasoner", // $0.14/$0.28
       fallback: [
         "xiaomi/mimo-v2.5",
-        "deepseek/deepseek-v4-pro", // V4 Pro flagship — $0.50/$1.00 promo, post-promo $2/$4
+        "deepseek/deepseek-v4-pro", // V4 Pro flagship — $1.32/$3.96
       ],
     },
   },

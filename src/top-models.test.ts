@@ -46,6 +46,7 @@ const RETIRED_PAID_IDS = [
   "xai/grok-3",
   "xai/grok-4-0709",
   "xai/grok-4-1-fast-reasoning",
+  "tencent/hy3", // retired (hidden) on blockrun
 ] as const;
 
 /** The live free tier as of 2026-09-29 (/v1/models), in auto-pick order. */
@@ -77,8 +78,17 @@ describe("TOP_MODELS", () => {
   it("names the current flagships, so a frozen catalog is visible", () => {
     for (const id of [
       "anthropic/claude-opus-5",
+      "anthropic/claude-opus-5.5",
+      "anthropic/claude-fable-5.1",
+      "anthropic/claude-sonnet-5.5",
       "openai/gpt-5.6-terra",
+      "openai/gpt-6-astra",
+      "openai/gpt-6-sol",
+      "openai/gpt-6-luna",
+      "openai/gpt-5.1",
       "xai/grok-4.5",
+      "xai/grok-4.6",
+      "xai/grok-4.7",
       "moonshot/kimi-k3",
       "zai/glm-5.3",
     ]) {

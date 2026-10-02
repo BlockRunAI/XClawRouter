@@ -55,7 +55,7 @@ Rules handle ~~80% of requests in <1ms. Only ambiguous queries hit the LLM class
 
 ## Available Models
 
-<!-- br:models.chatVisible -->82<!-- /br:models.chatVisible --> models including: claude-fable-5, claude-opus-5, claude-sonnet-5, gpt-5.6-terra, gpt-5.6-sol, gpt-5.5, gpt-5.4, gemini-3.1-pro, gemini-3.6-flash, grok-4.5, grok-4.3, glm-5.3, kimi-k3, qwen3.7-max, mimo-v2.5, deepseek-v4-pro, deepseek-chat, and the free models (nemotron-3.5-lightning [default], laguna-xs-2.1, north-mini-code, nemotron-3-nano-omni-30b-a3b-reasoning [vision], nemotron-3-ultra-550b, llama-3.2-11b-vision [vision]).
+<!-- br:models.chatVisible -->82<!-- /br:models.chatVisible --> models including: claude-fable-5.1, claude-fable-5, claude-opus-5.5, claude-opus-5, claude-sonnet-5.5, claude-sonnet-5, gpt-6-astra, gpt-6-sol, gpt-6-luna, gpt-5.6-terra, gpt-5.6-sol, gpt-5.5, gpt-5.4, gpt-5.1, gemini-3.1-pro, gemini-3.6-flash, grok-4.7, grok-4.6, grok-4.5, grok-4.3, glm-5.3, kimi-k3, qwen3.7-max, mimo-v2.5, deepseek-v4-pro, deepseek-chat, and the free models (nemotron-3.5-lightning [default], laguna-xs-2.1, north-mini-code, nemotron-3-nano-omni-30b-a3b-reasoning [vision], nemotron-3-ultra-550b, llama-3.2-11b-vision [vision]).
 
 ## Example Output
 
