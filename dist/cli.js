@@ -76723,7 +76723,7 @@ var DEFAULT_ROUTING_CONFIG = {
         "xiaomi/mimo-v2.5",
         // $0.14/$0.28
         "deepseek/deepseek-v4-pro",
-        // V4 Pro flagship ($0.50/$1.00 promo through 2026-05-31, list $2/$4)
+        // V4 Pro flagship ($1.32/$3.96)
         "openai/o4-mini",
         // 2,328ms ($1.10/$4.40)
         "openai/o3"
@@ -76789,7 +76789,7 @@ var DEFAULT_ROUTING_CONFIG = {
       fallback: [
         "xiaomi/mimo-v2.5",
         "deepseek/deepseek-v4-pro"
-        // V4 Pro flagship — $0.50/$1.00 promo, post-promo $2/$4
+        // V4 Pro flagship — $1.32/$3.96
       ]
     }
   },
@@ -77584,8 +77584,8 @@ var BLOCKRUN_MODELS = [
     id: "google/gemini-3.5-flash",
     name: "Gemini 3.5 Flash",
     version: "3.5",
-    inputPrice: 0.5,
-    outputPrice: 3,
+    inputPrice: 1.5,
+    outputPrice: 9,
     contextWindow: 1048576,
     maxOutput: 65536,
     reasoning: true,
@@ -77650,8 +77650,8 @@ var BLOCKRUN_MODELS = [
     id: "deepseek/deepseek-chat",
     name: "DeepSeek V4 Flash Chat",
     version: "4-flash",
-    inputPrice: 0.2,
-    outputPrice: 0.4,
+    inputPrice: 0.14,
+    outputPrice: 0.28,
     contextWindow: 1e6,
     maxOutput: 8192,
     toolCalling: true
@@ -77660,22 +77660,21 @@ var BLOCKRUN_MODELS = [
     id: "deepseek/deepseek-reasoner",
     name: "DeepSeek V4 Flash Reasoner",
     version: "4-flash",
-    inputPrice: 0.2,
-    outputPrice: 0.4,
+    inputPrice: 0.14,
+    outputPrice: 0.28,
     contextWindow: 1e6,
     maxOutput: 8192,
     reasoning: true,
     toolCalling: true
   },
   {
-    // V4 flagship — strongest open-weight reasoner. The 75% launch promo
-    // became DeepSeek's permanent list price after 2026-05-31. Resold via
-    // BlockRun's OpenRouter credit pool.
+    // V4 flagship — strongest open-weight reasoner. Resold via BlockRun's
+    // OpenRouter credit pool.
     id: "deepseek/deepseek-v4-pro",
     name: "DeepSeek V4 Pro",
     version: "4-pro",
-    inputPrice: 0.435,
-    outputPrice: 0.87,
+    inputPrice: 1.32,
+    outputPrice: 3.96,
     contextWindow: 1048576,
     maxOutput: 65536,
     reasoning: true,
@@ -77855,8 +77854,8 @@ var BLOCKRUN_MODELS = [
     id: "xai/grok-4.3",
     name: "Grok 4.3",
     version: "4.3",
-    inputPrice: 1.5,
-    outputPrice: 4,
+    inputPrice: 1.25,
+    outputPrice: 2.5,
     contextWindow: 1e6,
     maxOutput: 16384,
     reasoning: true,
@@ -77868,8 +77867,8 @@ var BLOCKRUN_MODELS = [
     id: "xai/grok-build-0.1",
     name: "Grok Build 0.1",
     version: "0.1",
-    inputPrice: 1.5,
-    outputPrice: 3,
+    inputPrice: 1,
+    outputPrice: 2,
     contextWindow: 256e3,
     maxOutput: 16384,
     agentic: true,
@@ -77955,15 +77954,15 @@ var BLOCKRUN_MODELS = [
     toolCalling: true
   },
   {
-    // Newest Sonnet — near-Opus coding/agentic quality at Sonnet cost. Same
-    // price as 4.6 ($3/$15) but 1M ctx / 128K out / adaptive thinking. Kept as
+    // Newest Sonnet — near-Opus coding/agentic quality at Sonnet cost
+    // ($2/$10, below 4.6's $3/$15), 1M ctx / 128K out / adaptive thinking. Kept as
     // an opt-in distinct model (bare `sonnet`/`claude` still resolve to 4.6);
     // primaries not promoted pending benchmarks. BlockRun fallback → sonnet-4.6.
     id: "anthropic/claude-sonnet-5",
     name: "Claude Sonnet 5",
     version: "5",
-    inputPrice: 3,
-    outputPrice: 15,
+    inputPrice: 2,
+    outputPrice: 10,
     contextWindow: 1e6,
     maxOutput: 128e3,
     reasoning: true,
@@ -78122,12 +78121,12 @@ var BLOCKRUN_MODELS = [
   },
   {
     // Newest-generation Flash with built-in thinking mode (blockrun #329,
-    // 2026-08-03). 17% cheaper output than 3.5 Flash.
+    // 2026-08-03).
     id: "google/gemini-3.6-flash",
     name: "Gemini 3.6 Flash",
     version: "3.6",
-    inputPrice: 1.5,
-    outputPrice: 7.5,
+    inputPrice: 0.75,
+    outputPrice: 3.75,
     contextWindow: 1048576,
     maxOutput: 65536,
     reasoning: true,
@@ -78150,8 +78149,8 @@ var BLOCKRUN_MODELS = [
     id: "xai/grok-4.5",
     name: "Grok 4.5",
     version: "4.5",
-    inputPrice: 2.5,
-    outputPrice: 9,
+    inputPrice: 2,
+    outputPrice: 6,
     contextWindow: 5e5,
     maxOutput: 16384,
     reasoning: true,
@@ -78526,8 +78525,8 @@ var BLOCKRUN_MODELS = [
     id: "zai/glm-5",
     name: "GLM-5",
     version: "5",
-    inputPrice: 0.6,
-    outputPrice: 1.92,
+    inputPrice: 1,
+    outputPrice: 3.2,
     contextWindow: 2e5,
     maxOutput: 128e3,
     toolCalling: true
