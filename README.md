@@ -327,11 +327,11 @@ Edit existing images with `/img2img`:
 | google/gemini-3-flash-preview               |     $0.50 |      $3.00 |    $0.0018 | 1M      | vision                                       |
 | xiaomi/mimo-v2.5                            |     $0.14 |      $0.28 |    $0.0003 | 1M      | reasoning, vision, tools                     |
 | qwen/qwen3.8-flash                          |     $0.15 |      $0.47 |    $0.0003 | 1M      | reasoning, vision, tools                     |
-| tencent/hy3                                 |     $0.13 |      $0.53 |    $0.0003 | 262K    | reasoning, tools                             |
 | zai/glm-5.3-flash                           |     $0.15 |      $0.50 |    $0.0003 | 1M      | reasoning, vision, tools                     |
 | openai/gpt-5.6-luna                         |     $0.20 |      $1.20 |    $0.0007 | 1M      | vision, agentic, tools                       |
+| openai/gpt-6-luna                           |     $0.10 |      $0.50 |    $0.0003 | 1M      | reasoning, vision, agentic, tools            |
 | xiaomi/mimo-v2.5-pro                        |     $0.43 |      $0.87 |    $0.0008 | 1M      | reasoning, tools                             |
-| deepseek/deepseek-v4-flash-vision-exp       |     $0.44 |      $1.32 |    $0.0010 | 1M      | reasoning, vision, tools                     |
+| deepseek/deepseek-v4-flash-vision-exp       |     $0.30 |      $1.20 |    $0.0008 | 1M      | reasoning, vision, tools                     |
 
 ### Mid-Range Models ($0.001–$0.01/request)
 
@@ -358,8 +358,13 @@ Edit existing images with `/img2img`:
 | qwen/qwen3.7-max             |     $1.48 |      $4.42 |    $0.0032 | 1M      | reasoning, agentic, tools                 |
 | google/gemini-3.6-flash      |     $1.50 |      $7.50 |    $0.0045 | 1M      | reasoning, vision, tools                  |
 | xai/grok-4.5                 |     $2.00 |      $6.00 |    $0.0040 | 500K    | reasoning, vision, agentic, tools         |
+| xai/grok-4.6                 |     $2.00 |      $6.00 |    $0.0040 | 500K    | reasoning, vision, agentic, tools         |
+| xai/grok-4.7                 |     $2.00 |      $6.00 |    $0.0040 | 500K    | reasoning, vision, agentic, tools         |
 | openai/gpt-5.6-terra         |     $2.00 |     $12.00 |    $0.0068 | 1M      | reasoning, vision, agentic, tools         |
+| openai/gpt-6-sol             |     $2.00 |     $10.00 |    $0.0060 | 1M      | reasoning, vision, agentic, tools         |
+| openai/gpt-5.1               |     $1.25 |     $10.00 |    $0.0056 | 400K    | reasoning, vision, agentic, tools         |
 | anthropic/claude-sonnet-5    |     $3.00 |     $15.00 |    $0.0090 | 1M      | reasoning, vision, agentic, tools         |
+| anthropic/claude-sonnet-5.5  |     $2.00 |     $10.00 |    $0.0060 | 1M      | reasoning, vision, agentic, tools         |
 | moonshot/kimi-k3             |     $3.00 |     $15.00 |    $0.0090 | 1M      | reasoning, vision, agentic, tools         |
 
 ### Premium Models ($0.01+/request)
@@ -375,8 +380,11 @@ Edit existing images with `/img2img`:
 | openai/gpt-5.4-pro          |    $30.00 |    $180.00 |    $0.1050 | 400K    | reasoning, tools                  |
 | anthropic/claude-opus-4.5   |     $5.00 |     $25.00 |    $0.0150 | 200K    | reasoning, vision, agentic, tools |
 | anthropic/claude-opus-5     |     $5.00 |     $25.00 |    $0.0150 | 1M      | reasoning, vision, agentic, tools |
-| openai/gpt-5.6-sol          |     $5.00 |     $30.00 |    $0.0170 | 1M      | reasoning, vision, agentic, tools |
+| anthropic/claude-opus-5.5   |     $4.00 |     $20.00 |    $0.0120 | 1M      | reasoning, vision, agentic, tools |
+| openai/gpt-5.6-sol          |     $4.00 |     $20.00 |    $0.0120 | 1M      | reasoning, vision, agentic, tools |
 | anthropic/claude-fable-5    |    $10.00 |     $50.00 |    $0.0300 | 1M      | reasoning, vision, agentic, tools |
+| anthropic/claude-fable-5.1  |    $10.00 |     $50.00 |    $0.0300 | 1M      | reasoning, vision, agentic, tools |
+| openai/gpt-6-astra          |    $10.00 |     $50.00 |    $0.0300 | 1M      | reasoning, vision, agentic, tools |
 | openai/gpt-5.5-pro          |    $30.00 |    $180.00 |    $0.1020 | 1M      | reasoning, vision, tools          |
 
 > **Free tier:** <!-- br:models.free -->6<!-- /br:models.free --> models cost nothing — `/model free` points to nemotron-3.5-lightning, or pick any free model directly (e.g., `/model nemotron-omni` for vision, `/model north-mini-code` for coding, `/model nemotron-3-ultra-550b` for reasoning + 1M context).
