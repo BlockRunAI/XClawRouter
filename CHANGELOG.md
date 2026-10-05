@@ -4,6 +4,17 @@ All notable changes to XClawRouter.
 
 ---
 
+## v0.12.193 — October 5, 2026
+
+Security release. Also ships the model catalog updates merged since v0.12.192
+(GPT-6, GPT-5.1, Claude 5.5 / Fable 5.1, Grok 4.6 / 4.7, synced prices).
+
+- **Web pages can no longer spend from your wallet.** The proxy listens on 127.0.0.1, but a page open in your browser could still send it requests. It now refuses any request from another site, and any request whose `Host` is not a local name, which also blocks DNS-rebinding pages. OpenClaw, the CLI, SDKs and `curl` send no `Origin` and work as before.
+- **img2img reads only images.** A local path in an img2img request, or after `/img2img --image`, is read only if the file really is a PNG, JPEG or WebP. Source image URLs must be public, and every redirect is re-checked. To use a local image server, set `CLAWROUTER_ALLOW_PRIVATE_FETCH=1`.
+- **Paid channel commands need an authorized sender.** `/imagegen` and `/videogen` spend from the wallet and now follow OpenClaw's default of only accepting authorized senders.
+
+---
+
 ## v0.12.192 — August 31, 2026
 
 Synced the paid catalog with the live gateway. v0.12.191 fixed the free tier; this is the other half — the catalog had been frozen since 2026-06-08, and the damage reached the router itself.
