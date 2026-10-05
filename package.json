@@ -1,6 +1,6 @@
 {
   "name": "@blockrun/xclawrouter",
-  "version": "0.12.192",
+  "version": "0.12.193",
   "description": "Smart LLM router — 82 models with one BlockRun API key or Solana/Base x402 payments.",
   "type": "module",
   "main": "dist/index.js",
