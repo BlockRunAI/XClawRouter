@@ -1,7 +1,7 @@
 # 11 Free AI Models, Zero Cost: How BlockRun Gives Developers Top-Tier LLMs for Nothing
 
 > **The count in this title is a snapshot.** It was 11 when this was written; the
-> published free tier is now <!-- br:models.free -->6<!-- /br:models.free --> — models are withheld from `/v1/models` when a
+> published free tier is now <!-- br:models.free -->7<!-- /br:models.free --> — models are withheld from `/v1/models` when a
 > provider's terms change, most recently over NVIDIA's prompt-retention policy.
 > The URL keeps its original slug so existing links do not break. Current figures:
 > [blockrun.ai/brand/numbers.json](https://blockrun.ai/brand/numbers.json).
