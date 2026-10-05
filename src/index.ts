@@ -1830,7 +1830,8 @@ const plugin: OpenClawPluginDefinition = {
       name: "imagegen",
       description: "Generate an image (BlockRun image models, paid via wallet)",
       acceptsArgs: true,
-      requireAuth: false,
+      // Paid from the wallet: only authorized senders.
+      requireAuth: true,
       handler: async (ctx: PluginCommandContext) => {
         const parsed = parseGenArgs(ctx.args ?? "");
         if (!parsed.prompt) {
@@ -1884,7 +1885,8 @@ const plugin: OpenClawPluginDefinition = {
       name: "videogen",
       description: "Generate a short video (Grok Imagine / Seedance, paid via wallet)",
       acceptsArgs: true,
-      requireAuth: false,
+      // Paid from the wallet: only authorized senders.
+      requireAuth: true,
       handler: async (ctx: PluginCommandContext) => {
         const parsed = parseGenArgs(ctx.args ?? "");
         if (!parsed.prompt) {
