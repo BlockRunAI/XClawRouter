@@ -47,9 +47,17 @@ const RETIRED_PAID_IDS = [
   "xai/grok-4-0709",
   "xai/grok-4-1-fast-reasoning",
   "tencent/hy3", // retired (hidden) on blockrun
+  "xai/grok-3-mini", // redirected to grok-4-1-fast (2026-10-20 sync)
+  "xai/grok-4-fast-reasoning",
+  "xai/grok-4-fast-non-reasoning",
+  "xai/grok-2-vision", // retired upstream, redirected to grok-4.3
 ] as const;
 
-/** The live free tier as of 2026-09-29 (/v1/models), in auto-pick order. */
+/**
+ * The live free tier as of 2026-10-20 (/v1/models), in auto-pick order.
+ * muse-glimmer-30b is picker-only (last): it is not an auto-pick rung, because
+ * a small max_tokens comes back with empty content.
+ */
 const LIVE_FREE_IDS = [
   "free/nemotron-3.5-lightning",
   "free/laguna-xs-2.1",
@@ -57,6 +65,7 @@ const LIVE_FREE_IDS = [
   "free/nemotron-3-nano-omni-30b-a3b-reasoning",
   "free/nemotron-3-ultra-550b",
   "free/llama-3.2-11b-vision",
+  "free/muse-glimmer-30b",
 ] as const;
 
 describe("TOP_MODELS", () => {

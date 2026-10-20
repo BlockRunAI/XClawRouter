@@ -109,17 +109,20 @@ export const MODEL_ALIASES: Record<string, string> = {
   // IDs still resolve for pinned users).
   grok: "xai/grok-4.3",
   "grok-4.3": "xai/grok-4.3",
-  "grok-fast": "xai/grok-4-fast-reasoning",
+  // grok-4-fast-* are redirected server-side to grok-4-1-fast-* (Azure Foundry
+  // EOL'd the 4-fast line); follow the redirect instead of chaining through it.
+  "grok-fast": "xai/grok-4-1-fast-reasoning",
   "grok-build": "xai/grok-build-0.1",
   "grok-code": "xai/grok-build-0.1", // xAI's agentic coding model (Build 0.1, 2026-06-04)
   // Delisted model redirects — full model IDs that were previously valid but removed
   "grok-code-fast-1": "deepseek/deepseek-chat", // bare alias
   "xai/grok-code-fast-1": "deepseek/deepseek-chat", // delisted 2026-03-12
-  "xai/grok-3-fast": "xai/grok-4-fast-reasoning", // delisted (too expensive)
+  "xai/grok-3-fast": "xai/grok-4-1-fast-reasoning", // delisted (too expensive); follows the 4-fast redirect
 
   // NVIDIA — backward compat aliases (nvidia/xxx → free/xxx)
   // Default free model is nemotron-3.5-lightning as of the 2026-08-31 rebuild;
-  // gpt-oss-120b held this slot until it died upstream on 2026-08-16. The
+  // gpt-oss-120b held this slot until it died upstream on 2026-08-16 (NVIDIA
+  // then published its EOL on 2026-09-03; the gateway redirects it). The
   // model-specific aliases below still resolve to their original targets even
   // where those are retired — the entries stay in BLOCKRUN_MODELS so an
   // explicit pin keeps working; they are simply off the picker and the
@@ -130,56 +133,67 @@ export const MODEL_ALIASES: Record<string, string> = {
   "gpt-20b": "free/gpt-oss-20b",
   "nvidia/gpt-oss-120b": "free/gpt-oss-120b",
   "nvidia/gpt-oss-20b": "free/gpt-oss-20b",
-  "nvidia/deepseek-v3.2": "free/deepseek-v4-flash", // v3.2 phased out 2026-04-29; v4-pro also down → v4-flash
-  "free/deepseek-v3.2": "free/deepseek-v4-flash", // local pin redirect
-  "nvidia/deepseek-v4-pro": "free/deepseek-v4-flash", // NVIDIA v4-pro down → v4-flash
-  "free/deepseek-v4-pro": "free/deepseek-v4-flash", // NVIDIA upstream down 2026-05-14
+  // The whole nvidia/deepseek-* family is dead upstream (v4-flash 410'd
+  // 2026-08-12). Ids naming v4-flash itself keep the real id (the gateway
+  // redirects them); v3.2/v4-pro used to chain through v4-flash and now land
+  // on the live free default instead of a second dead model.
+  "nvidia/deepseek-v3.2": "free/nemotron-3.5-lightning",
+  "free/deepseek-v3.2": "free/nemotron-3.5-lightning",
+  "nvidia/deepseek-v4-pro": "free/nemotron-3.5-lightning",
+  "free/deepseek-v4-pro": "free/nemotron-3.5-lightning",
   "nvidia/deepseek-v4-flash": "free/deepseek-v4-flash",
   "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning": "free/nemotron-3-nano-omni-30b-a3b-reasoning",
   "nvidia/qwen3-coder-480b": "free/qwen3-coder-480b",
   "qwen/qwen3-coder-480b-a35b-instruct": "free/qwen3-coder-480b",
-  "nvidia/glm-4.7": "free/qwen3-coder-480b",
+  "nvidia/glm-4.7": "free/glm-4.7", // names the model itself — the gateway redirects it
   "nvidia/llama-4-maverick": "free/llama-4-maverick",
-  "nvidia/qwen3-next-80b-a3b-thinking": "free/llama-4-maverick",
-  "nvidia/mistral-small-4-119b": "free/llama-4-maverick", // NVIDIA upstream timing out — hidden + redirected server-side 2026-06-08
-  // Retired free IDs → successors (mirror server-side redirects)
-  "nvidia/nemotron-ultra-253b": "free/llama-4-maverick",
-  "nvidia/nemotron-3-super-120b": "free/llama-4-maverick",
-  "nvidia/nemotron-super-49b": "free/llama-4-maverick",
-  "nvidia/mistral-large-3-675b": "free/llama-4-maverick",
-  "nvidia/devstral-2-123b": "free/qwen3-coder-480b",
-  "free/nemotron-ultra-253b": "free/llama-4-maverick",
-  "free/nemotron-3-super-120b": "free/llama-4-maverick",
-  "free/nemotron-super-49b": "free/llama-4-maverick",
-  "free/mistral-large-3-675b": "free/llama-4-maverick",
-  "free/devstral-2-123b": "free/qwen3-coder-480b",
-  // Free model shorthand aliases
-  "deepseek-free": "free/deepseek-v4-flash", // was v4-pro; NVIDIA v4-pro down 2026-05-14
-  "deepseek-v4-pro": "free/deepseek-v4-flash", // NVIDIA v4-pro down → v4-flash
+  // Retired free IDs that X never carried as catalog entries. These used to
+  // point at llama-4-maverick / qwen3-coder-480b, both themselves dead upstream,
+  // so every one of them chained through a second retired model (and silently
+  // defeated /exclude). They now land on the live free default.
+  "nvidia/qwen3-next-80b-a3b-thinking": "free/nemotron-3.5-lightning",
+  "nvidia/mistral-small-4-119b": "free/nemotron-3.5-lightning",
+  "nvidia/nemotron-ultra-253b": "free/nemotron-3.5-lightning",
+  "nvidia/nemotron-3-super-120b": "free/nemotron-3.5-lightning",
+  "nvidia/nemotron-super-49b": "free/nemotron-3.5-lightning",
+  "nvidia/mistral-large-3-675b": "free/nemotron-3.5-lightning",
+  "nvidia/devstral-2-123b": "free/nemotron-3.5-lightning",
+  "free/nemotron-ultra-253b": "free/nemotron-3.5-lightning",
+  "free/nemotron-3-super-120b": "free/nemotron-3.5-lightning",
+  "free/nemotron-super-49b": "free/nemotron-3.5-lightning",
+  "free/mistral-large-3-675b": "free/nemotron-3.5-lightning",
+  "free/devstral-2-123b": "free/nemotron-3.5-lightning",
+  // Free model shorthand aliases. Generic "a free X" shorthands follow the
+  // live free tier (there is no free DeepSeek, Mistral, GLM or Qwen left on
+  // NVIDIA); shorthands that NAME a model (v4-flash, maverick) keep the real id
+  // and the gateway redirects them.
+  "deepseek-free": "free/nemotron-3.5-lightning",
+  "deepseek-v4-pro": "free/nemotron-3.5-lightning",
   "deepseek-v4-flash": "free/deepseek-v4-flash",
-  "v4-pro": "free/deepseek-v4-flash", // NVIDIA v4-pro down → v4-flash
+  "v4-pro": "free/nemotron-3.5-lightning",
   "v4-flash": "free/deepseek-v4-flash",
-  "mistral-free": "free/llama-4-maverick",
-  "glm-free": "free/qwen3-coder-480b",
-  "llama-free": "free/llama-4-maverick",
-  "qwen-coder": "free/qwen3-coder-480b",
-  "qwen-coder-free": "free/qwen3-coder-480b",
-  "qwen-thinking": "free/llama-4-maverick",
-  "qwen3-next": "free/llama-4-maverick",
-  "mistral-small": "free/llama-4-maverick",
+  "mistral-free": "free/nemotron-3.5-lightning",
+  "glm-free": "free/nemotron-3.5-lightning",
+  "llama-free": "free/llama-3.2-11b-vision", // the only free Llama NVIDIA still serves
+  "qwen-coder": "free/nemotron-3.5-lightning",
+  "qwen-coder-free": "free/nemotron-3.5-lightning",
+  "qwen-thinking": "free/nemotron-3.5-lightning",
+  "qwen3-next": "free/nemotron-3.5-lightning",
+  "mistral-small": "free/nemotron-3.5-lightning",
   // Vision-capable free model — BlockRun's first
   "nemotron-omni": "free/nemotron-3-nano-omni-30b-a3b-reasoning",
   "nano-omni": "free/nemotron-3-nano-omni-30b-a3b-reasoning",
   "vision-free": "free/nemotron-3-nano-omni-30b-a3b-reasoning",
-  // Retired shorthand aliases redirect to successors
-  nemotron: "free/llama-4-maverick",
-  "nemotron-ultra": "free/llama-4-maverick",
-  "nemotron-253b": "free/llama-4-maverick",
-  "nemotron-super": "free/llama-4-maverick",
-  "nemotron-49b": "free/llama-4-maverick",
-  "nemotron-120b": "free/llama-4-maverick",
-  devstral: "free/qwen3-coder-480b",
-  "devstral-2": "free/qwen3-coder-480b",
+  // Retired shorthand aliases redirect to the live free default (they used to
+  // name llama-4-maverick / qwen3-coder-480b, both dead upstream).
+  nemotron: "free/nemotron-3.5-lightning",
+  "nemotron-ultra": "free/nemotron-3.5-lightning",
+  "nemotron-253b": "free/nemotron-3.5-lightning",
+  "nemotron-super": "free/nemotron-3.5-lightning",
+  "nemotron-49b": "free/nemotron-3.5-lightning",
+  "nemotron-120b": "free/nemotron-3.5-lightning",
+  devstral: "free/nemotron-3.5-lightning",
+  "devstral-2": "free/nemotron-3.5-lightning",
   maverick: "free/llama-4-maverick",
   free: "free/nemotron-3.5-lightning",
 
@@ -203,16 +217,23 @@ export const MODEL_ALIASES: Record<string, string> = {
   // They don't need aliases since they're already top-level model IDs
 
   // Image generation
-  dalle: "openai/dall-e-3",
-  "dall-e": "openai/dall-e-3",
+  // dall-e-3 was delisted upstream 2026-05-25; the legacy aliases point at its
+  // OpenAI successor. black-forest/flux-1.1-pro has no gateway entry at all, so
+  // the flux aliases are gone rather than pointing at a guaranteed 400.
+  dalle: "openai/gpt-image-2",
+  "dall-e": "openai/gpt-image-2",
   "gpt-image": "openai/gpt-image-1",
+  "gpt-image-2": "openai/gpt-image-2",
   "nano-banana": "google/nano-banana",
   banana: "google/nano-banana",
   "banana-pro": "google/nano-banana-pro",
   "nano-banana-pro": "google/nano-banana-pro",
-  flux: "black-forest/flux-1.1-pro",
-  "flux-pro": "black-forest/flux-1.1-pro",
+  // Explicit pins — bare `nano-banana`/`grok-imagine` stay on the originals.
+  "nano-banana-2": "google/nano-banana-2",
+  "banana-2": "google/nano-banana-2",
+  seedream: "bytedance/seedream-5-pro",
   "grok-imagine": "xai/grok-imagine-image",
+  "grok-imagine-2": "xai/grok-imagine-image-2.0",
   "grok-imagine-pro": "xai/grok-imagine-image-pro",
   cogview: "zai/cogview-4",
 
@@ -222,6 +243,12 @@ export const MODEL_ALIASES: Record<string, string> = {
   "seedance-1.5": "bytedance/seedance-1.5-pro",
   "seedance-2-fast": "bytedance/seedance-2.0-fast",
   "seedance-2": "bytedance/seedance-2.0",
+  // Bare `seedance` stays on 1.5-pro, the cheapest; newer tiers are explicit pins.
+  "seedance-2-mini": "bytedance/seedance-2.0-mini",
+  "seedance-mini": "bytedance/seedance-2.0-mini",
+  "seedance-2.5": "bytedance/seedance-2.5",
+  "seedance-2-5": "bytedance/seedance-2.5",
+  "grok-video-1.5": "xai/grok-imagine-video-1.5",
 };
 
 /**
@@ -375,7 +402,7 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     inputPrice: 0.25,
     outputPrice: 2.0,
     contextWindow: 200000,
-    maxOutput: 65536,
+    maxOutput: 128000,
     toolCalling: true,
   },
   {
@@ -424,7 +451,7 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     version: "5.4",
     inputPrice: 2.5,
     outputPrice: 15.0,
-    contextWindow: 400000,
+    contextWindow: 1050000,
     maxOutput: 128000,
     reasoning: true,
     vision: true,
@@ -449,7 +476,7 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     version: "5.4",
     inputPrice: 30.0,
     outputPrice: 180.0,
-    contextWindow: 400000,
+    contextWindow: 1050000,
     maxOutput: 128000,
     reasoning: true,
     toolCalling: true,
@@ -461,7 +488,7 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     inputPrice: 0.2,
     outputPrice: 1.25,
     contextWindow: 1050000,
-    maxOutput: 32768,
+    maxOutput: 128000,
     toolCalling: true,
   },
 
@@ -478,6 +505,11 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     vision: true,
     agentic: true,
     toolCalling: true,
+    // RETIRED 2026-08-29: OpenAI answers 404 model_not_found upstream. The
+    // gateway marks it available:false and redirects it to gpt-5.2 at the same
+    // $1.75/$14. Entry kept so explicit pins stay priced; off the picker.
+    deprecated: true,
+    fallbackModel: "openai/gpt-5.2",
   },
 
   // OpenAI Codex Family
@@ -501,7 +533,7 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     inputPrice: 2.0,
     outputPrice: 8.0,
     contextWindow: 128000,
-    maxOutput: 16384,
+    maxOutput: 32768,
     vision: true,
     toolCalling: true,
   },
@@ -512,7 +544,7 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     inputPrice: 0.4,
     outputPrice: 1.6,
     contextWindow: 128000,
-    maxOutput: 16384,
+    maxOutput: 32768,
     toolCalling: true,
   },
   {
@@ -522,7 +554,7 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     inputPrice: 0.1,
     outputPrice: 0.4,
     contextWindow: 128000,
-    maxOutput: 16384,
+    maxOutput: 32768,
     toolCalling: true,
   },
   {
@@ -589,7 +621,7 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     inputPrice: 1.1,
     outputPrice: 4.4,
     contextWindow: 128000,
-    maxOutput: 65536,
+    maxOutput: 100000,
     reasoning: true,
     toolCalling: true,
   },
@@ -600,7 +632,7 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     inputPrice: 1.1,
     outputPrice: 4.4,
     contextWindow: 128000,
-    maxOutput: 65536,
+    maxOutput: 100000,
     reasoning: true,
     toolCalling: true,
   },
@@ -614,7 +646,7 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     inputPrice: 1.0,
     outputPrice: 5.0,
     contextWindow: 200000,
-    maxOutput: 8192,
+    maxOutput: 64000,
     vision: true,
     agentic: true,
     toolCalling: true,
@@ -623,6 +655,19 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     id: "anthropic/claude-sonnet-4.6",
     name: "Claude Sonnet 4.6",
     version: "4.6",
+    inputPrice: 3.0,
+    outputPrice: 15.0,
+    contextWindow: 1000000,
+    maxOutput: 128000,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true,
+  },
+  {
+    id: "anthropic/claude-sonnet-4.5",
+    name: "Claude Sonnet 4.5",
+    version: "4.5",
     inputPrice: 3.0,
     outputPrice: 15.0,
     contextWindow: 200000,
@@ -639,7 +684,7 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     inputPrice: 5.0,
     outputPrice: 25.0,
     contextWindow: 200000,
-    maxOutput: 32000,
+    maxOutput: 64000,
     reasoning: true,
     vision: true,
     agentic: true,
@@ -694,7 +739,7 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     version: "3.1",
     inputPrice: 2.0,
     outputPrice: 12.0,
-    contextWindow: 1050000,
+    contextWindow: 1048576,
     maxOutput: 65536,
     reasoning: true,
     vision: true,
@@ -732,7 +777,7 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     version: "3.0",
     inputPrice: 0.5,
     outputPrice: 3.0,
-    contextWindow: 1000000,
+    contextWindow: 1048576,
     maxOutput: 65536,
     vision: true,
   },
@@ -742,7 +787,7 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     version: "2.5",
     inputPrice: 1.25,
     outputPrice: 10.0,
-    contextWindow: 1050000,
+    contextWindow: 1048576,
     maxOutput: 65536,
     reasoning: true,
     vision: true,
@@ -754,7 +799,7 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     version: "2.5",
     inputPrice: 0.3,
     outputPrice: 2.5,
-    contextWindow: 1000000,
+    contextWindow: 1048576,
     maxOutput: 65536,
     vision: true,
     toolCalling: true,
@@ -765,7 +810,7 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     version: "2.5",
     inputPrice: 0.1,
     outputPrice: 0.4,
-    contextWindow: 1000000,
+    contextWindow: 1048576,
     maxOutput: 65536,
     toolCalling: true,
   },
@@ -775,8 +820,8 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     version: "3.1",
     inputPrice: 0.25,
     outputPrice: 1.5,
-    contextWindow: 1000000,
-    maxOutput: 8192,
+    contextWindow: 1048576,
+    maxOutput: 65536,
     toolCalling: true,
   },
 
@@ -787,8 +832,8 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     version: "4-flash",
     inputPrice: 0.14,
     outputPrice: 0.28,
-    contextWindow: 1000000,
-    maxOutput: 8192,
+    contextWindow: 1048576,
+    maxOutput: 65536,
     toolCalling: true,
   },
   {
@@ -797,8 +842,8 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     version: "4-flash",
     inputPrice: 0.14,
     outputPrice: 0.28,
-    contextWindow: 1000000,
-    maxOutput: 8192,
+    contextWindow: 1048576,
+    maxOutput: 65536,
     reasoning: true,
     toolCalling: true,
   },
@@ -874,6 +919,10 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     maxOutput: 16384,
     reasoning: true,
     toolCalling: true,
+    // Server-side redirect on blockrun (MODEL_REDIRECTS): Azure Foundry EOL'd
+    // this line 2026-05-01, so the gateway serves it as grok-4-1-fast-non-reasoning. Kept for pins.
+    deprecated: true,
+    fallbackModel: "xai/grok-4-1-fast-non-reasoning",
   },
   // grok-3-fast removed - too expensive ($5/$25), use grok-4-fast instead
   {
@@ -885,6 +934,10 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     contextWindow: 131072,
     maxOutput: 16384,
     toolCalling: true,
+    // Server-side redirect on blockrun (MODEL_REDIRECTS): Azure Foundry EOL'd
+    // this line 2026-05-01, so the gateway serves it as grok-4-1-fast-non-reasoning. Kept for pins.
+    deprecated: true,
+    fallbackModel: "xai/grok-4-1-fast-non-reasoning",
   },
 
   // xAI Grok 4 Family - Ultra-cheap fast models
@@ -898,6 +951,10 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     maxOutput: 16384,
     reasoning: true,
     toolCalling: true,
+    // Server-side redirect on blockrun (MODEL_REDIRECTS): Azure Foundry EOL'd
+    // this line 2026-05-01, so the gateway serves it as grok-4-1-fast-reasoning. Kept for pins.
+    deprecated: true,
+    fallbackModel: "xai/grok-4-1-fast-reasoning",
   },
   {
     id: "xai/grok-4-fast-non-reasoning",
@@ -908,6 +965,10 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     contextWindow: 131072,
     maxOutput: 16384,
     toolCalling: true,
+    // Server-side redirect on blockrun (MODEL_REDIRECTS): Azure Foundry EOL'd
+    // this line 2026-05-01, so the gateway serves it as grok-4-1-fast-non-reasoning. Kept for pins.
+    deprecated: true,
+    fallbackModel: "xai/grok-4-1-fast-non-reasoning",
   },
   {
     id: "xai/grok-4-1-fast-reasoning",
@@ -953,6 +1014,10 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     maxOutput: 16384,
     vision: true,
     toolCalling: true,
+    // Retired upstream 2026-07-07 (HTTP 400 on api.x.ai, no route anywhere);
+    // the gateway redirects it to grok-4.3. Kept for pins.
+    deprecated: true,
+    fallbackModel: "xai/grok-4.3",
   },
 
   // xAI Grok 4.20 Family (hidden in picker; explicit-only — mirrors BlockRun hidden:true)
@@ -1196,6 +1261,47 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     toolCalling: true,
   },
   {
+    // GPT-5.6 Pro tiers (blockrun #329): each base tier with pro reasoning mode,
+    // priced the same as its base tier.
+    id: "openai/gpt-5.6-sol-pro",
+    name: "GPT-5.6 Sol Pro",
+    version: "5.6",
+    inputPrice: 4.0,
+    outputPrice: 20.0,
+    contextWindow: 1050000,
+    maxOutput: 128000,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true,
+  },
+  {
+    id: "openai/gpt-5.6-terra-pro",
+    name: "GPT-5.6 Terra Pro",
+    version: "5.6",
+    inputPrice: 2.0,
+    outputPrice: 12.0,
+    contextWindow: 1050000,
+    maxOutput: 128000,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true,
+  },
+  {
+    id: "openai/gpt-5.6-luna-pro",
+    name: "GPT-5.6 Luna Pro",
+    version: "5.6",
+    inputPrice: 0.2,
+    outputPrice: 1.2,
+    contextWindow: 1050000,
+    maxOutput: 128000,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true,
+  },
+  {
     id: "openai/gpt-5.5-pro",
     name: "GPT-5.5 Pro",
     version: "5.5",
@@ -1204,6 +1310,20 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     contextWindow: 1050000,
     maxOutput: 128000,
     reasoning: true,
+    vision: true,
+    toolCalling: true,
+  },
+  {
+    // ChatGPT Instant — upstream exposes ChatGPT's default model only as the rolling
+    // `chat-latest` id, so the display name tracks whichever snapshot is current.
+    // Chat/vision only upstream.
+    id: "openai/chat-latest",
+    name: "ChatGPT Instant (GPT-5.5)",
+    version: "5.5",
+    inputPrice: 5.0,
+    outputPrice: 30.0,
+    contextWindow: 128000,
+    maxOutput: 128000,
     vision: true,
     toolCalling: true,
   },
@@ -1226,6 +1346,21 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     id: "openai/gpt-6-sol",
     name: "GPT-6 Sol",
     version: "6",
+    inputPrice: 2.0,
+    outputPrice: 10.0,
+    contextWindow: 1050000,
+    maxOutput: 128000,
+    reasoning: true,
+    vision: true,
+    agentic: true,
+    toolCalling: true,
+  },
+  {
+    // GPT-6.1 Sol (blockrun 2026-10-09): the refreshed Sol, same $2/$10 and envelope
+    // as gpt-6-sol; cached input is half of Sol's. Vision confirmed upstream.
+    id: "openai/gpt-6.1-sol",
+    name: "GPT-6.1 Sol",
+    version: "6.1",
     inputPrice: 2.0,
     outputPrice: 10.0,
     contextWindow: 1050000,
@@ -1268,6 +1403,20 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     id: "google/gemini-3.6-flash",
     name: "Gemini 3.6 Flash",
     version: "3.6",
+    inputPrice: 0.75,
+    outputPrice: 3.75,
+    contextWindow: 1048576,
+    maxOutput: 65536,
+    reasoning: true,
+    vision: true,
+    toolCalling: true,
+  },
+  {
+    // ⏰ PROMOTIONAL RATE: Google prices the 3.6/3.7/3.8 Flash band at 0.75/3.75
+    // through 2026-12-31, reverting to 1.50/7.50. Re-price with gemini-3.6-flash.
+    id: "google/gemini-3.8-flash",
+    name: "Gemini 3.8 Flash",
+    version: "3.8",
     inputPrice: 0.75,
     outputPrice: 3.75,
     contextWindow: 1048576,
@@ -1414,6 +1563,42 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     toolCalling: true,
   },
   {
+    // 770B / 49B-active MoE. maxOutput is the smallest vendor ceiling in the routed
+    // pool. Verbose reasoner — a small max_tokens can return no content.
+    id: "tencent/hy4-preview",
+    name: "Tencent Hy4 Preview",
+    version: "hy4-preview",
+    inputPrice: 0.834,
+    outputPrice: 2.501,
+    contextWindow: 1048576,
+    maxOutput: 64000,
+    reasoning: true,
+  },
+  {
+    // ⏰ $0.68/$2.09 is a LAUNCH PROMO upstream (Mistral lists $1.36/$4.18).
+    // blockrun probed text, stream, tools (clean tool_calls) and image input.
+    id: "mistral/mistral-large-4",
+    name: "Mistral Large 4",
+    version: "large-4",
+    inputPrice: 0.68,
+    outputPrice: 2.09,
+    contextWindow: 524288,
+    maxOutput: 262144,
+    reasoning: true,
+    vision: true,
+    toolCalling: true,
+  },
+  {
+    // The PAID, far larger sibling of free/laguna-xs-2.1 (118B / 8B active).
+    id: "poolside/laguna-s-2.1",
+    name: "Poolside Laguna S 2.1",
+    version: "s-2.1",
+    inputPrice: 0.09,
+    outputPrice: 0.18,
+    contextWindow: 1048576,
+    maxOutput: 131072,
+  },
+  {
     id: "moonshot/kimi-k3",
     name: "Kimi K3",
     version: "k3",
@@ -1437,6 +1622,42 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     reasoning: true,
     agentic: true,
     toolCalling: true,
+  },
+  {
+    // Qwen3.7 Plus/Flash (blockrun #329): the balanced and latency tiers under Max.
+    id: "qwen/qwen3.7-plus",
+    name: "Qwen3.7 Plus",
+    version: "3.7-plus",
+    inputPrice: 0.32,
+    outputPrice: 1.28,
+    contextWindow: 1000000,
+    maxOutput: 131072,
+    reasoning: true,
+    agentic: true,
+    toolCalling: true,
+  },
+  {
+    id: "qwen/qwen3.7-flash",
+    name: "Qwen3.7 Flash",
+    version: "3.7-flash",
+    inputPrice: 0.03,
+    outputPrice: 0.13,
+    contextWindow: 1000000,
+    maxOutput: 65536,
+    reasoning: true,
+    toolCalling: true,
+  },
+  {
+    // The 3.8 generation's flagship. Listed text-only, as on the gateway.
+    // toolCalling left opt-in: no structured tool_calls probe is recorded.
+    id: "qwen/qwen3.8-max",
+    name: "Qwen3.8 Max",
+    version: "3.8-max",
+    inputPrice: 2.0,
+    outputPrice: 6.0,
+    contextWindow: 1000000,
+    maxOutput: 131072,
+    reasoning: true,
   },
   {
     // Alibaba's 3.8 generation: 125B MoE, one tier above the whole 3.7 line and
@@ -1466,6 +1687,10 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     maxOutput: 128000,
     reasoning: true,
     toolCalling: true,
+    // RETIRED 2026-09-24: hidden on blockrun and redirected server-side to
+    // qwen/qwen3.7-flash. Entry kept so explicit pins stay routable; off the picker.
+    deprecated: true,
+    fallbackModel: "qwen/qwen3.7-flash",
   },
   {
     // The first DeepSeek SKU that takes images. BlockRun bills it at the V4
@@ -1481,6 +1706,9 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     vision: true,
     toolCalling: true,
   },
+  // EOL 2026-09-03: NVIDIA publishes 410 Gone with an end-of-life date for
+  // gpt-oss-120b. The gateway marks it available:false and redirects it to
+  // nvidia/nemotron-3-super-120b. Kept for pins; off the picker and every default.
   {
     id: "free/gpt-oss-120b",
     name: "[Free] GPT-OSS 120B",
@@ -1648,6 +1876,19 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     // while a plain-text control on the same id answered fine. The model is
     // alive; the image path is not. Mirroring the catalog's claim here would
     // have routed image turns to it. See the nano-omni note above.
+  },
+  {
+    // Meta Muse Glimmer 30B — free on NVIDIA as nvidia/muse-glimmer-30b. A reasoning
+    // model: a small max_tokens is spent in reasoning and returns empty content.
+    // Text only. Picker-listed, not in the FREE_MODELS auto-pick cascade.
+    id: "free/muse-glimmer-30b",
+    name: "[Free] Muse Glimmer 30B",
+    version: "30b",
+    inputPrice: 0,
+    outputPrice: 0,
+    contextWindow: 131072,
+    maxOutput: 16384,
+    reasoning: true,
   },
 
   // Z.AI GLM-5 Models
