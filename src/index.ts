@@ -1051,13 +1051,21 @@ function buildImageGenerationProvider(): ImageGenerationProviderPlugin {
     id: "blockrun",
     label: "BlockRun",
     defaultModel: "google/nano-banana",
+    // Must stay in sync with IMAGE_PRICING (proxy.ts) and the gateway catalog:
+    // OpenClaw sends the picked id straight to /v1/images/generations with no
+    // alias resolution, so a retired id here is a guaranteed upstream 400.
+    // dall-e-3 (delisted 2026-05-25) and flux-1.1-pro (no gateway entry) are gone.
     models: [
       "google/nano-banana",
+      "google/nano-banana-2",
       "google/nano-banana-pro",
       "openai/gpt-image-1",
-      "openai/dall-e-3",
-      "black-forest/flux-1.1-pro",
+      "openai/gpt-image-2",
+      "openai/gpt-image-2.5-flare",
+      "openai/gpt-image-2.5-sunburst",
+      "bytedance/seedream-5-pro",
       "xai/grok-imagine-image",
+      "xai/grok-imagine-image-2.0",
       "xai/grok-imagine-image-pro",
       "zai/cogview-4",
     ],
@@ -1144,7 +1152,9 @@ function buildMusicGenerationProvider(): MusicGenerationProviderPlugin {
     id: "blockrun",
     label: "BlockRun",
     defaultModel: "minimax/music-2.5+",
-    models: ["minimax/music-2.5+", "minimax/music-2.5"],
+    // minimax/music-2.5 left the gateway catalog (remapped server-side to
+    // music-2.5+), so the picker offers only the model that is served.
+    models: ["minimax/music-2.5+"],
     capabilities: {
       maxTracks: 1,
       maxDurationSeconds: 240,
@@ -1226,9 +1236,15 @@ function buildVideoGenerationProvider(): VideoGenerationProviderPlugin {
     defaultModel: "xai/grok-imagine-video",
     models: [
       "xai/grok-imagine-video",
+      "xai/grok-imagine-video-1.5",
       "bytedance/seedance-1.5-pro",
       "bytedance/seedance-2.0-fast",
       "bytedance/seedance-2.0",
+      "bytedance/seedance-2.0-mini",
+      "bytedance/seedance-2.5",
+      // azure/sora-2 is priced in VIDEO_PRICING but NOT listed here: the gateway
+      // accepts only 4, 8 or 12 seconds for it, and this provider advertises
+      // 5/8/10 — two of the three would be refused.
     ],
     capabilities: {
       maxVideos: 1,
@@ -1836,7 +1852,7 @@ const plugin: OpenClawPluginDefinition = {
         const parsed = parseGenArgs(ctx.args ?? "");
         if (!parsed.prompt) {
           return {
-            text: "Usage: `/imagegen <prompt> [--model=<alias>] [--size=1024x1024] [--n=1]`\n\nAliases: `nano-banana` (default), `banana-pro`, `dalle`, `gpt-image`, `flux`, `grok-imagine`, `grok-imagine-pro`, `cogview`.",
+            text: "Usage: `/imagegen <prompt> [--model=<alias>] [--size=1024x1024] [--n=1]`\n\nAliases: `nano-banana` (default), `banana-2`, `banana-pro`, `gpt-image`, `gpt-image-2`, `seedream`, `grok-imagine`, `grok-imagine-2`, `grok-imagine-pro`, `cogview`.",
           };
         }
         const model = resolveModelAlias(parsed.model ?? "nano-banana");
@@ -1891,7 +1907,7 @@ const plugin: OpenClawPluginDefinition = {
         const parsed = parseGenArgs(ctx.args ?? "");
         if (!parsed.prompt) {
           return {
-            text: "Usage: `/videogen <prompt> [--model=<alias>] [--duration=5|8|10]`\n\nAliases: `seedance` (1.5-pro, default — cheapest), `seedance-2-fast`, `seedance-2`, `grok-video`.\n\n⏱️  Generation takes 60–180 seconds. Payment settles only on success.",
+            text: "Usage: `/videogen <prompt> [--model=<alias>] [--duration=5|8|10]`\n\nAliases: `seedance` (1.5-pro, default — cheapest), `seedance-2-fast`, `seedance-2`, `seedance-2-mini`, `seedance-2.5`, `grok-video`, `grok-video-1.5`.\n\n⏱️  Generation takes 60–180 seconds. Payment settles only on success.",
           };
         }
         const model = resolveModelAlias(parsed.model ?? "seedance");

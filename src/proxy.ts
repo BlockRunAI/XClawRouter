@@ -1509,12 +1509,23 @@ const IMAGE_PRICING: Record<string, { default: number; sizes?: Record<string, nu
   },
   "bytedance/seedream-5-pro": { default: 0.045 },
   "google/nano-banana": { default: 0.05 },
+  "google/nano-banana-2": { default: 0.09 },
   "google/nano-banana-pro": {
     default: 0.1,
     sizes: { "1024x1024": 0.1, "2048x2048": 0.1, "4096x4096": 0.15 },
   },
   "xai/grok-imagine-image": { default: 0.02, sizes: { "1024x1024": 0.02 } },
-  "xai/grok-imagine-image-pro": { default: 0.07, sizes: { "1024x1024": 0.07 } },
+  "xai/grok-imagine-image-2.0": { default: 0.04, sizes: { "1024x1024": 0.04 } },
+  "xai/grok-imagine-image-pro": { default: 0.05, sizes: { "1024x1024": 0.05 } },
+  // GPT Image 2.5 Flare / Sunburst — same rate card on the gateway.
+  "openai/gpt-image-2.5-flare": {
+    default: 0.28,
+    sizes: { "1024x1024": 0.28, "1536x1024": 0.56, "1024x1536": 0.56 },
+  },
+  "openai/gpt-image-2.5-sunburst": {
+    default: 0.28,
+    sizes: { "1024x1024": 0.28, "1536x1024": 0.56, "1024x1536": 0.56 },
+  },
   "zai/cogview-4": {
     default: 0.015,
     sizes: {
@@ -1531,9 +1542,16 @@ const IMAGE_PRICING: Record<string, { default: number; sizes?: Record<string, nu
 // Video pricing (must match server's VIDEO_MODELS in blockrun/src/lib/models.ts)
 const VIDEO_PRICING: Record<string, { pricePerSecond: number; defaultDurationSeconds: number }> = {
   "xai/grok-imagine-video": { pricePerSecond: 0.05, defaultDurationSeconds: 8 },
-  "bytedance/seedance-1.5-pro": { pricePerSecond: 0.03, defaultDurationSeconds: 5 },
-  "bytedance/seedance-2.0-fast": { pricePerSecond: 0.15, defaultDurationSeconds: 5 },
-  "bytedance/seedance-2.0": { pricePerSecond: 0.3, defaultDurationSeconds: 5 },
+  "xai/grok-imagine-video-1.5": { pricePerSecond: 0.08, defaultDurationSeconds: 8 },
+  // Seedance rates re-synced 2026-10-20 from the gateway's VIDEO_MODELS (the
+  // family was repriced; these three still carried pre-reprice numbers).
+  "bytedance/seedance-1.5-pro": { pricePerSecond: 0.07, defaultDurationSeconds: 5 },
+  "bytedance/seedance-2.0-fast": { pricePerSecond: 0.165, defaultDurationSeconds: 5 },
+  "bytedance/seedance-2.0": { pricePerSecond: 0.227, defaultDurationSeconds: 5 },
+  "bytedance/seedance-2.0-mini": { pricePerSecond: 0.0797, defaultDurationSeconds: 5 },
+  "bytedance/seedance-2.5": { pricePerSecond: 0.315, defaultDurationSeconds: 5 },
+  // Sora 2 via Azure AI Foundry — flat $0.10/s; 4, 8 or 12 seconds only.
+  "azure/sora-2": { pricePerSecond: 0.1, defaultDurationSeconds: 4 },
 };
 
 /**
@@ -3484,10 +3502,15 @@ async function proxyRequest(
             "gpt-image-2": "openai/gpt-image-2",
             banana: "google/nano-banana",
             "nano-banana": "google/nano-banana",
+            "banana-2": "google/nano-banana-2",
+            "nano-banana-2": "google/nano-banana-2",
             "banana-pro": "google/nano-banana-pro",
             "nano-banana-pro": "google/nano-banana-pro",
+            "gpt-image-2.5-flare": "openai/gpt-image-2.5-flare",
+            "gpt-image-2.5-sunburst": "openai/gpt-image-2.5-sunburst",
             grok: "xai/grok-imagine-image",
             "grok-imagine": "xai/grok-imagine-image",
+            "grok-imagine-2": "xai/grok-imagine-image-2.0",
             "grok-imagine-pro": "xai/grok-imagine-image-pro",
             seedream: "bytedance/seedream-5-pro",
             cogview: "zai/cogview-4",

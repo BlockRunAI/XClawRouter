@@ -230,20 +230,24 @@ Generate images directly from chat with `/imagegen`:
 
 ```
 /imagegen a dog dancing on the beach
-/imagegen --model dall-e-3 a futuristic city at sunset
+/imagegen --model gpt-image-2 a futuristic city at sunset
 /imagegen --model banana-pro --size 2048x2048 mountain landscape
 ```
 
-| Model                        | Provider              | Price        | Max Size  |
-| ---------------------------- | --------------------- | ------------ | --------- |
-| `nano-banana`                | Google Gemini Flash   | $0.05/image  | 1024x1024 |
-| `banana-pro`                 | Google Gemini Pro     | $0.10/image  | 4096x4096 |
-| `dall-e-3`                   | OpenAI DALL-E 3       | $0.04/image  | 1792x1024 |
-| `gpt-image`                  | OpenAI GPT Image 1    | $0.02/image  | 1536x1024 |
-| `flux`                       | Black Forest Flux 1.1 | $0.04/image  | 1024x1024 |
-| `xai/grok-imagine-image`     | xAI Grok Imagine      | $0.02/image  | 1024x1024 |
-| `xai/grok-imagine-image-pro` | xAI Grok Imagine Pro  | $0.07/image  | 1024x1024 |
-| `zai/cogview-4`              | Zhipu CogView-4       | $0.015/image | 1440x1440 |
+| Model                           | Provider                      | Price        | Max Size  |
+| ------------------------------- | ----------------------------- | ------------ | --------- |
+| `nano-banana`                   | Google Gemini Flash           | $0.05/image  | 1024x1024 |
+| `banana-pro`                    | Google Gemini Pro             | $0.10/image  | 4096x4096 |
+| `banana-2`                      | Google Nano Banana 2          | $0.09/image  | 1024x1024 |
+| `gpt-image`                     | OpenAI GPT Image 1            | $0.02/image  | 1536x1024 |
+| `gpt-image-2`                   | OpenAI GPT Image 2            | $0.06/image  | 1536x1024 |
+| `openai/gpt-image-2.5-flare`    | OpenAI GPT Image 2.5 Flare    | $0.28/image  | 1536x1024 |
+| `openai/gpt-image-2.5-sunburst` | OpenAI GPT Image 2.5 Sunburst | $0.28/image  | 1536x1024 |
+| `seedream`                      | ByteDance Seedream 5 Pro      | $0.045/image | 2048x2048 |
+| `xai/grok-imagine-image`        | xAI Grok Imagine              | $0.02/image  | 1024x1024 |
+| `grok-imagine-2`                | xAI Grok Imagine 2.0          | $0.04/image  | 1024x1024 |
+| `xai/grok-imagine-image-pro`    | xAI Grok Imagine Pro          | $0.05/image  | 1024x1024 |
+| `zai/cogview-4`                 | Zhipu CogView-4               | $0.015/image | 1440x1440 |
 
 ## Video Generation
 
@@ -263,12 +267,16 @@ curl -X POST http://localhost:8402/v1/videos/generations \
   -d '{"model":"bytedance/seedance-2.0-fast","prompt":"a red apple slowly spinning","duration_seconds":5}'
 ```
 
-| Model                         | Provider           | Price     | Duration              |
-| ----------------------------- | ------------------ | --------- | --------------------- |
-| `bytedance/seedance-1.5-pro`  | ByteDance Seedance | $0.03/sec | 5s default, up to 10s |
-| `bytedance/seedance-2.0-fast` | ByteDance Seedance | $0.15/sec | 5s default, up to 10s |
-| `bytedance/seedance-2.0`      | ByteDance Seedance | $0.30/sec | 5s default, up to 10s |
-| `xai/grok-imagine-video`      | xAI Grok Imagine   | $0.05/sec | 8s default            |
+| Model                         | Provider              | Price            | Duration                     |
+| ----------------------------- | --------------------- | ---------------- | ---------------------------- |
+| `bytedance/seedance-1.5-pro`  | ByteDance Seedance    | $0.07/sec        | 5s default, up to 12s        |
+| `bytedance/seedance-2.0-fast` | ByteDance Seedance    | $0.165/sec       | 5s default, up to 15s        |
+| `bytedance/seedance-2.0-mini` | ByteDance Seedance    | $0.0797/sec      | 5s default, up to 15s        |
+| `bytedance/seedance-2.0`      | ByteDance Seedance    | $0.227/sec       | 5s default, up to 15s        |
+| `bytedance/seedance-2.5`      | ByteDance Seedance    | $0.315/sec       | 5s default, up to 30s        |
+| `xai/grok-imagine-video`      | xAI Grok Imagine      | $0.05/sec        | 8s default, up to 15s        |
+| `xai/grok-imagine-video-1.5`  | xAI Grok Imagine      | $0.08/sec (480p) | 8s default, up to 15s        |
+| `azure/sora-2`                | OpenAI Sora 2 (Azure) | $0.10/sec        | 4s default; 4, 8 or 12s only |
 
 Calls block for 30–120s while the upstream polls the job. Text-to-video and image-to-video (`image_url` parameter) are both supported. Seedance 2.0 Fast typically returns in 60–80s; 2.0 Pro trades latency for quality.
 
@@ -308,6 +316,7 @@ Edit existing images with `/img2img`:
 | free/nemotron-3-nano-omni-30b-a3b-reasoning |  **FREE** |   **FREE** |     **$0** | 256K    | reasoning, **vision** (text+img+video+audio) |
 | free/nemotron-3-ultra-550b                  |  **FREE** |   **FREE** |     **$0** | 1M      | reasoning                                    |
 | free/llama-3.2-11b-vision                   |  **FREE** |   **FREE** |     **$0** | 128K    | **vision**                                   |
+| free/muse-glimmer-30b                       |  **FREE** |   **FREE** |     **$0** | 131K    | reasoning (Meta Muse, text only)             |
 | openai/gpt-4.1-nano                         |     $0.10 |      $0.40 |    $0.0003 | 128K    | tools                                        |
 | google/gemini-2.5-flash-lite                |     $0.10 |      $0.40 |    $0.0003 | 1M      | tools                                        |
 | openai/gpt-4o-mini                          |     $0.15 |      $0.60 |    $0.0004 | 128K    | tools                                        |
@@ -329,59 +338,72 @@ Edit existing images with `/img2img`:
 | qwen/qwen3.8-flash                          |     $0.15 |      $0.47 |    $0.0003 | 1M      | reasoning, vision, tools                     |
 | zai/glm-5.3-flash                           |     $0.15 |      $0.50 |    $0.0003 | 1M      | reasoning, vision, tools                     |
 | openai/gpt-5.6-luna                         |     $0.20 |      $1.20 |    $0.0007 | 1M      | vision, agentic, tools                       |
+| openai/gpt-5.6-luna-pro                     |     $0.20 |      $1.20 |    $0.0007 | 1M      | reasoning, vision, agentic, tools            |
+| qwen/qwen3.7-flash                          |     $0.03 |      $0.13 |    $0.0001 | 1M      | reasoning, tools                             |
+| qwen/qwen3.7-plus                           |     $0.32 |      $1.28 |    $0.0008 | 1M      | reasoning, agentic, tools                    |
+| poolside/laguna-s-2.1                       |     $0.09 |      $0.18 |    $0.0001 | 1M      | coding (paid sibling of laguna-xs)           |
 | openai/gpt-6-luna                           |     $0.10 |      $0.50 |    $0.0003 | 1M      | reasoning, vision, agentic, tools            |
 | xiaomi/mimo-v2.5-pro                        |    $0.435 |      $0.87 |    $0.0007 | 1M      | reasoning, tools                             |
 | deepseek/deepseek-v4-flash-vision-exp       |     $0.30 |      $1.20 |    $0.0008 | 1M      | reasoning, vision, tools                     |
 
 ### Mid-Range Models ($0.001–$0.01/request)
 
-| Model                        | Input $/M | Output $/M | ~$/request | Context | Features                                  |
-| ---------------------------- | --------: | ---------: | ---------: | ------- | ----------------------------------------- |
-| openai/gpt-5.4-mini          |     $0.75 |      $4.50 |    $0.0026 | 400K    | vision, agentic, tools                    |
-| anthropic/claude-haiku-4.5   |     $1.00 |      $5.00 |    $0.0030 | 200K    | vision, agentic, tools                    |
-| openai/o3-mini               |     $1.10 |      $4.40 |    $0.0028 | 128K    | reasoning, tools                          |
-| openai/o4-mini               |     $1.10 |      $4.40 |    $0.0028 | 128K    | reasoning, tools                          |
-| google/gemini-2.5-pro        |     $1.25 |     $10.00 |    $0.0056 | 1M      | reasoning, vision, tools                  |
-| zai/glm-5.1                  |     $1.40 |      $4.40 |    $0.0029 | 200K    | reasoning, tools (promo ended 2026-06-05) |
-| xai/grok-4.3                 |     $1.25 |      $2.50 |    $0.0019 | 1M      | reasoning, vision, agentic, tools         |
-| xai/grok-build-0.1           |     $1.00 |      $2.00 |    $0.0015 | 256K    | agentic coding, tools                     |
-| openai/gpt-5.2               |     $1.75 |     $14.00 |    $0.0079 | 400K    | reasoning, vision, agentic, tools         |
-| openai/gpt-5.3-codex         |     $1.75 |     $14.00 |    $0.0079 | 400K    | agentic, tools                            |
-| openai/gpt-4.1               |     $2.00 |      $8.00 |    $0.0050 | 128K    | vision, tools                             |
-| openai/o3                    |     $2.00 |      $8.00 |    $0.0050 | 200K    | reasoning, tools                          |
-| google/gemini-3.1-pro        |     $2.00 |     $12.00 |    $0.0070 | 1M      | reasoning, vision, tools                  |
-| openai/gpt-4o                |     $2.50 |     $10.00 |    $0.0063 | 128K    | vision, agentic, tools                    |
-| openai/gpt-5.4               |     $2.50 |     $15.00 |    $0.0088 | 400K    | reasoning, vision, agentic, tools         |
-| google/gemini-3.5-flash-lite |     $0.30 |      $2.50 |    $0.0014 | 1M      | reasoning, tools                          |
-| zai/glm-5.2                  |     $1.40 |      $4.40 |    $0.0029 | 1M      | reasoning, tools                          |
-| zai/glm-5.3                  |     $1.40 |      $4.40 |    $0.0029 | 1M      | reasoning, tools                          |
-| qwen/qwen3.7-max             |    $1.475 |     $4.425 |    $0.0029 | 1M      | reasoning, agentic, tools                 |
-| google/gemini-3.6-flash      |     $0.75 |      $3.75 |    $0.0022 | 1M      | reasoning, vision, tools                  |
-| xai/grok-4.5                 |     $2.00 |      $6.00 |    $0.0040 | 500K    | reasoning, vision, agentic, tools         |
-| xai/grok-4.6                 |     $2.00 |      $6.00 |    $0.0040 | 500K    | reasoning, vision, agentic, tools         |
-| xai/grok-4.7                 |     $2.00 |      $6.00 |    $0.0040 | 500K    | reasoning, vision, agentic, tools         |
-| openai/gpt-5.6-terra         |     $2.00 |     $12.00 |    $0.0070 | 1M      | reasoning, vision, agentic, tools         |
-| openai/gpt-6-sol             |     $2.00 |     $10.00 |    $0.0060 | 1M      | reasoning, vision, agentic, tools         |
-| openai/gpt-5.1               |     $1.25 |     $10.00 |    $0.0056 | 400K    | reasoning, vision, agentic, tools         |
-| anthropic/claude-sonnet-5    |     $2.00 |     $10.00 |    $0.0060 | 1M      | reasoning, vision, agentic, tools         |
-| anthropic/claude-sonnet-5.5  |     $2.00 |     $10.00 |    $0.0060 | 1M      | reasoning, vision, agentic, tools         |
-| moonshot/kimi-k3             |     $3.00 |     $15.00 |    $0.0090 | 1M      | reasoning, vision, agentic, tools         |
+| Model                        | Input $/M | Output $/M | ~$/request | Context | Features                                            |
+| ---------------------------- | --------: | ---------: | ---------: | ------- | --------------------------------------------------- |
+| openai/gpt-5.4-mini          |     $0.75 |      $4.50 |    $0.0026 | 400K    | vision, agentic, tools                              |
+| anthropic/claude-haiku-4.5   |     $1.00 |      $5.00 |    $0.0030 | 200K    | vision, agentic, tools                              |
+| openai/o3-mini               |     $1.10 |      $4.40 |    $0.0028 | 128K    | reasoning, tools                                    |
+| openai/o4-mini               |     $1.10 |      $4.40 |    $0.0028 | 128K    | reasoning, tools                                    |
+| google/gemini-2.5-pro        |     $1.25 |     $10.00 |    $0.0056 | 1M      | reasoning, vision, tools                            |
+| zai/glm-5.1                  |     $1.40 |      $4.40 |    $0.0029 | 200K    | reasoning, tools (promo ended 2026-06-05)           |
+| xai/grok-4.3                 |     $1.25 |      $2.50 |    $0.0019 | 1M      | reasoning, vision, agentic, tools                   |
+| xai/grok-build-0.1           |     $1.00 |      $2.00 |    $0.0015 | 256K    | agentic coding, tools                               |
+| openai/gpt-5.2               |     $1.75 |     $14.00 |    $0.0079 | 400K    | reasoning, vision, agentic, tools                   |
+| openai/gpt-5.3-codex         |     $1.75 |     $14.00 |    $0.0079 | 400K    | agentic, tools                                      |
+| openai/gpt-4.1               |     $2.00 |      $8.00 |    $0.0050 | 128K    | vision, tools                                       |
+| openai/o3                    |     $2.00 |      $8.00 |    $0.0050 | 200K    | reasoning, tools                                    |
+| google/gemini-3.1-pro        |     $2.00 |     $12.00 |    $0.0070 | 1M      | reasoning, vision, tools                            |
+| openai/gpt-4o                |     $2.50 |     $10.00 |    $0.0063 | 128K    | vision, agentic, tools                              |
+| openai/gpt-5.4               |     $2.50 |     $15.00 |    $0.0088 | 1M      | reasoning, vision, agentic, tools                   |
+| google/gemini-3.5-flash-lite |     $0.30 |      $2.50 |    $0.0014 | 1M      | reasoning, tools                                    |
+| zai/glm-5.2                  |     $1.40 |      $4.40 |    $0.0029 | 1M      | reasoning, tools                                    |
+| zai/glm-5.3                  |     $1.40 |      $4.40 |    $0.0029 | 1M      | reasoning, tools                                    |
+| mistral/mistral-large-4      |     $0.68 |      $2.09 |    $0.0014 | 512K    | reasoning, vision, tools (launch-promo rate)        |
+| tencent/hy4-preview          |    $0.834 |     $2.501 |    $0.0017 | 1M      | reasoning                                           |
+| qwen/qwen3.7-max             |    $1.475 |     $4.425 |    $0.0029 | 1M      | reasoning, agentic, tools                           |
+| qwen/qwen3.8-max             |     $2.00 |      $6.00 |    $0.0040 | 1M      | reasoning                                           |
+| google/gemini-3.6-flash      |     $0.75 |      $3.75 |    $0.0022 | 1M      | reasoning, vision, tools                            |
+| google/gemini-3.8-flash      |     $0.75 |      $3.75 |    $0.0023 | 1M      | reasoning, vision, tools (promo rate to 2026-12-31) |
+| xai/grok-4.5                 |     $2.00 |      $6.00 |    $0.0040 | 500K    | reasoning, vision, agentic, tools                   |
+| xai/grok-4.6                 |     $2.00 |      $6.00 |    $0.0040 | 500K    | reasoning, vision, agentic, tools                   |
+| xai/grok-4.7                 |     $2.00 |      $6.00 |    $0.0040 | 500K    | reasoning, vision, agentic, tools                   |
+| openai/gpt-5.6-terra         |     $2.00 |     $12.00 |    $0.0070 | 1M      | reasoning, vision, agentic, tools                   |
+| openai/gpt-5.6-terra-pro     |     $2.00 |     $12.00 |    $0.0070 | 1M      | reasoning, vision, agentic, tools                   |
+| openai/gpt-6-sol             |     $2.00 |     $10.00 |    $0.0060 | 1M      | reasoning, vision, agentic, tools                   |
+| openai/gpt-6.1-sol           |     $2.00 |     $10.00 |    $0.0060 | 1M      | reasoning, vision, agentic, tools                   |
+| openai/gpt-5.1               |     $1.25 |     $10.00 |    $0.0056 | 400K    | reasoning, vision, agentic, tools                   |
+| anthropic/claude-sonnet-5    |     $2.00 |     $10.00 |    $0.0060 | 1M      | reasoning, vision, agentic, tools                   |
+| anthropic/claude-sonnet-5.5  |     $2.00 |     $10.00 |    $0.0060 | 1M      | reasoning, vision, agentic, tools                   |
+| moonshot/kimi-k3             |     $3.00 |     $15.00 |    $0.0090 | 1M      | reasoning, vision, agentic, tools                   |
 
 ### Premium Models ($0.01+/request)
 
 | Model                       | Input $/M | Output $/M | ~$/request | Context | Features                          |
 | --------------------------- | --------: | ---------: | ---------: | ------- | --------------------------------- |
-| anthropic/claude-sonnet-4.6 |     $3.00 |     $15.00 |    $0.0090 | 200K    | reasoning, vision, agentic, tools |
+| anthropic/claude-sonnet-4.6 |     $3.00 |     $15.00 |    $0.0090 | 1M      | reasoning, vision, agentic, tools |
+| anthropic/claude-sonnet-4.5 |     $3.00 |     $15.00 |    $0.0090 | 200K    | reasoning, vision, agentic, tools |
 | anthropic/claude-opus-4.8   |     $5.00 |     $25.00 |    $0.0150 | 1M      | reasoning, vision, agentic, tools |
 | anthropic/claude-opus-4.7   |     $5.00 |     $25.00 |    $0.0150 | 1M      | reasoning, vision, agentic, tools |
 | openai/gpt-5.5              |     $5.00 |     $30.00 |    $0.0175 | 1M      | reasoning, vision, agentic, tools |
+| openai/chat-latest          |     $5.00 |     $30.00 |    $0.0175 | 128K    | vision, tools (ChatGPT Instant)   |
 | openai/o1                   |    $15.00 |     $60.00 |    $0.0375 | 200K    | reasoning, tools                  |
 | openai/gpt-5.2-pro          |    $21.00 |    $168.00 |    $0.0945 | 400K    | reasoning, tools                  |
-| openai/gpt-5.4-pro          |    $30.00 |    $180.00 |    $0.1050 | 400K    | reasoning, tools                  |
+| openai/gpt-5.4-pro          |    $30.00 |    $180.00 |    $0.1050 | 1M      | reasoning, tools                  |
 | anthropic/claude-opus-4.5   |     $5.00 |     $25.00 |    $0.0150 | 200K    | reasoning, vision, agentic, tools |
 | anthropic/claude-opus-5     |     $5.00 |     $25.00 |    $0.0150 | 1M      | reasoning, vision, agentic, tools |
 | anthropic/claude-opus-5.5   |     $4.00 |     $20.00 |    $0.0120 | 1M      | reasoning, vision, agentic, tools |
 | openai/gpt-5.6-sol          |     $4.00 |     $20.00 |    $0.0120 | 1M      | reasoning, vision, agentic, tools |
+| openai/gpt-5.6-sol-pro      |     $4.00 |     $20.00 |    $0.0120 | 1M      | reasoning, vision, agentic, tools |
 | anthropic/claude-fable-5    |    $10.00 |     $50.00 |    $0.0300 | 1M      | reasoning, vision, agentic, tools |
 | anthropic/claude-fable-5.1  |    $10.00 |     $50.00 |    $0.0300 | 1M      | reasoning, vision, agentic, tools |
 | openai/gpt-6-astra          |    $10.00 |     $50.00 |    $0.0300 | 1M      | reasoning, vision, agentic, tools |
