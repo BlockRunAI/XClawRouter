@@ -323,8 +323,9 @@ Edit existing images with `/img2img`:
 | openai/gpt-5.4-nano                         |     $0.20 |      $1.25 |    $0.0007 | 1M      | tools                                        |
 | openai/gpt-5-mini                           |     $0.25 |      $2.00 |    $0.0011 | 200K    | tools                                        |
 | google/gemini-3.1-flash-lite                |     $0.25 |      $1.50 |    $0.0009 | 1M      | tools                                        |
-| deepseek/deepseek-chat                      |     $0.14 |      $0.28 |    $0.0002 | 1M      | tools (V4 Flash chat)                        |
-| deepseek/deepseek-reasoner                  |     $0.14 |      $0.28 |    $0.0002 | 1M      | reasoning, tools (V4 Flash thinking)         |
+| deepseek/deepseek-v4.1-flash                |     $0.14 |      $0.28 |    $0.0002 | 1M      | tools (V4.1 Flash, non-thinking)             |
+| deepseek/deepseek-chat                      |     $0.14 |      $0.28 |    $0.0002 | 1M      | tools (V4.1 Flash chat)                      |
+| deepseek/deepseek-reasoner                  |     $0.14 |      $0.28 |    $0.0002 | 1M      | reasoning, tools (V4.1 Flash thinking)       |
 | deepseek/deepseek-v4-pro                    |     $1.32 |      $3.96 |    $0.0026 | 1M      | reasoning, agentic, tools (V4 flagship)      |
 | zai/glm-5                                   |     $1.00 |      $3.20 |    $0.0021 | 200K    | tools                                        |
 | zai/glm-5-turbo                             |     $1.20 |      $4.00 |    $0.0026 | 200K    | tools                                        |

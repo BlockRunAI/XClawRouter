@@ -76,6 +76,11 @@ export const MODEL_ALIASES: Record<string, string> = {
   deepseek: "deepseek/deepseek-chat",
   "deepseek-chat": "deepseek/deepseek-chat",
   reasoner: "deepseek/deepseek-reasoner",
+  // DeepSeek V4.1 Flash (2026-10-20) — PAID, same $0.14/$0.28 as deepseek-chat.
+  // Explicit pins only; the free-tier v4-flash names below never move onto it.
+  "deepseek-v4.1-flash": "deepseek/deepseek-v4.1-flash",
+  "deepseek-v4-1-flash": "deepseek/deepseek-v4.1-flash",
+  "v4.1-flash": "deepseek/deepseek-v4.1-flash",
 
   // Kimi / Moonshot — K2.6 is the featured flagship on BlockRun (K2.5 hidden in
   // BlockRun's UI 2026-04-28). Bare aliases now resolve to K2.6. Users who
@@ -134,14 +139,16 @@ export const MODEL_ALIASES: Record<string, string> = {
   "nvidia/gpt-oss-120b": "free/gpt-oss-120b",
   "nvidia/gpt-oss-20b": "free/gpt-oss-20b",
   // The whole nvidia/deepseek-* family is dead upstream (v4-flash 410'd
-  // 2026-08-12). Ids naming v4-flash itself keep the real id (the gateway
-  // redirects them); v3.2/v4-pro used to chain through v4-flash and now land
-  // on the live free default instead of a second dead model.
+  // 2026-08-12). v3.2/v4-pro used to chain through v4-flash and now land on
+  // the live free default instead of a second dead model. On 2026-10-20 the
+  // gateway removed nvidia/deepseek-v4-flash outright (400 Unknown model, no
+  // redirect), so the ids naming v4-flash follow the free default too — never
+  // the paid deepseek-v4.1-flash that replaced it.
   "nvidia/deepseek-v3.2": "free/nemotron-3.5-lightning",
   "free/deepseek-v3.2": "free/nemotron-3.5-lightning",
   "nvidia/deepseek-v4-pro": "free/nemotron-3.5-lightning",
   "free/deepseek-v4-pro": "free/nemotron-3.5-lightning",
-  "nvidia/deepseek-v4-flash": "free/deepseek-v4-flash",
+  "nvidia/deepseek-v4-flash": "free/nemotron-3.5-lightning",
   "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning": "free/nemotron-3-nano-omni-30b-a3b-reasoning",
   "nvidia/qwen3-coder-480b": "free/qwen3-coder-480b",
   "qwen/qwen3-coder-480b-a35b-instruct": "free/qwen3-coder-480b",
@@ -169,9 +176,9 @@ export const MODEL_ALIASES: Record<string, string> = {
   // and the gateway redirects them.
   "deepseek-free": "free/nemotron-3.5-lightning",
   "deepseek-v4-pro": "free/nemotron-3.5-lightning",
-  "deepseek-v4-flash": "free/deepseek-v4-flash",
+  "deepseek-v4-flash": "free/nemotron-3.5-lightning",
   "v4-pro": "free/nemotron-3.5-lightning",
-  "v4-flash": "free/deepseek-v4-flash",
+  "v4-flash": "free/nemotron-3.5-lightning",
   "mistral-free": "free/nemotron-3.5-lightning",
   "glm-free": "free/nemotron-3.5-lightning",
   "llama-free": "free/llama-3.2-11b-vision", // the only free Llama NVIDIA still serves
@@ -828,8 +835,8 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
   // DeepSeek
   {
     id: "deepseek/deepseek-chat",
-    name: "DeepSeek V4 Flash Chat",
-    version: "4-flash",
+    name: "DeepSeek Chat (V4.1 Flash)",
+    version: "4.1-flash",
     inputPrice: 0.14,
     outputPrice: 0.28,
     contextWindow: 1048576,
@@ -838,13 +845,25 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
   },
   {
     id: "deepseek/deepseek-reasoner",
-    name: "DeepSeek V4 Flash Reasoner",
-    version: "4-flash",
+    name: "DeepSeek Reasoner (V4.1 Flash)",
+    version: "4.1-flash",
     inputPrice: 0.14,
     outputPrice: 0.28,
     contextWindow: 1048576,
     maxOutput: 65536,
     reasoning: true,
+    toolCalling: true,
+  },
+  {
+    // DeepSeek V4.1 Flash (blockrun 2026-10-20): same upstream, price and
+    // non-thinking mode as deepseek-chat, so the flags mirror deepseek-chat.
+    id: "deepseek/deepseek-v4.1-flash",
+    name: "DeepSeek V4.1 Flash",
+    version: "4.1-flash",
+    inputPrice: 0.14,
+    outputPrice: 0.28,
+    contextWindow: 1048576,
+    maxOutput: 65536,
     toolCalling: true,
   },
   {
@@ -1731,6 +1750,9 @@ export const BLOCKRUN_MODELS: BlockRunModel[] = [
     // V4 Flash: 284B / 13B active MoE, 1M context. ~5x faster than V4 Pro.
     // Strong on chat/summarization (MMLU-Pro 86.2). Caveat: weaker factual
     // recall (SimpleQA 34% vs Pro's 58%) — pick V4 Pro for fact-heavy loops.
+    // RETIRED: 410 at NVIDIA 2026-08-12, and since 2026-10-20 the gateway
+    // answers 400 Unknown model for nvidia/deepseek-v4-flash (no redirect).
+    // Entry kept only so a direct pin is classified free; no alias targets it.
     id: "free/deepseek-v4-flash",
     name: "[Free] DeepSeek V4 Flash",
     version: "v4-flash",
