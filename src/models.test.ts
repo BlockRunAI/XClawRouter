@@ -131,9 +131,6 @@ describe("2026-10-20 live catalog sync", () => {
     const namingPins = new Set([
       "gpt-120b",
       "nvidia/gpt-oss-120b",
-      "deepseek-v4-flash",
-      "v4-flash",
-      "nvidia/deepseek-v4-flash",
       "nvidia/qwen3-coder-480b",
       "qwen/qwen3-coder-480b-a35b-instruct",
       "nvidia/glm-4.7",
@@ -154,5 +151,27 @@ describe("2026-10-20 live catalog sync", () => {
     expect(resolveModelAlias("flux")).toBe("flux");
     expect(Object.values(MODEL_ALIASES)).not.toContain("openai/dall-e-3");
     expect(Object.values(MODEL_ALIASES)).not.toContain("black-forest/flux-1.1-pro");
+  });
+});
+
+describe("DeepSeek V4.1 Flash (2026-10-20)", () => {
+  it("carries the paid id at the gateway's rate and pins it explicitly", () => {
+    expect(BLOCKRUN_MODELS.find((m) => m.id === "deepseek/deepseek-v4.1-flash")).toMatchObject({
+      inputPrice: 0.14,
+      outputPrice: 0.28,
+      contextWindow: 1_048_576,
+      maxOutput: 65_536,
+    });
+    expect(TOP_MODELS).toContain("deepseek/deepseek-v4.1-flash");
+    expect(resolveModelAlias("deepseek-v4.1-flash")).toBe("deepseek/deepseek-v4.1-flash");
+    expect(resolveModelAlias("deepseek")).toBe("deepseek/deepseek-chat");
+  });
+
+  it("never moves a free-tier deepseek name onto the paid model", () => {
+    // The gateway 400s nvidia/deepseek-v4-flash since 2026-10-20.
+    for (const alias of ["deepseek-v4-flash", "v4-flash", "nvidia/deepseek-v4-flash"]) {
+      expect(resolveModelAlias(alias), alias).toBe("free/nemotron-3.5-lightning");
+    }
+    expect(Object.values(MODEL_ALIASES)).not.toContain("free/deepseek-v4-flash");
   });
 });
