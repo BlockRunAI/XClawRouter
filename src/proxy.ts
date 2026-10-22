@@ -2377,6 +2377,7 @@ export async function startProxy(options: ProxyOptions): Promise<ProxyHandle> {
               // CLAWROUTER_ALLOW_PRIVATE_FETCH=1 opts in to a local image server.
               const imgResp = await ssrfSafeFetch(val, {
                 allowPrivate: process.env.CLAWROUTER_ALLOW_PRIVATE_FETCH === "1",
+                viaUpstreamProxy: Boolean(upstreamProxy),
               });
               if (!imgResp.ok)
                 throw new Error(`Failed to download ${field} from ${val}: HTTP ${imgResp.status}`);
