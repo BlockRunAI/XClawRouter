@@ -1,0 +1,68 @@
+name: Publish (npm)
+
+# Why this exists: publishing was manual — `npm publish` from a laptop, which
+# needs a logged-in npm session and an interactive OTP every release. CI
+# publishes instead, via npm trusted publishing (OIDC) with --provenance,
+# guarded by a version check so a re-run can never double-publish.
+# Copied from ClawRouter/.github/workflows/publish.yml.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "package.json" # only run when the version could have changed
+      - ".github/workflows/publish.yml"
+  workflow_dispatch: # manual trigger (e.g. to unstick a failed publish)
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # required for npm --provenance attestation
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Resolve versions
+        id: v
+        run: |
+          PKG=$(node -p "require('./package.json').version")
+          NPM=$(npm view @blockrun/xclawrouter version 2>/dev/null || echo "none")
+          echo "pkg=$PKG" >> "$GITHUB_OUTPUT"
+          echo "npm=$NPM" >> "$GITHUB_OUTPUT"
+          echo "package.json=$PKG | npm=$NPM"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build, typecheck, test
+        run: |
+          npm run build
+          npm run typecheck
+          npm test
+
+      # npm trusted publishing (OIDC): with this package's Trusted Publisher set
+      # to this repo + publish.yml on npmjs.com, npm >= 11.5.1 exchanges the
+      # job's id-token for a one-off publish credential, so no long-lived
+      # NPM_TOKEN is needed. The token stays below as a fallback until every
+      # package is switched over.
+      - name: Upgrade npm for trusted publishing
+        run: npm install -g npm@^11.5.1
+      - name: Publish to npm
+        if: steps.v.outputs.pkg != steps.v.outputs.npm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Skip npm (already published)
+        if: steps.v.outputs.pkg == steps.v.outputs.npm
+        run: echo "npm already at ${{ steps.v.outputs.pkg }} — skipping npm publish"
