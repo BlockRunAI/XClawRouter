@@ -6,7 +6,7 @@
 
 <p>Use one BlockRun account API key or let an agent settle each request over x402.<br><br>
 <strong>Local smart routing across <!-- br:models.chatVisible -->91<!-- /br:models.chatVisible --> models.</strong><br><br>
-<em><!-- br:models.free -->8<!-- /br:models.free --> models free, no crypto required.</em></p>
+<em><!-- br:models.free -->9<!-- /br:models.free --> models free, no crypto required.</em></p>
 
 <br>
 
@@ -57,7 +57,7 @@ Both modes use the same local router and model IDs.
 |                  | OpenRouter        | LiteLLM          | Martian           | Portkey           | **ClawRouter**                                                         |
 | ---------------- | ----------------- | ---------------- | ----------------- | ----------------- | ---------------------------------------------------------------------- |
 | **Models**       | 200+              | 100+             | Smart routing     | Gateway           | **60+**                                                                |
-| **Free tier**    | Rate-limited      | BYO keys         | No                | No                | **<!-- br:models.free -->8<!-- /br:models.free --> models, no signup** |
+| **Free tier**    | Rate-limited      | BYO keys         | No                | No                | **<!-- br:models.free -->9<!-- /br:models.free --> models, no signup** |
 | **Routing**      | Manual selection  | Manual selection | Smart (closed)    | Observability     | **Smart (open source)**                                                |
 | **Auth**         | Account + API key | Your API keys    | Account + API key | Account + API key | **BlockRun API key or wallet signature**                               |
 | **Payment**      | Credit card       | BYO keys         | Credit card       | $49-499/mo        | **Account credit or USDC per-request**                                 |
@@ -416,7 +416,7 @@ Live per-model prices: [blockrun.ai/pricing](https://blockrun.ai/pricing) (agent
 | openai/gpt-6-astra          | 1M      | reasoning, vision, agentic, tools |
 | openai/gpt-5.5-pro          | 1M      | reasoning, vision, tools          |
 
-> **Free tier:** <!-- br:models.free -->8<!-- /br:models.free --> models cost nothing — `/model free` points to nemotron-3.5-lightning, or pick any free model directly (e.g., `/model nemotron-omni` for vision, `/model north-mini-code` for coding, `/model nemotron-3-ultra-550b` for reasoning + 1M context).
+> **Free tier:** <!-- br:models.free -->9<!-- /br:models.free --> models cost nothing — `/model free` points to nemotron-3.5-lightning, or pick any free model directly (e.g., `/model nemotron-omni` for vision, `/model north-mini-code` for coding, `/model nemotron-3-ultra-550b` for reasoning + 1M context).
 > **Best value:** `xiaomi/mimo-v2.5`, `qwen/qwen3.8-flash` and `zai/glm-5.3-flash` deliver strong results at ~$0.0003/request.
 
 ---

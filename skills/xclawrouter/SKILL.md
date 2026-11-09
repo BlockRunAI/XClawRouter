@@ -19,7 +19,7 @@ metadata: { "openclaw": { "emoji": "🦀", "requires": { "config": ["models.prov
 
 # XClawRouter
 
-Smart LLM router that saves <!-- br:savings.autoVsBaselinePct -->84<!-- /br:savings.autoVsBaselinePct -->% on inference costs by routing each request to the cheapest model that can handle it. <!-- br:models.chatVisible -->91<!-- /br:models.chatVisible --> models across 9 providers (<!-- br:models.free -->8<!-- /br:models.free --> free models), all through one wallet.
+Smart LLM router that saves <!-- br:savings.autoVsBaselinePct -->84<!-- /br:savings.autoVsBaselinePct -->% on inference costs by routing each request to the cheapest model that can handle it. <!-- br:models.chatVisible -->91<!-- /br:models.chatVisible --> models across 9 providers (<!-- br:models.free -->9<!-- /br:models.free --> free models), all through one wallet.
 
 ## Install
 
